@@ -6,7 +6,7 @@ defmodule ImsWeb.SettingLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :settings, Settings.list_settings())}
+    {:ok, socket |> assign(:settings, Settings.list_settings() |> Ims.Repo.paginate(page: 1))}
   end
 
   @impl true
@@ -33,8 +33,11 @@ defmodule ImsWeb.SettingLive.Index do
   end
 
   @impl true
-  def handle_info({ImsWeb.SettingLive.FormComponent, {:saved, setting}}, socket) do
-    {:noreply, stream_insert(socket, :settings, setting)}
+  def handle_info({ImsWeb.SettingLive.FormComponent, {:saved, _setting}}, socket) do
+   {:noreply, socket |>
+    assign(:settings, Settings.list_settings() |> Ims.Repo.paginate(page: 1)) |>
+    put_flash(:info, "Setting saved successfully")}
+
   end
 
   @impl true

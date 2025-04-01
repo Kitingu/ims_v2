@@ -1,7 +1,7 @@
 <.header>
   Listing Settings
   <:actions>
-    <.link patch={~p"/settings/new"}>
+    <.link patch={~p"/admin/settings/new"}>
       <.button>New Setting</.button>
     </.link>
   </:actions>
@@ -9,34 +9,38 @@
 
 <.table
   id="settings"
-  rows={@streams.settings}
-  row_click={fn {_id, setting} -> JS.navigate(~p"/settings/#{setting}") end}
+  rows={@settings}
+  current_user={@current_user}
+  resource="settings"
 >
-  <:col :let={{_id, setting}} label="Name">{setting.name}</:col>
-  <:col :let={{_id, setting}} label="Value">{setting.value}</:col>
-  <:action :let={{_id, setting}}>
-    <div class="sr-only">
-      <.link navigate={~p"/settings/#{setting}"}>Show</.link>
+  <:col :let={ setting} label="Name">
+    <span class="font-medium text-gray-900"><%= setting.name %></span>
+  </:col>
+  <:col :let={ setting} label="Value">
+    <span class="text-gray-600"><%= setting.value %></span>
+  </:col>
+  <:action :let={ setting}>
+    <div class="flex space-x-2">
+      <.link patch={~p"/admin/settings/#{setting}/edit"} class="text-indigo-600 hover:underline">Edit</.link>
+      <.link
+        phx-click={JS.push("delete", value: %{id: setting.id}) |> hide("##{setting.id}")}
+        data-confirm="Are you sure?"
+        class="text-red-600 hover:underline"
+      >
+        Delete
+      </.link>
     </div>
-    <.link patch={~p"/settings/#{setting}/edit"}>Edit</.link>
   </:action>
-  <:action :let={{id, setting}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: setting.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
-      Delete
-    </.link>
-  </:action>
+  
 </.table>
 
-<.modal :if={@live_action in [:new, :edit]} id="setting-modal" show on_cancel={JS.patch(~p"/settings")}>
+<.modal :if={@live_action in [:new, :edit]} id="setting-modal" show on_cancel={JS.patch(~p"/admin/settings")}>
   <.live_component
     module={ImsWeb.SettingLive.FormComponent}
     id={@setting.id || :new}
     title={@page_title}
     action={@live_action}
     setting={@setting}
-    patch={~p"/settings"}
+    patch={~p"/admin/settings"}
   />
 </.modal>

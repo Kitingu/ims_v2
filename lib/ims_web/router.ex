@@ -18,6 +18,9 @@ defmodule ImsWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+  end
+
+  scope "/admin", ImsWeb do
 
     live "/settings", SettingLive.Index, :index
     live "/settings/new", SettingLive.Index, :new

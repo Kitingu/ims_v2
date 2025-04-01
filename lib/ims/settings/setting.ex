@@ -1,6 +1,7 @@
 defmodule Ims.Settings.Setting do
   use Ecto.Schema
   import Ecto.Changeset
+  use Ims.RepoHelpers, repo: Ims.Repo
 
   schema "settings" do
     field :name, :string

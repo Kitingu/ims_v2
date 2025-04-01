@@ -57,7 +57,13 @@ defmodule Ims.MixProject do
       {:gettext, "~> 0.26"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
-      {:bandit, "~> 1.5"}
+      {:bandit, "~> 1.5"},
+      {:scrivener_ecto, "~> 2.0"},
+      {:scrivener_list, "~> 2.0"},
+      {:timex, "~> 3.7"},
+      {:canada, "~> 2.0"},
+      {:elixlsx, "~> 0.6.0"},
+      {:oban, "~> 2.16"}
     ]
   end
 

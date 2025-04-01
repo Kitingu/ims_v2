@@ -10,11 +10,18 @@ defmodule Ims.Repo.Seeds.Settings do
       },
       %{
         name: "logo_url",
-        value: "1.0.0"
+        value:
+          "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Coat_of_arms_of_Kenya_%28Official%29.svg/1920px-Coat_of_arms_of_Kenya_%28Official%29.svg.png"
       },
       %{
-        name: "app_description",
-        value: "This is a sample application."
+        name: "primary_color",
+        # Blue
+        value: "#007bff"
+      },
+      %{
+        name: "secondary_color",
+        # Gray
+        value: "#6c757d"
       }
     ]
 
