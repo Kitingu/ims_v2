@@ -1,0 +1,42 @@
+<.header>
+  Listing Settings
+  <:actions>
+    <.link patch={~p"/settings/new"}>
+      <.button>New Setting</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="settings"
+  rows={@streams.settings}
+  row_click={fn {_id, setting} -> JS.navigate(~p"/settings/#{setting}") end}
+>
+  <:col :let={{_id, setting}} label="Name">{setting.name}</:col>
+  <:col :let={{_id, setting}} label="Value">{setting.value}</:col>
+  <:action :let={{_id, setting}}>
+    <div class="sr-only">
+      <.link navigate={~p"/settings/#{setting}"}>Show</.link>
+    </div>
+    <.link patch={~p"/settings/#{setting}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, setting}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: setting.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="setting-modal" show on_cancel={JS.patch(~p"/settings")}>
+  <.live_component
+    module={ImsWeb.SettingLive.FormComponent}
+    id={@setting.id || :new}
+    title={@page_title}
+    action={@live_action}
+    setting={@setting}
+    patch={~p"/settings"}
+  />
+</.modal>

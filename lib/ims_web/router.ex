@@ -18,6 +18,13 @@ defmodule ImsWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    live "/settings", SettingLive.Index, :index
+    live "/settings/new", SettingLive.Index, :new
+    live "/settings/:id/edit", SettingLive.Index, :edit
+
+    live "/settings/:id", SettingLive.Show, :show
+    live "/settings/:id/show/edit", SettingLive.Show, :edit
   end
 
   # Other scopes may use custom stacks.
