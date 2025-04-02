@@ -8,7 +8,7 @@ defmodule ImsWeb.SettingLive.FormComponent do
     ~H"""
     <div>
       <.header>
-        {@title}
+        <%= @title %>
         <:subtitle>Use this form to manage setting records in your database.</:subtitle>
       </.header>
 
@@ -72,7 +72,7 @@ defmodule ImsWeb.SettingLive.FormComponent do
         {:noreply,
          socket
          |> put_flash(:info, "Setting created successfully")
-         |> push_patch(to: socket.assigns.patch)}
+         |> redirect(to: "/admin/settings")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}

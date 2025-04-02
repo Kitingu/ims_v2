@@ -1,0 +1,52 @@
+<.header>
+    Listing roles
+    <:actions>
+      <.link patch={~p"/admin/roles/new"}>
+        <.button>New role</.button>
+      </.link>
+    </:actions>
+  </.header>
+  
+  <.table
+    id="roles"
+    rows={@roles}
+    current_user={@current_user}
+    resource="roles"
+    actions={["edit", "delete"]}
+  
+  >
+  <:col :let={ role} label="ID"><%= role.id %></:col>
+    <:col :let={ role} label="Name"><%= role.name %></:col>
+    <:col :let={ role} label="Description"><%= role.description %></:col>
+    <:col :let={role} label="Created at"> <%= Ims.Helpers.humanize_datetime( role.inserted_at) %>  </:col>
+    <:action :let={ role}>
+      <div class="sr-only">
+      
+        <.link patch={~p"/admin/roles/#{role}/edit"}>Edit</.link>
+
+      </div>
+      <.link patch={~p"/admin/roles/#{role}/edit"}>Edit</.link>
+    </:action>
+    <:action :let={{id, role}}>
+      <.link
+        phx-click={JS.push("delete", value: %{id: role.id}) |> hide("##{role.id}")}
+        data-confirm="Are you sure?"
+      >
+        Delete
+      </.link>
+    </:action>
+  </.table>
+  
+  <.modal :if={@live_action in [:new, :edit]} id="role-modal" show on_cancel={JS.patch(~p"/admin/roles")}>
+    <.live_component
+      module={ImsWeb.RoleLive.FormComponent}
+      id={@role.id || :new}
+      title={@page_title}
+      action={@live_action}
+      role={@role}
+      permissions={@permissions}
+       grouped_permissions={@grouped_permissions}
+      patch={~p"/roles"}
+    />
+  </.modal>
+  

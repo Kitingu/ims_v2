@@ -1,35 +1,35 @@
 defmodule Ims.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Ims.Repo
+  alias Ims.Accounts.{Role, Departments, JobGroup}
+  alias Ims.Leave.{LeaveBalance, LeaveType}
+  use Ims.RepoHelpers, repo: Repo
 
   schema "users" do
-    # profile
-    field :first_name, :string
-    field :last_name, :string
-    field :other_names, :string
-    field :msisdn, :string
-    field :gender, :string
-    field :dob, :date
-    field :designation, :string
-    field :personal_number, :string
-    field :password_reset_required, :boolean, default: false
-    field :metadata, :map
-    belongs_to :department, Ims.Accounts.Departments
-    belongs_to :job_group, Ims.Account.JobGroup
-
-    # to do next
-    # 1 add department
-    # 2 office location
-    # job groups
-    #  leave balances
-
-
-
     field :email, :string
     field :password, :string, virtual: true, redact: true
+    field :password_confirmation, :string, virtual: true, redact: true
+    field :first_name, :string
+    field :last_name, :string
+    field :msisdn, :string
+    belongs_to :department, Departments
+    field :personal_number, :string
+    field :designation, :string
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
+    field :password_reset_required, :boolean, default: true # New field
+    field :gender, :string # New gender field
+
+
+    many_to_many :roles, Role,
+      join_through: "user_roles",
+      on_replace: :delete
+
+    has_many :leave_balances, LeaveBalance
+    belongs_to :job_group, JobGroup
+    # many_to_many :roles, Role, join_through: UserRole
 
     timestamps(type: :utc_datetime)
   end
@@ -59,9 +59,66 @@ defmodule Ims.Accounts.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password, :personal_number, :first_name, :last_name, :msisdn, :designation])
+    |> cast(attrs, [
+      :email,
+      :password,
+      :password_confirmation,
+      :first_name,
+      :last_name,
+      :designation,
+      :personal_number,
+      :msisdn,
+      :department_id,
+      :job_group_id,
+      :gender,
+      :password_reset_required
+    ])
+    |> cast_assoc(:department)
+    |> validate_required([
+      :email,
+      # :password,
+      # :password_confirmation,
+      :first_name,
+      :last_name,
+      :department_id,
+      :msisdn,
+      :designation,
+      :job_group_id,
+      :gender
+
+    ])
     |> validate_email(opts)
+    |> validate_msisdn()
+    |> validate_inclusion(:gender, ["Male", "Female"])
+    |> put_assoc(:leave_balances, default_leave_balances())
+    |> unique_constraint(:msisdn, name: "unique_msisdn")
     |> validate_password(opts)
+    |> validate_password_confirmation()
+  end
+
+  def profile_changeset(user, attrs) do
+    user
+    |> cast(attrs, [
+      :email,
+      :first_name,
+      :last_name,
+      :personal_number,
+      :designation,
+      :department_id,
+      :msisdn
+    ])
+    |> validate_required([:email, :first_name, :last_name])
+    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
+    |> validate_length(:email, max: 160)
+    |> validate_msisdn()
+    |> unique_constraint(:msisdn, name: "unique_msisdn")
+    |> validate_length(:personal_number, min: 6, max: 8)
+  end
+
+  def role_changeset(role, permissions) do
+    role
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.put_assoc(:permissions, permissions)
   end
 
   defp validate_email(changeset, opts) do
@@ -72,15 +129,42 @@ defmodule Ims.Accounts.User do
     |> maybe_validate_unique_email(opts)
   end
 
+  def validate_msisdn(changeset) do
+    msisdn = get_change(changeset, :msisdn)
+
+    case Ims.Helpers.validate_phone_number(msisdn) do
+      true -> changeset
+      false -> add_error(changeset, :msisdn, "is not a valid phone number")
+    end
+  end
+
+  def validate_personal_number(changeset) do
+    changeset
+    |> validate_length(:personal_number, min: 6, max: 8)
+    |> validate_format(:personal_number, ~r/^[0-9]+$/, message: "must be a number")
+  end
+
   defp validate_password(changeset, opts) do
     changeset
     |> validate_required([:password])
-    |> validate_length(:password, min: 12, max: 72)
-    # Examples of additional password validation:
-    # |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
-    # |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
-    # |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/, message: "at least one digit or punctuation character")
+    |> validate_length(:password, min: 6, max: 72)
+    |> validate_format(:password, ~r/[a-z]/, message: "at least one lower case character")
+    |> validate_format(:password, ~r/[A-Z]/, message: "at least one upper case character")
+    |> validate_format(:password, ~r/[!?@#$%^&*_0-9]/,
+      message: "at least one digit or punctuation character"
+    )
     |> maybe_hash_password(opts)
+  end
+
+  defp validate_password_confirmation(changeset) do
+    password = get_change(changeset, :password)
+    password_confirmation = get_change(changeset, :password_confirmation)
+
+    if password && password_confirmation && password != password_confirmation do
+      add_error(changeset, :password_confirmation, "Passwords do not match")
+    else
+      changeset
+    end
   end
 
   defp maybe_hash_password(changeset, opts) do
@@ -179,5 +263,20 @@ defmodule Ims.Accounts.User do
     else
       add_error(changeset, :current_password, "is not valid")
     end
+  end
+
+  def assign_role(user, role) do
+    user
+    |> Ecto.Changeset.change()
+    |> Ecto.Changeset.put_assoc(:roles, [role])
+    |> Repo.update()
+  end
+
+  def default_leave_balances do
+    leave_types = Repo.all(LeaveType)
+
+    Enum.map(leave_types, fn leave_type ->
+      %LeaveBalance{leave_type_id: leave_type.id, remaining_days: 0}
+    end)
   end
 end

@@ -17,20 +17,17 @@ defmodule ImsWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :admin_auth do
+    plug :browser
+    plug :require_authenticated_user
+    plug ImsWeb.Plugs.EnsureAuthorizedPlug, actions: ["manage"]
+  end
+
   scope "/", ImsWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
-  end
-
-  scope "/admin", ImsWeb do
-
-    live "/settings", SettingLive.Index, :index
-    live "/settings/new", SettingLive.Index, :new
-    live "/settings/:id/edit", SettingLive.Index, :edit
-
-    live "/settings/:id", SettingLive.Show, :show
-    live "/settings/:id/show/edit", SettingLive.Show, :edit
+    # users, roles and permissions
+    # setup
   end
 
   # Other scopes may use custom stacks.
@@ -62,10 +59,11 @@ defmodule ImsWeb.Router do
 
     live_session :redirect_if_user_is_authenticated,
       on_mount: [{ImsWeb.UserAuth, :redirect_if_user_is_authenticated}] do
-      live "/users/register", UserRegistrationLive, :new
       live "/users/log_in", UserLoginLive, :new
       live "/users/reset_password", UserForgotPasswordLive, :new
       live "/users/reset_password/:token", UserResetPasswordLive, :edit
+
+      # settings
     end
 
     post "/users/log_in", UserSessionController, :create
@@ -76,8 +74,139 @@ defmodule ImsWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [{ImsWeb.UserAuth, :ensure_authenticated}] do
+      live "/", UserProfileLive, :index
+      live "/dashboard", DashboardLive.Index, :index
+
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
+
+      # live "/devices", DeviceLive.Index, :index
+      # live "/devices/new", DeviceLive.Index, :new
+      # live "/devices/:id/edit", DeviceLive.Index, :edit
+
+      # live "/devices/:id", DeviceLive.Show, :show
+      # live "/devices/:id/show/edit", DeviceLive.Show, :edit
+
+      # users
+
+      # live "/requests", RequestLive.Index, :index
+      # live "/requests/new", RequestLive.Index, :new
+      # live "/requests/:id/edit", RequestLive.Index, :edit
+
+      # live "/requests/:id", RequestLive.Show, :show
+      # live "/requests/:id/show/edit", RequestLive.Show, :edit
+
+      # live "/lost_devices", LostDeviceLive.Index, :index
+      # live "/lost_devices/new", LostDeviceLive.Index, :new
+      # live "/lost_devices/:id/edit", LostDeviceLive.Index, :edit
+      # live "/lost_devices/:id", LostDeviceLive.Show, :show
+
+      # live "/returned_devices", ReturnedDeviceLive.Index, :index
+      # live "/returned_devices/new", ReturnedDeviceLive.Index, :new
+      # live "/returned_devices/:id/edit", ReturnedDeviceLive.Index, :edit
+
+      # live "/returned_devices/:id", ReturnedDeviceLive.Show, :show
+      # live "/returned_devices/:id/show/edit", ReturnedDeviceLive.Show, :edit
+
+      # live "/leave_applications", LeaveApplicationLive.Index, :index
+      # live "/leave_applications/new", LeaveApplicationLive.Index, :new
+
+      # live "/training_applications", TrainingApplicationLive.Index, :index
+      # live "/training_applications/new", TrainingApplicationLive.Index, :new
+      # live "/training_applications/:id/edit", TrainingApplicationLive.Index, :edit
+
+      # live "/training_applications/:id", TrainingApplicationLive.Show, :show
+      # live "/training_applications/:id/show/edit", TrainingApplicationLive.Show, :edit
+
+      # live "/revoked_devices", RevokedDeviceLive.Index, :index
+      # live "/revoked_devices/new", RevokedDeviceLive.Index, :new
+      # live "/revoked_devices/:id/edit", RevokedDeviceLive.Index, :edit
+
+      # live "/revoked_devices/:id", RevokedDeviceLive.Show, :show
+      # live "/revoked_devices/:id/show/edit", RevokedDeviceLive.Show, :edit
+
+
+    end
+  end
+
+  scope "/admin", ImsWeb do
+    pipe_through [:admin_auth]
+
+    live_session :admin,
+      # ✅ Mounts `current_user`
+      on_mount: [{ImsWeb.UserAuth, :mount_current_user}] do
+      live "/users", UserLive, :index
+      live "/users/register", UserRegistrationLive, :new
+      live "/users/:id/edit", UserLive, :edit
+      live "/users/:id", UserLive, :show
+
+      # settings
+      live "/settings", SettingLive.Index, :index
+      live "/settings/new", SettingLive.Index, :new
+      live "/settings/:id/edit", SettingLive.Index, :edit
+      live "/settings/:id", SettingLive.Show, :show
+      live "/settings/:id/show/edit", SettingLive.Show, :edit
+
+      # categories
+      # # categories
+      # live "/categories", CategoryLive.Index, :index
+      # live "/categories/new", CategoryLive.Index, :new
+      # live "/categories/:id/edit", CategoryLive.Index, :edit
+
+      # live "/categories/:id", CategoryLive.Show, :show
+      # live "/categories/:id/show/edit", CategoryLive.Show, :edit
+
+      # live "/user_assignments", UserAssignmentLive.Index, :index
+      # live "/user_assignments/new", UserAssignmentLive.Index, :new
+      # live "/user_assignments/:id/edit", UserAssignmentLive.Index, :edit
+
+      # live "/user_assignments/:id", UserAssignmentLive.Show, :show
+      # live "/user_assignments/:id/show/edit", UserAssignmentLive.Show, :edit
+
+      # permissions
+      # roles
+      live "/roles", RoleLive.Index, :index
+      live "/roles/new", RoleLive.Index, :new
+      live "/roles/:id/edit", RoleLive.Index, :edit
+
+      live "/job_groups", JobGroupLive.Index, :index
+      live "/job_groups/new", JobGroupLive.Index, :new
+      live "/job_groups/:id/edit", JobGroupLive.Index, :edit
+
+      # live "/job_groups/:id", JobGroupLive.Show, :show
+      # live "/job_groups/:id/show/edit", JobGroupLive.Show, :edit
+
+      # live "/device_names", DeviceNameLive.Index, :index
+      # live "/device_names/new", DeviceNameLive.Index, :new
+      # live "/device_names/:id/edit", DeviceNameLive.Index, :edit
+
+      # live "/device_names/:id", DeviceNameLive.Show, :show
+      # live "/device_names/:id/show/edit", DeviceNameLive.Show, :edit
+    end
+  end
+
+  scope "/hr", ImsWeb do
+    pipe_through [:admin_auth]
+
+    live_session :hr,
+      on_mount: [{ImsWeb.UserAuth, :mount_current_user}] do
+      # live "/leave_applications", LeaveApplicationLive.Index, :index
+
+      # live "/leave_applications/:id/edit", LeaveApplicationLive.Index, :edit
+
+      # live "/leave_applications/:id", LeaveApplicationLive.Show, :show
+      # live "/leave_applications/:id/show/edit", LeaveApplicationLive.Show, :edit
+
+      live "/leave_types", LeaveTypeLive.Index, :index
+      live "/leave_types/new", LeaveTypeLive.Index, :new
+      live "/leave_types/:id/edit", LeaveTypeLive.Index, :edit
+
+      live "/leave_types/:id", LeaveTypeLive.Show, :show
+      live "/leave_types/:id/show/edit", LeaveTypeLive.Show, :edit
+
+      # live "/leave_balances", LeaveBalanceLive.Index, :index
+      # live "/leave_balances/new", LeaveBalanceLive.Index, :new
+      # live "/leave_balances/:id/edit", LeaveBalanceLive.Index, :edit
     end
   end
 
@@ -85,6 +214,9 @@ defmodule ImsWeb.Router do
     pipe_through [:browser]
 
     delete "/users/log_out", UserSessionController, :delete
+    post "/reports/download", ReportsController, :download_report
+    get "/reports/training_applications", ReportsController, :export_training_applications
+    get "/unauthorized", UnauthorizedController, :index
 
     live_session :current_user,
       on_mount: [{ImsWeb.UserAuth, :mount_current_user}] do
