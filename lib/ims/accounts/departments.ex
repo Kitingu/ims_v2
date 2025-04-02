@@ -4,7 +4,8 @@ defmodule Ims.Accounts.Departments do
 
   schema "departments" do
     field :name, :string
-    field :created_by_id, :id
+    belongs_to :created_by, Ims.Accounts.User
+    has_many :users, Ims.Accounts.User
 
     timestamps(type: :utc_datetime)
   end
@@ -12,7 +13,7 @@ defmodule Ims.Accounts.Departments do
   @doc false
   def changeset(departments, attrs) do
     departments
-    |> cast(attrs, [:name])
+    |> cast(attrs, [:name, :created_by_id])
     |> validate_required([:name])
   end
 end

@@ -14,6 +14,9 @@ defmodule Ims.Accounts.User do
     field :personal_number, :string
     field :password_reset_required, :boolean, default: false
     field :metadata, :map
+    belongs_to :department, Ims.Accounts.Departments
+    belongs_to :job_group, Ims.Account.JobGroup
+
     # to do next
     # 1 add department
     # 2 office location

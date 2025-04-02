@@ -446,4 +446,292 @@ defmodule Ims.Accounts do
   def change_departments(%Departments{} = departments, attrs \\ %{}) do
     Departments.changeset(departments, attrs)
   end
+
+  alias Ims.Accounts.JobGroup
+
+  @doc """
+  Returns the list of job_groups.
+
+  ## Examples
+
+      iex> list_job_groups()
+      [%JobGroup{}, ...]
+
+  """
+  def list_job_groups do
+    Repo.all(JobGroup)
+  end
+
+  @doc """
+  Gets a single job_group.
+
+  Raises `Ecto.NoResultsError` if the Job group does not exist.
+
+  ## Examples
+
+      iex> get_job_group!(123)
+      %JobGroup{}
+
+      iex> get_job_group!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_job_group!(id), do: Repo.get!(JobGroup, id)
+
+  @doc """
+  Creates a job_group.
+
+  ## Examples
+
+      iex> create_job_group(%{field: value})
+      {:ok, %JobGroup{}}
+
+      iex> create_job_group(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_job_group(attrs \\ %{}) do
+    %JobGroup{}
+    |> JobGroup.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a job_group.
+
+  ## Examples
+
+      iex> update_job_group(job_group, %{field: new_value})
+      {:ok, %JobGroup{}}
+
+      iex> update_job_group(job_group, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_job_group(%JobGroup{} = job_group, attrs) do
+    job_group
+    |> JobGroup.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a job_group.
+
+  ## Examples
+
+      iex> delete_job_group(job_group)
+      {:ok, %JobGroup{}}
+
+      iex> delete_job_group(job_group)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_job_group(%JobGroup{} = job_group) do
+    Repo.delete(job_group)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking job_group changes.
+
+  ## Examples
+
+      iex> change_job_group(job_group)
+      %Ecto.Changeset{data: %JobGroup{}}
+
+  """
+  def change_job_group(%JobGroup{} = job_group, attrs \\ %{}) do
+    JobGroup.changeset(job_group, attrs)
+  end
+
+  alias Ims.Accounts.Role
+
+  @doc """
+  Returns the list of roles.
+
+  ## Examples
+
+      iex> list_roles()
+      [%Role{}, ...]
+
+  """
+  def list_roles do
+    Repo.all(Role)
+  end
+
+  @doc """
+  Gets a single role.
+
+  Raises `Ecto.NoResultsError` if the Role does not exist.
+
+  ## Examples
+
+      iex> get_role!(123)
+      %Role{}
+
+      iex> get_role!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_role!(id), do: Repo.get!(Role, id)
+
+  @doc """
+  Creates a role.
+
+  ## Examples
+
+      iex> create_role(%{field: value})
+      {:ok, %Role{}}
+
+      iex> create_role(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_role(attrs \\ %{}) do
+    %Role{}
+    |> Role.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a role.
+
+  ## Examples
+
+      iex> update_role(role, %{field: new_value})
+      {:ok, %Role{}}
+
+      iex> update_role(role, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_role(%Role{} = role, attrs) do
+    role
+    |> Role.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a role.
+
+  ## Examples
+
+      iex> delete_role(role)
+      {:ok, %Role{}}
+
+      iex> delete_role(role)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_role(%Role{} = role) do
+    Repo.delete(role)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking role changes.
+
+  ## Examples
+
+      iex> change_role(role)
+      %Ecto.Changeset{data: %Role{}}
+
+  """
+  def change_role(%Role{} = role, attrs \\ %{}) do
+    Role.changeset(role, attrs)
+  end
+
+  alias Ims.Accounts.Permission
+
+  @doc """
+  Returns the list of permissions.
+
+  ## Examples
+
+      iex> list_permissions()
+      [%Permission{}, ...]
+
+  """
+  def list_permissions do
+    Repo.all(Permission)
+  end
+
+  @doc """
+  Gets a single permission.
+
+  Raises `Ecto.NoResultsError` if the Permission does not exist.
+
+  ## Examples
+
+      iex> get_permission!(123)
+      %Permission{}
+
+      iex> get_permission!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_permission!(id), do: Repo.get!(Permission, id)
+
+  @doc """
+  Creates a permission.
+
+  ## Examples
+
+      iex> create_permission(%{field: value})
+      {:ok, %Permission{}}
+
+      iex> create_permission(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_permission(attrs \\ %{}) do
+    %Permission{}
+    |> Permission.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a permission.
+
+  ## Examples
+
+      iex> update_permission(permission, %{field: new_value})
+      {:ok, %Permission{}}
+
+      iex> update_permission(permission, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_permission(%Permission{} = permission, attrs) do
+    permission
+    |> Permission.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a permission.
+
+  ## Examples
+
+      iex> delete_permission(permission)
+      {:ok, %Permission{}}
+
+      iex> delete_permission(permission)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_permission(%Permission{} = permission) do
+    Repo.delete(permission)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking permission changes.
+
+  ## Examples
+
+      iex> change_permission(permission)
+      %Ecto.Changeset{data: %Permission{}}
+
+  """
+  def change_permission(%Permission{} = permission, attrs \\ %{}) do
+    Permission.changeset(permission, attrs)
+  end
 end

@@ -42,4 +42,49 @@ defmodule Ims.AccountsFixtures do
 
     departments
   end
+
+  @doc """
+  Generate a job_group.
+  """
+  def job_group_fixture(attrs \\ %{}) do
+    {:ok, job_group} =
+      attrs
+      |> Enum.into(%{
+        description: "some description",
+        name: "some name"
+      })
+      |> Ims.Accounts.create_job_group()
+
+    job_group
+  end
+
+  @doc """
+  Generate a role.
+  """
+  def role_fixture(attrs \\ %{}) do
+    {:ok, role} =
+      attrs
+      |> Enum.into(%{
+        description: "some description",
+        name: "some name"
+      })
+      |> Ims.Accounts.create_role()
+
+    role
+  end
+
+  @doc """
+  Generate a permission.
+  """
+  def permission_fixture(attrs \\ %{}) do
+    {:ok, permission} =
+      attrs
+      |> Enum.into(%{
+        description: "some description",
+        name: "some name"
+      })
+      |> Ims.Accounts.create_permission()
+
+    permission
+  end
 end
