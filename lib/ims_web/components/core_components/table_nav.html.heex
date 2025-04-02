@@ -1,0 +1,102 @@
+<div
+  class="flex flex-col md:flex-row gap-6 items-center border-gray-300 rounded-bl-xl rounded-br-xl justify-between bg-white px-4 py-4"
+>
+  <div class="flex items-center gap-4">
+    <div
+      x-data="{ paginationOpen: false }"
+      x-on:click.away="paginationOpen=false"
+      class="w-20 relative"
+    >
+      <div class="flex-1 space-y-2">
+        <div class="w-full space-y-1.5">
+          <button
+            x-on:click="paginationOpen = !paginationOpen"
+            type="button"
+            class="w-full px-3.5 py-1.5 shadow-sm border rounded-lg border-gray-300 inline-flex gap-x-2 items-center justify-start !btn-outline"
+          >
+            <div class="flex-1 flex gap-x-2 items-center justify-start">
+              <p class="text-base font-medium leading-normal">
+                <%= @data.page_size %>
+              </p>
+            </div>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5.83337 12.5L10 16.6667L14.1667 12.5M5.83337 7.50004L10 3.33337L14.1667 7.50004"
+                stroke="currentColor"
+                stroke-width="1.67"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div
+        x-show="paginationOpen"
+        x-transition:enter="ease-out duration-200"
+        x-transition:enter-start="-translate-y-2"
+        x-transition:enter-end="translate-y-0"
+        class="absolute right-0 shadow-sm left-0 bg-white border mt-1 border-gray-200 rounded-lg"
+      >
+        <%= for opt <- @opts do %>
+          <button
+            phx-click="resize_table"
+            phx-value-size={opt}
+            x-on:click="paginationOpen = false"
+            class="text-sm font-medium leading-normal px-4 w-full text-left py-2 hover:bg-gray-50 text-gray-900"
+          >
+            <%= opt %>
+          </button>
+        <% end %>
+      </div>
+    </div>
+    <p class="text-sm sm:block font-medium leading-tight text-gray-500">
+      Entries Per Page
+    </p>
+  </div>
+  <!-- Action buttons -->
+  <div class="flex gap-3 items-center">
+    <%= if @data.page_number > 1 do %>
+      <button
+        phx-click="render_page"
+        phx-value-page="previous"
+        class="px-3.5 py-2 bg-white hover:bg-gray-50 shadow-sm border rounded-lg border-gray-300 flex gap-x-2 items-center justify-center"
+      >
+        <div>
+          <p class="text-sm font-semibold leading-tight text-slate-700">Previous</p>
+        </div>
+      </button>
+    <% end %>
+
+    <%= with %{total_pages: total_pages} <- @data, true <- @data.page_number < total_pages do %>
+      <button
+        phx-click="render_page"
+        phx-value-page="next"
+        class="px-3.5 py-2 bg-white shadow-sm hover:bg-gray-50 border rounded-lg border-gray-300 flex gap-x-2 items-center justify-center"
+      >
+        <div>
+          <p class="text-sm font-semibold leading-tight text-slate-700">Next</p>
+        </div>
+      </button>
+      <% else %{page_size: page_size, entries: entries} -> %>
+        <button
+          :if={length(entries) >= page_size}
+          phx-click="render_page"
+          phx-value-page="next"
+          class="px-3.5 py-2 bg-white shadow-sm hover:bg-gray-50 border rounded-lg border-gray-300 flex gap-x-2 items-center justify-center"
+        >
+          <div>
+            <p class="text-sm font-semibold leading-tight text-slate-700">Next</p>
+          </div>
+        </button>
+      <% _ -> %>
+    <% end %>
+  </div>
+</div>
+

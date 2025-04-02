@@ -1,0 +1,67 @@
+<div class="mt-6 divide-y divide-gray-300  lg:hidden border border-gray-300 shadow-sm rounded-lg">
+  <%= for row <- @rows.entries do %>
+    <div x-data="{isOpen:false}" class="divide-y divide-gray-200">
+      <div
+        id={@row_id && @row_id.(row)}
+        x-on:click="isOpen = !isOpen"
+        x-bind:class="{'bg-gray-100 hover:bg-gray-100': isOpen,}"
+        class="flex justify-between w-full hover:cursor-pointer items-center gap-4 px-4 py-4 hover:bg-gray-50 border-transparent rounded-tl-lg rounded-tr-lg hover:rounded-br-lg hover:rounded-bl-lg transition-all ease-in-out duration-200"
+      >
+        <div class="whitespace-nowrap py-1  text-sm font-medium text-gray-900 ">
+          <!--%= row[:title] %-->
+          <%= Map.get(row, @title) %>
+        </div>
+        <button
+          x-bind:class="{'transform rotate-180': isOpen,}"
+          class="text-gray-700 hover:text-gray-900"
+        >
+          <svg
+            width="14"
+            height="9"
+            viewBox="0 0 14 9"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M1 1.5L7 7.5L13 1.5"
+              stroke="currentColor"
+              stroke-opacity="0.3"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+      <div
+        x-show="isOpen"
+        x-cloak
+        x-transition:enter="ease-out duration-200"
+        x-transition:enter-start="-translate-y-2"
+        x-transition:enter-end="translate-y-0"
+      >
+        <div
+          :for={{row_data, _i} <- Enum.with_index(@row_data)}
+          class={["flex items-start w-full justify-between py-4 px-4", @row_data[:label_class]]}
+        >
+          <p class="text-sm font-medium leading-tight text-gray-500"><%= row_data[:label] %></p>
+          <!--%!-- row_data --%-->
+          <%= render_slot(row_data, @row_item.(row)) %>
+        </div>
+        <!-- Action buttons -->
+        <.table_actions
+          class="flex w-full items-center justify-end gap-3 py-4 px-4 pr-2"
+          actions={@actions}
+          item={row}
+        />
+      </div>
+    </div>
+  <% end %>
+  <%= if Enum.count(@rows.entries) < 1 do %>
+    <div class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700">
+      <.empty_state />
+    </div>
+  <% end %>
+  <!-- Pagination -->
+  <.table_nav data={@rows} />
+</div>

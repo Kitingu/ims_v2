@@ -1,0 +1,38 @@
+<table class="min-w-full divide-y bg-white border-gray-300 divide-gray-200 rounded-tl-lg rounded-tr-lg">
+  <thead class="whitespace-nowrap bg-gray-100 border-t text-black rounded-tl-lg rounded-tr-lg">
+    <tr>
+      <th
+        :for={col <- @col}
+        scope="col"
+        class="pl-4 px-4 py-3.5 text-left text-xs font-medium uppercase"
+      >
+        <%= col[:label] %>
+      </th>
+      <th class="pl-4 px-4 py-3.5 text-left text-xs font-medium uppercase relative">
+      </th>
+    </tr>
+  </thead>
+  <%= if Enum.count(@rows.entries) >= 1 do %>
+    <tbody
+      id={@id}
+      phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows.entries) && "stream"}
+      class="divide-y text-sm divide-gray-200"
+    >
+      <tr :for={row <- @rows.entries} id={@row_id && @row_id.(row)}>
+        <td
+          :for={{col, _i} <- Enum.with_index(@col)}
+          phx-click={@row_click && @row_click.(row)}
+          class="pl-4 py-2 px-3 text-sm whitespace-nowrap"
+        >
+          <%= render_slot(col, @row_item.(row)) %>
+        </td>
+        <td class="whitespace-nowrap px-3 py-2 text-sm text-gray-500">
+          <.table_actions actions={@actions} current_user={@current_user} resource={@resource} item={row} />
+        </td>
+      </tr>
+    </tbody>
+  <% else %>
+    <.empty_state />
+  <% end %>
+</table>
+<.table_nav data={@rows} border={@border} border_top={@border_top} />

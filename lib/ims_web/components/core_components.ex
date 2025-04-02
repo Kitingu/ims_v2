@@ -15,10 +15,15 @@ defmodule ImsWeb.CoreComponents do
   Icons are provided by [heroicons](https://heroicons.com). See `icon/1` for usage.
   """
   use Phoenix.Component
-  use Gettext, backend: ImsWeb.Gettext
 
   alias Phoenix.LiveView.JS
+  import ImsWeb.Gettext
 
+  defp t(term), do: ImsWeb.Gettext.gettext(term)
+
+
+
+embed_templates "/core_components/*"
   @doc """
   Renders a modal.
 
@@ -73,13 +78,13 @@ defmodule ImsWeb.CoreComponents do
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
                   type="button"
                   class="-m-3 flex-none p-3 opacity-20 hover:opacity-40"
-                  aria-label={gettext("close")}
+                  aria-label={t("close")}
                 >
                   <.icon name="hero-x-mark-solid" class="h-5 w-5" />
                 </button>
               </div>
               <div id={"#{@id}-content"}>
-                {render_slot(@inner_block)}
+                <%= render_slot(@inner_block) %>
               </div>
             </.focus_wrap>
           </div>
@@ -124,10 +129,10 @@ defmodule ImsWeb.CoreComponents do
       <p :if={@title} class="flex items-center gap-1.5 text-sm font-semibold leading-6">
         <.icon :if={@kind == :info} name="hero-information-circle-mini" class="h-4 w-4" />
         <.icon :if={@kind == :error} name="hero-exclamation-circle-mini" class="h-4 w-4" />
-        {@title}
+        <%= @title %>
       </p>
-      <p class="mt-2 text-sm leading-5">{msg}</p>
-      <button type="button" class="group absolute top-1 right-1 p-2" aria-label={gettext("close")}>
+      <p class="mt-2 text-sm leading-5"><%= msg %></p>
+      <button type="button" class="group absolute top-1 right-1 p-2" aria-label={t("close")}>
         <.icon name="hero-x-mark-solid" class="h-5 w-5 opacity-40 group-hover:opacity-70" />
       </button>
     </div>
@@ -147,29 +152,29 @@ defmodule ImsWeb.CoreComponents do
   def flash_group(assigns) do
     ~H"""
     <div id={@id}>
-      <.flash kind={:info} title={gettext("Success!")} flash={@flash} />
-      <.flash kind={:error} title={gettext("Error!")} flash={@flash} />
+      <.flash kind={:info} title={t("Success!")} flash={@flash} />
+      <.flash kind={:error} title={t("Error!")} flash={@flash} />
       <.flash
         id="client-error"
         kind={:error}
-        title={gettext("We can't find the internet")}
+        title={t("We can't find the internet")}
         phx-disconnected={show(".phx-client-error #client-error")}
         phx-connected={hide("#client-error")}
         hidden
       >
-        {gettext("Attempting to reconnect")}
+        <%= t("Attempting to reconnect") %>
         <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
       </.flash>
 
       <.flash
         id="server-error"
         kind={:error}
-        title={gettext("Something went wrong!")}
+        title={t("Something went wrong!")}
         phx-disconnected={show(".phx-server-error #server-error")}
         phx-connected={hide("#server-error")}
         hidden
       >
-        {gettext("Hang in there while we get back on track")}
+      <%= ImsWeb.Gettext.t("Hang in there while we get back on track") %>
         <.icon name="hero-arrow-path" class="ml-1 h-3 w-3 animate-spin" />
       </.flash>
     </div>
@@ -201,11 +206,11 @@ defmodule ImsWeb.CoreComponents do
 
   def simple_form(assigns) do
     ~H"""
-    <.form :let={f} for={@for} as={@as} {@rest}>
+    <.form :let={f} for={@for} as={@as}  {@rest}>
       <div class="mt-10 space-y-8 bg-white">
-        {render_slot(@inner_block, f)}
+        <%= render_slot(@inner_block, f) %>
         <div :for={action <- @actions} class="mt-2 flex items-center justify-between gap-6">
-          {render_slot(action, f)}
+          <%= render_slot(action, f) %>
         </div>
       </div>
     </.form>
@@ -237,7 +242,7 @@ defmodule ImsWeb.CoreComponents do
       ]}
       {@rest}
     >
-      {render_slot(@inner_block)}
+      <%= render_slot(@inner_block) %>
     </button>
     """
   end
@@ -321,9 +326,9 @@ defmodule ImsWeb.CoreComponents do
           class="rounded border-zinc-300 text-zinc-900 focus:ring-0"
           {@rest}
         />
-        {@label}
+        <%= @label %>
       </label>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
   end
@@ -331,7 +336,7 @@ defmodule ImsWeb.CoreComponents do
   def input(%{type: "select"} = assigns) do
     ~H"""
     <div>
-      <.label for={@id}>{@label}</.label>
+      <.label for={@id}><%= @label %></.label>
       <select
         id={@id}
         name={@name}
@@ -339,10 +344,10 @@ defmodule ImsWeb.CoreComponents do
         multiple={@multiple}
         {@rest}
       >
-        <option :if={@prompt} value="">{@prompt}</option>
-        {Phoenix.HTML.Form.options_for_select(@options, @value)}
+        <option :if={@prompt} value=""><%= @prompt %></option>
+        <%= Phoenix.HTML.Form.options_for_select(@options, @value) %>
       </select>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
   end
@@ -350,7 +355,7 @@ defmodule ImsWeb.CoreComponents do
   def input(%{type: "textarea"} = assigns) do
     ~H"""
     <div>
-      <.label for={@id}>{@label}</.label>
+      <.label for={@id}><%= @label %></.label>
       <textarea
         id={@id}
         name={@name}
@@ -360,8 +365,8 @@ defmodule ImsWeb.CoreComponents do
           @errors != [] && "border-rose-400 focus:border-rose-400"
         ]}
         {@rest}
-      >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
-      <.error :for={msg <- @errors}>{msg}</.error>
+      ><%= Phoenix.HTML.Form.normalize_value("textarea", @value) %></textarea>
+      <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
   end
@@ -370,7 +375,7 @@ defmodule ImsWeb.CoreComponents do
   def input(assigns) do
     ~H"""
     <div>
-      <.label for={@id}>{@label}</.label>
+      <.label for={@id}><%= @label %></.label>
       <input
         type={@type}
         name={@name}
@@ -383,10 +388,20 @@ defmodule ImsWeb.CoreComponents do
         ]}
         {@rest}
       />
-      <.error :for={msg <- @errors}>{msg}</.error>
+      <.error :for={msg <- @errors}><%= msg %></.error>
     </div>
     """
   end
+
+  # def multi_select(assigns) do
+  #   ~H"""
+  #   <select class="form-select">
+  #     <%= for {label, value} <- @options do %>
+  #       <option value={value}><%= label %></option>
+  #     <% end %>
+  #   </select>
+  #   """
+  # end
 
   @doc """
   Renders a label.
@@ -397,7 +412,7 @@ defmodule ImsWeb.CoreComponents do
   def label(assigns) do
     ~H"""
     <label for={@for} class="block text-sm font-semibold leading-6 text-zinc-800">
-      {render_slot(@inner_block)}
+      <%= render_slot(@inner_block) %>
     </label>
     """
   end
@@ -406,12 +421,13 @@ defmodule ImsWeb.CoreComponents do
   Generates a generic error message.
   """
   slot :inner_block, required: true
+  attr :class, :string, default: nil
 
   def error(assigns) do
     ~H"""
     <p class="mt-3 flex gap-3 text-sm leading-6 text-rose-600">
       <.icon name="hero-exclamation-circle-mini" class="mt-0.5 h-5 w-5 flex-none" />
-      {render_slot(@inner_block)}
+      <%= render_slot(@inner_block) %>
     </p>
     """
   end
@@ -430,16 +446,23 @@ defmodule ImsWeb.CoreComponents do
     <header class={[@actions != [] && "flex items-center justify-between gap-6", @class]}>
       <div>
         <h1 class="text-lg font-semibold leading-8 text-zinc-800">
-          {render_slot(@inner_block)}
+          <%= render_slot(@inner_block) %>
         </h1>
         <p :if={@subtitle != []} class="mt-2 text-sm leading-6 text-zinc-600">
-          {render_slot(@subtitle)}
+          <%= render_slot(@subtitle) %>
         </p>
       </div>
-      <div class="flex-none">{render_slot(@actions)}</div>
+      <div class="flex-none"><%= render_slot(@actions) %></div>
     </header>
     """
   end
+
+  attr(:url, :string, default: nil)
+  attr(:label, :string, default: nil)
+  slot(:inner_block, required: true)
+
+  def empty_state(assigns)
+
 
   @doc ~S"""
   Renders a table with generic styling.
@@ -447,77 +470,69 @@ defmodule ImsWeb.CoreComponents do
   ## Examples
 
       <.table id="users" rows={@users}>
-        <:col :let={user} label="id">{user.id}</:col>
-        <:col :let={user} label="username">{user.username}</:col>
+        <:col :let={user} label="id"><%= user.id %></:col>
+        <:col :let={user} label="username"><%= user.username %></:col>
       </.table>
   """
+
   attr :id, :string, required: true
   attr :rows, :list, required: true
   attr :row_id, :any, default: nil, doc: "the function for generating the row id"
   attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
+  attr :loading, :boolean, default: false, doc: "the state for handling on loading"
+  attr :border, :boolean , default: true
+  attr :border_top, :boolean , default: false
+  attr :current_user, :any, default: nil
+  attr :resource, :any, default: nil
 
   attr :row_item, :any,
-    default: &Function.identity/1,
-    doc: "the function for mapping each row before calling the :col and :action slots"
+       default: &Function.identity/1,
+       doc: "the function for mapping each row before calling the :col and :action slots"
+
+  attr :actions, :list,
+       default: ["edit", "view", "delete"],
+       doc: "the slot for showing user actions in the last table column"
 
   slot :col, required: true do
     attr :label, :string
+    attr :label_class, :any
+    attr :class, :any
   end
 
-  slot :action, doc: "the slot for showing user actions in the last table column"
+  def table(assigns)
 
-  def table(assigns) do
-    assigns =
-      with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
-        assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
-      end
+  @doc ~S"""
+  Renders a mobile table with generic styling.
+  """
+  attr :id, :string, required: true
+  attr :rows, :list, required: true
+  attr :title, :atom, required: true
+  attr :row_id, :any, default: nil, doc: "the function for generating the row id"
+  attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
+  attr :loading, :boolean, default: false, doc: "the state for handling on loading"
 
-    ~H"""
-    <div class="overflow-y-auto px-4 sm:overflow-visible sm:px-0">
-      <table class="w-[40rem] mt-11 sm:w-full">
-        <thead class="text-sm text-left leading-6 text-zinc-500">
-          <tr>
-            <th :for={col <- @col} class="p-0 pb-4 pr-6 font-normal">{col[:label]}</th>
-            <th :if={@action != []} class="relative p-0 pb-4">
-              <span class="sr-only">{gettext("Actions")}</span>
-            </th>
-          </tr>
-        </thead>
-        <tbody
-          id={@id}
-          phx-update={match?(%Phoenix.LiveView.LiveStream{}, @rows) && "stream"}
-          class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-sm leading-6 text-zinc-700"
-        >
-          <tr :for={row <- @rows} id={@row_id && @row_id.(row)} class="group hover:bg-zinc-50">
-            <td
-              :for={{col, i} <- Enum.with_index(@col)}
-              phx-click={@row_click && @row_click.(row)}
-              class={["relative p-0", @row_click && "hover:cursor-pointer"]}
-            >
-              <div class="block py-4 pr-6">
-                <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-zinc-50 sm:rounded-l-xl" />
-                <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
-                  {render_slot(col, @row_item.(row))}
-                </span>
-              </div>
-            </td>
-            <td :if={@action != []} class="relative w-14 p-0">
-              <div class="relative whitespace-nowrap py-4 text-right text-sm font-medium">
-                <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-zinc-50 sm:rounded-r-xl" />
-                <span
-                  :for={action <- @action}
-                  class="relative ml-4 font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
-                >
-                  {render_slot(action, @row_item.(row))}
-                </span>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    """
+  attr :row_item, :any,
+       default: &Function.identity/1,
+       doc: "the function for mapping each row before calling the :col and :action slots"
+
+  attr :actions, :list,
+       default: ["edit", "view"],
+       doc: "the slot for showing user actions in the last table column"
+
+  slot :row_data, required: true do
+    attr :class, :any
+    attr :label, :string
+    attr :label_class, :any
   end
+
+  def mobile_table(assigns)
+
+  def table_loader(assigns)
+
+  attr(:data, :map, default: %{page: 1, page_size: 10})
+  attr(:show_nav, :boolean, default: true)
+  attr(:opts, :list, default: [10, 20, 30])
+  def table_nav(assigns)
 
   @doc """
   Renders a data list.
@@ -525,12 +540,12 @@ defmodule ImsWeb.CoreComponents do
   ## Examples
 
       <.list>
-        <:item title="Title">{@post.title}</:item>
-        <:item title="Views">{@post.views}</:item>
+        <:item title="Title"><%= @post.title %></:item>
+        <:item title="Views"><%= @post.views %></:item>
       </.list>
   """
   slot :item, required: true do
-    attr :title, :string, required: true
+    attr(:title, :string, required: true)
   end
 
   def list(assigns) do
@@ -538,8 +553,8 @@ defmodule ImsWeb.CoreComponents do
     <div class="mt-14">
       <dl class="-my-4 divide-y divide-zinc-100">
         <div :for={item <- @item} class="flex gap-4 py-4 text-sm leading-6 sm:gap-8">
-          <dt class="w-1/4 flex-none text-zinc-500">{item.title}</dt>
-          <dd class="text-zinc-700">{render_slot(item)}</dd>
+          <dt class="w-1/4 flex-none text-zinc-500"><%= item.title %></dt>
+          <dd class="text-zinc-700"><%= render_slot(item) %></dd>
         </div>
       </dl>
     </div>
@@ -564,7 +579,7 @@ defmodule ImsWeb.CoreComponents do
         class="text-sm font-semibold leading-6 text-zinc-900 hover:text-zinc-700"
       >
         <.icon name="hero-arrow-left-solid" class="h-3 w-3" />
-        {render_slot(@inner_block)}
+        <%= render_slot(@inner_block) %>
       </.link>
     </div>
     """
@@ -647,10 +662,10 @@ defmodule ImsWeb.CoreComponents do
   end
 
   @doc """
-  Translates an error message using gettext.
+  Translates an error message using t.
   """
   def translate_error({msg, opts}) do
-    # When using gettext, we typically pass the strings we want
+    # When using t, we typically pass the strings we want
     # to translate as a static argument:
     #
     #     # Translate the number of files with plural rules
@@ -658,7 +673,7 @@ defmodule ImsWeb.CoreComponents do
     #
     # However the error messages in our forms and APIs are generated
     # dynamically, so we need to translate them by calling Gettext
-    # with our gettext backend as first argument. Translations are
+    # with our t backend as first argument. Translations are
     # available in the errors.po file (as we use the "errors" domain).
     if count = opts[:count] do
       Gettext.dngettext(ImsWeb.Gettext, "errors", msg, msg, count, opts)
