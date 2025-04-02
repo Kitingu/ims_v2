@@ -1,0 +1,41 @@
+<.header>
+  Listing Departments
+  <:actions>
+    <.link patch={~p"/departments/new"}>
+      <.button>New Departments</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="departments"
+  rows={@streams.departments_collection}
+  row_click={fn {_id, departments} -> JS.navigate(~p"/departments/#{departments}") end}
+>
+  <:col :let={{_id, departments}} label="Name">{departments.name}</:col>
+  <:action :let={{_id, departments}}>
+    <div class="sr-only">
+      <.link navigate={~p"/departments/#{departments}"}>Show</.link>
+    </div>
+    <.link patch={~p"/departments/#{departments}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, departments}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: departments.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="departments-modal" show on_cancel={JS.patch(~p"/departments")}>
+  <.live_component
+    module={ImsWeb.DepartmentsLive.FormComponent}
+    id={@departments.id || :new}
+    title={@page_title}
+    action={@live_action}
+    departments={@departments}
+    patch={~p"/departments"}
+  />
+</.modal>
