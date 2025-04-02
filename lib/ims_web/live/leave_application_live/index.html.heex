@@ -1,0 +1,47 @@
+<.header>
+  Listing Leave applications
+  <:actions>
+    <.link patch={~p"/leave_applications/new"}>
+      <.button>New Leave application</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="leave_applications"
+  rows={@streams.leave_applications}
+  row_click={fn {_id, leave_application} -> JS.navigate(~p"/leave_applications/#{leave_application}") end}
+>
+  <:col :let={{_id, leave_application}} label="Days requested">{leave_application.days_requested}</:col>
+  <:col :let={{_id, leave_application}} label="Status">{leave_application.status}</:col>
+  <:col :let={{_id, leave_application}} label="Comment">{leave_application.comment}</:col>
+  <:col :let={{_id, leave_application}} label="Start date">{leave_application.start_date}</:col>
+  <:col :let={{_id, leave_application}} label="End date">{leave_application.end_date}</:col>
+  <:col :let={{_id, leave_application}} label="Resumption date">{leave_application.resumption_date}</:col>
+  <:col :let={{_id, leave_application}} label="Proof document">{leave_application.proof_document}</:col>
+  <:action :let={{_id, leave_application}}>
+    <div class="sr-only">
+      <.link navigate={~p"/leave_applications/#{leave_application}"}>Show</.link>
+    </div>
+    <.link patch={~p"/leave_applications/#{leave_application}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, leave_application}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: leave_application.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="leave_application-modal" show on_cancel={JS.patch(~p"/leave_applications")}>
+  <.live_component
+    module={ImsWeb.LeaveApplicationLive.FormComponent}
+    id={@leave_application.id || :new}
+    title={@page_title}
+    action={@live_action}
+    leave_application={@leave_application}
+    patch={~p"/leave_applications"}
+  />
+</.modal>

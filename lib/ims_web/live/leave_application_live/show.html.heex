@@ -1,0 +1,32 @@
+<.header>
+  Leave application {@leave_application.id}
+  <:subtitle>This is a leave_application record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/leave_applications/#{@leave_application}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit leave_application</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Days requested">{@leave_application.days_requested}</:item>
+  <:item title="Status">{@leave_application.status}</:item>
+  <:item title="Comment">{@leave_application.comment}</:item>
+  <:item title="Start date">{@leave_application.start_date}</:item>
+  <:item title="End date">{@leave_application.end_date}</:item>
+  <:item title="Resumption date">{@leave_application.resumption_date}</:item>
+  <:item title="Proof document">{@leave_application.proof_document}</:item>
+</.list>
+
+<.back navigate={~p"/leave_applications"}>Back to leave_applications</.back>
+
+<.modal :if={@live_action == :edit} id="leave_application-modal" show on_cancel={JS.patch(~p"/leave_applications/#{@leave_application}")}>
+  <.live_component
+    module={ImsWeb.LeaveApplicationLive.FormComponent}
+    id={@leave_application.id}
+    title={@page_title}
+    action={@live_action}
+    leave_application={@leave_application}
+    patch={~p"/leave_applications/#{@leave_application}"}
+  />
+</.modal>

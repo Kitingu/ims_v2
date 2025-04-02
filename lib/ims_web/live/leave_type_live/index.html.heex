@@ -1,0 +1,44 @@
+<.header>
+  Listing Leave types
+  <:actions>
+    <.link patch={~p"/leave_types/new"}>
+      <.button>New Leave type</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="leave_types"
+  rows={@streams.leave_types}
+  row_click={fn {_id, leave_type} -> JS.navigate(~p"/leave_types/#{leave_type}") end}
+>
+  <:col :let={{_id, leave_type}} label="Name">{leave_type.name}</:col>
+  <:col :let={{_id, leave_type}} label="Max days">{leave_type.max_days}</:col>
+  <:col :let={{_id, leave_type}} label="Carry forward">{leave_type.carry_forward}</:col>
+  <:col :let={{_id, leave_type}} label="Requires approval">{leave_type.requires_approval}</:col>
+  <:action :let={{_id, leave_type}}>
+    <div class="sr-only">
+      <.link navigate={~p"/leave_types/#{leave_type}"}>Show</.link>
+    </div>
+    <.link patch={~p"/leave_types/#{leave_type}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, leave_type}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: leave_type.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="leave_type-modal" show on_cancel={JS.patch(~p"/leave_types")}>
+  <.live_component
+    module={ImsWeb.LeaveTypeLive.FormComponent}
+    id={@leave_type.id || :new}
+    title={@page_title}
+    action={@live_action}
+    leave_type={@leave_type}
+    patch={~p"/leave_types"}
+  />
+</.modal>

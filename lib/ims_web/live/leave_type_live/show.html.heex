@@ -1,0 +1,29 @@
+<.header>
+  Leave type {@leave_type.id}
+  <:subtitle>This is a leave_type record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/leave_types/#{@leave_type}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit leave_type</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Name">{@leave_type.name}</:item>
+  <:item title="Max days">{@leave_type.max_days}</:item>
+  <:item title="Carry forward">{@leave_type.carry_forward}</:item>
+  <:item title="Requires approval">{@leave_type.requires_approval}</:item>
+</.list>
+
+<.back navigate={~p"/leave_types"}>Back to leave_types</.back>
+
+<.modal :if={@live_action == :edit} id="leave_type-modal" show on_cancel={JS.patch(~p"/leave_types/#{@leave_type}")}>
+  <.live_component
+    module={ImsWeb.LeaveTypeLive.FormComponent}
+    id={@leave_type.id}
+    title={@page_title}
+    action={@live_action}
+    leave_type={@leave_type}
+    patch={~p"/leave_types/#{@leave_type}"}
+  />
+</.modal>
