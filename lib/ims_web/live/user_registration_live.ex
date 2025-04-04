@@ -29,108 +29,116 @@ defmodule ImsWeb.UserRegistrationLive do
     </.error>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- Left Column -->
-      <div class="space-y-5">
-        <.input
-          field={@form[:first_name]}
-          type="text"
-          label="First name"
-          required
-          class="input-field"
-          label_class="input-label"
-        />
+  <.input
+    field={@form[:first_name]}
+    type="text"
+    label="First name"
+    required
+    class="input-field"
+    label_class="input-label"
+  />
 
-        <.input
-          field={@form[:last_name]}
-          type="text"
-          label="Last name"
-          required
-          class="input-field"
-          label_class="input-label"
-        />
+  <.input
+    field={@form[:gender]}
+    type="select"
+    label="Job Group"
+    options={[
+      {:Male, "Male"},
+      {:Female, "Female"}
+    ]}
+    required
+    class="input-field"
+    label_class="input-label"
+  />
 
-        <.input
-          :if={!@edit_mode}
-          field={@form[:password]}
-          type="password"
-          label="Password"
-          required
-          class="input-field"
-          label_class="input-label"
-        />
+  <.input
+    field={@form[:last_name]}
+    type="text"
+    label="Last name"
+    required
+    class="input-field"
+    label_class="input-label"
+  />
 
-        <.input
-          :if={!@edit_mode}
-          field={@form[:password_confirmation]}
-          type="password"
-          label="Confirm Password"
-          required
-          class="input-field"
-          label_class="input-label"
-        />
-      </div>
+  <.input
+    field={@form[:email]}
+    type="email"
+    label="Email"
+    required
+    class="input-field"
+    label_class="input-label"
+  />
 
-      <!-- Right Column -->
-      <div class="space-y-5">
-        <.input
-          field={@form[:email]}
-          type="email"
-          label="Email"
-          required
-          class="input-field"
-          label_class="input-label"
-        />
+  <.input
+    field={@form[:personal_number]}
+    type="text"
+    label="Personal Number"
+    required
+    class="input-field"
+    label_class="input-label"
+  />
 
-        <.input
-          field={@form[:personal_number]}
-          type="text"
-          label="Personal Number"
-          required
-          class="input-field"
-          label_class="input-label"
-        />
+  <.input
+    field={@form[:msisdn]}
+    type="text"
+    label="Phone Number"
+    required
+    class="input-field"
+    label_class="input-label"
+  />
 
-        <.input
-          field={@form[:msisdn]}
-          type="text"
-          label="Phone Number"
-          required
-          class="input-field"
-          label_class="input-label"
-        />
+  <.input
+    field={@form[:designation]}
+    type="text"
+    label="Designation"
+    required
+    class="input-field"
+    label_class="input-label"
+  />
 
-        <.input
-          field={@form[:designation]}
-          type="text"
-          label="Designation"
-          required
-          class="input-field"
-          label_class="input-label"
-        />
-      </div>
-    </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-      <.input
-        field={@form[:department_id]}
-        type="select"
-        label="Department"
-        options={@departments}
-        required
-        class="input-field"
-        label_class="input-label"
-      />
 
-      <.input
-        field={@form[:job_group_id]}
-        type="select"
-        label="Job Group"
-        options={@job_groups}
-        required
-        class="input-field"
-        label_class="input-label"
-      />
-    </div>
+  <%!-- <.input
+    :if={!@edit_mode}
+    field={@form[:password_confirmation]}
+    type="password"
+    label="Confirm Password"
+    required
+    class="input-field"
+    label_class="input-label"
+  /> --%>
+
+  <.input
+    field={@form[:department_id]}
+    type="select"
+    label="Department"
+    options={@departments}
+    required
+    class="input-field"
+    label_class="input-label"
+  />
+
+  <.input
+    field={@form[:job_group_id]}
+    type="select"
+    label="Job Group"
+    options={@job_groups}
+    required
+    class="input-field"
+    label_class="input-label"
+  />
+
+  <.input
+    :if={!@edit_mode}
+    field={@form[:password]}
+    type="hidden"
+    value="Password@12345"
+    required
+    class="input-field"
+    label_class="input-label"
+  />
+</div>
+
 
     <:actions>
       <.button

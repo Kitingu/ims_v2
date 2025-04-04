@@ -96,30 +96,44 @@ defmodule Ims.Accounts do
     end
   end
 
-  def set_default_leave_balances(user_id) do
-    try do
-      leave_types = Repo.all(LeaveType)
 
-      leave_balances =
-        Enum.map(leave_types, fn leave_type ->
-          LeaveBalance.create(%{
+
+  def set_default_leave_balances(user_id) do
+    user = Repo.get!(Ims.Accounts.User, user_id)
+    leave_types = Repo.all(Ims.Leave.LeaveType)
+
+    results =
+      Enum.map(leave_types, fn leave_type ->
+        skip =
+          case {String.downcase(user.gender), String.downcase(leave_type.name)} do
+            {"male", "maternity leave"} -> true
+            {"female", "paternity leave"} -> true
+            _ -> false
+          end
+
+        unless skip do
+          %Ims.Leave.LeaveBalance{}
+          |> Ims.Leave.LeaveBalance.changeset(%{
             user_id: user_id,
             leave_type_id: leave_type.id,
-            remaining_days: leave_type.default_days
+            remaining_days: 0
           })
-        end)
+          |> Repo.insert()
+        else
+          {:skipped, leave_type.name}
+        end
+      end)
 
-      case Repo.insert_all(LeaveBalance, leave_balances) do
-        {count, _} when count > 0 -> {:ok, leave_balances}
-        _ -> {:error, :failed_to_create_leave_balances}
-      end
-    rescue
-      e ->
-        {:error,
-         Ecto.Changeset.change(%LeaveBalance{})
-         |> Ecto.Changeset.add_error(:base, "failed to set default balances")}
+    case Enum.all?(results, fn
+           {:ok, _} -> true
+           {:skipped, _} -> true
+           _ -> false
+         end) do
+      true -> {:ok, results}
+      false -> {:error, :some_failed}
     end
   end
+
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking user changes.

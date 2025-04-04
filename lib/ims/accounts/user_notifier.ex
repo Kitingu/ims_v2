@@ -8,11 +8,11 @@ defmodule Ims.Accounts.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"Ims", "contact@example.com"})
+      |> from({"Ims", "kitingu11@gmail.com"})
       |> subject(subject)
       |> text_body(body)
 
-    with {:ok, _metadata} <- Mailer.deliver(email) do
+    with {:ok, _metadata} <- Mailer.deliver(email) |> IO.inspect() do
       {:ok, email}
     end
   end

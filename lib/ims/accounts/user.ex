@@ -93,7 +93,7 @@ defmodule Ims.Accounts.User do
     |> put_assoc(:leave_balances, default_leave_balances())
     |> unique_constraint(:msisdn, name: "unique_msisdn")
     |> validate_password(opts)
-    |> validate_password_confirmation()
+    # |> validate_password_confirmation()
   end
 
   def profile_changeset(user, attrs) do

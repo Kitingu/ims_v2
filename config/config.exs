@@ -29,7 +29,20 @@ config :ims, ImsWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :ims, Ims.Mailer, adapter: Swoosh.Adapters.Local
+# config :ims, Ims.Mailer, adapter: Swoosh.Adapters.Local
+
+config :ims, Ims.Mailer,
+  adapter: Swoosh.Adapters.SMTP,
+  relay: "smtp.gmail.com",
+  username: Application.get_env(:ims, :smtp_username),
+  password: Application.get_env(:ims, :smtp_password),
+  # password: "ocxteshxatrzrinh",
+  port: 587,
+  ssl: false,
+  tls: :always,
+  tls_options: [verify: :verify_none],
+  auth: :always
+
 
 # Configure esbuild (the version is required)
 config :esbuild,

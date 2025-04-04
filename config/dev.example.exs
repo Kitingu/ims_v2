@@ -5,7 +5,7 @@ config :ims, Ims.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
-  database: "new_ims_dev",
+  database: "ims_dev",
   stacktrace: true,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
@@ -83,3 +83,9 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+
+config :ims, :smtp_username,
+  "test@gmail.com"
+
+config :ims, :smtp_password,
+  ""
