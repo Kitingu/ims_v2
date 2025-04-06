@@ -97,10 +97,10 @@ defmodule Ims.Accounts.Permission do
       %{name: "users.list_all"},
 
       # Categories
-      %{name: "categories.new"},
-      %{name: "categories.index"},
-      %{name: "categories.edit"},
-      %{name: "categories.view"},
+      %{name: "asset_types.new"},
+      %{name: "asset_types.index"},
+      %{name: "asset_types.edit"},
+      %{name: "asset_types.view"},
 
       # Devices
       %{name: "devices.new"},

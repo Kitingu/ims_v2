@@ -80,6 +80,44 @@ defmodule ImsWeb.Router do
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
 
+      live "/asset_names", AssetNameLive.Index, :index
+      live "/asset_names/new", AssetNameLive.Index, :new
+      live "/asset_names/:id/edit", AssetNameLive.Index, :edit
+      live "/asset_names/:id", AssetNameLive.Show, :show
+      live "/asset_names/:id/show/edit", AssetNameLive.Show, :edit
+
+      live "/offices", OfficeLive.Index, :index
+      live "/offices/new", OfficeLive.Index, :new
+      live "/offices/:id/edit", OfficeLive.Index, :edit
+      live "/offices/:id", OfficeLive.Show, :show
+      live "/offices/:id/show/edit", OfficeLive.Show, :edit
+
+      live "/asset_types", AssetTypeLive.Index, :index
+      live "/asset_types/new", AssetTypeLive.Index, :new
+      live "/asset_types/:id/edit", AssetTypeLive.Index, :edit
+      live "/asset_types/:id", AssetTypeLive.Show, :show
+      live "/asset_types/:id/show/edit", AssetTypeLive.Show, :edit
+
+      live "/locations", LocationLive.Index, :index
+      live "/locations/new", LocationLive.Index, :new
+      live "/locations/:id/edit", LocationLive.Index, :edit
+      live "/locations/:id", LocationLive.Show, :show
+      live "/locations/:id/show/edit", LocationLive.Show, :edit
+
+      live "/offices", OfficeLive.Index, :index
+      live "/offices/new", OfficeLive.Index, :new
+      live "/offices/:id/edit", OfficeLive.Index, :edit
+      live "/offices/:id", OfficeLive.Show, :show
+      live "/offices/:id/show/edit", OfficeLive.Show, :edit
+
+
+      live "/categories", CategoryLive.Index, :index
+      live "/categories/new", CategoryLive.Index, :new
+      live "/categories/:id/edit", CategoryLive.Index, :edit
+      live "/categories/:id", CategoryLive.Show, :show
+      live "/categories/:id/show/edit", CategoryLive.Show, :edit
+
+
       # live "/devices", DeviceLive.Index, :index
       # live "/devices/new", DeviceLive.Index, :new
       # live "/devices/:id/edit", DeviceLive.Index, :edit
@@ -124,8 +162,6 @@ defmodule ImsWeb.Router do
 
       # live "/revoked_devices/:id", RevokedDeviceLive.Show, :show
       # live "/revoked_devices/:id/show/edit", RevokedDeviceLive.Show, :edit
-
-
     end
   end
 

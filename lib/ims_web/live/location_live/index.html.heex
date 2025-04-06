@@ -1,0 +1,32 @@
+<.header>
+  Listing Locations
+  <:actions>
+    <.link patch={~p"/locations/new"}>
+      <.button>New Location</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="locations"
+  rows={@locations}
+  current_user={@current_user}
+  resource="locations"
+  actions={["edit", "delete"]}
+ 
+>
+  <:col :let={ location } label="Name">{location.name}</:col>
+  <:col :let={ location } label="Description">{location.description}</:col>
+ 
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="location-modal" show on_cancel={JS.patch(~p"/locations")}>
+  <.live_component
+    module={ImsWeb.LocationLive.FormComponent}
+    id={@location.id || :new}
+    title={@page_title}
+    action={@live_action}
+    location={@location}
+    patch={~p"/locations"}
+  />
+</.modal>

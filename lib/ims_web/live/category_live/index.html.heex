@@ -1,0 +1,43 @@
+<.header>
+  Listing Categories
+  <:actions>
+    <.link patch={~p"/categories/new"}>
+      <.button>New Category</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="categories"
+  rows={@categories}
+  current_user={@current_user}
+  resource="categories"
+  actions={["edit", "delete"]}
+>
+  <:col :let={ category} label="Name">{category.name}</:col>
+  <:action :let={ category}>
+    <div class="sr-only">
+      <.link navigate={~p"/categories/#{category}"}>Show</.link>
+    </div>
+    <.link patch={~p"/categories/#{category}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, category}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: category.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="category-modal" show on_cancel={JS.patch(~p"/categories")}>
+  <.live_component
+    module={ImsWeb.CategoryLive.FormComponent}
+    id={@category.id || :new}
+    title={@page_title}
+    action={@live_action}
+    category={@category}
+    patch={~p"/categories"}
+  />
+</.modal>

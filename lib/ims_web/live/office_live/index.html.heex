@@ -1,0 +1,40 @@
+<.header>
+  Listing Offices
+  <:actions>
+    <.link patch={~p"/offices/new"}>
+      <.button>New Office</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="offices"
+  rows={@offices}
+  current_user={@current_user}
+  resource="offices"
+  actions={["edit", "delete"]}
+ 
+>
+  <:col :let={ office} label="Name">{office.name}</:col>
+  <:col :let={ office} label="Building">{office.building}</:col>
+  <:col :let={ office} label="Floor">{office.floor}</:col>
+  <:col :let={ office} label="Door name">{office.door_name}</:col>
+  <:action :let={ office}>
+    <div class="sr-only">
+      <.link navigate={~p"/offices/#{office}"}>Show</.link>
+    </div>
+    <.link patch={~p"/offices/#{office}/edit"}>Edit</.link>
+  </:action>
+  
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="office-modal" show on_cancel={JS.patch(~p"/offices")}>
+  <.live_component
+    module={ImsWeb.OfficeLive.FormComponent}
+    id={@office.id || :new}
+    title={@page_title}
+    action={@live_action}
+    office={@office}
+    patch={~p"/offices"}
+  />
+</.modal>

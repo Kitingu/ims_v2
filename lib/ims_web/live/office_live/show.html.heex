@@ -1,0 +1,29 @@
+<.header>
+  Office {@office.id}
+  <:subtitle>This is a office record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/offices/#{@office}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit office</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Name">{@office.name}</:item>
+  <:item title="Building">{@office.building}</:item>
+  <:item title="Floor">{@office.floor}</:item>
+  <:item title="Door name">{@office.door_name}</:item>
+</.list>
+
+<.back navigate={~p"/offices"}>Back to offices</.back>
+
+<.modal :if={@live_action == :edit} id="office-modal" show on_cancel={JS.patch(~p"/offices/#{@office}")}>
+  <.live_component
+    module={ImsWeb.OfficeLive.FormComponent}
+    id={@office.id}
+    title={@page_title}
+    action={@live_action}
+    office={@office}
+    patch={~p"/offices/#{@office}"}
+  />
+</.modal>

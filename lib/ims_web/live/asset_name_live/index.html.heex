@@ -1,0 +1,33 @@
+<.header>
+  Listing Asset names
+  <:actions>
+    <.link patch={~p"/asset_names/new"}>
+      <.button>New Asset name</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="asset_names"
+  rows={@asset_names}
+  current_user={@current_user}
+  resource="asset_names"
+  actions={["edit", "delete"]}
+
+>
+  <:col :let={ asset_name} label="Name">{asset_name.name}</:col>
+  <:col :let={ asset_name} label="Description">{asset_name.description}</:col>
+  
+ 
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="asset_name-modal" show on_cancel={JS.patch(~p"/asset_names")}>
+  <.live_component
+    module={ImsWeb.AssetNameLive.FormComponent}
+    id={@asset_name.id || :new}
+    title={@page_title}
+    action={@live_action}
+    asset_name={@asset_name}
+    patch={~p"/asset_names"}
+  />
+</.modal>
