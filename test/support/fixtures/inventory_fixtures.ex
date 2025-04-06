@@ -79,4 +79,24 @@ defmodule Ims.InventoryFixtures do
 
     category
   end
+
+  @doc """
+  Generate a asset.
+  """
+  def asset_fixture(attrs \\ %{}) do
+    {:ok, asset} =
+      attrs
+      |> Enum.into(%{
+        condition: "some condition",
+        original_cost: "120.5",
+        purchase_date: ~D[2025-04-05],
+        serial_number: "some serial_number",
+        status: "some status",
+        tag_number: "some tag_number",
+        warranty_expiry: ~D[2025-04-05]
+      })
+      |> Ims.Inventory.create_asset()
+
+    asset
+  end
 end

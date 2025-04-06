@@ -547,4 +547,11 @@ defmodule Ims.Accounts do
   def change_job_group(%JobGroup{} = job_group, attrs \\ %{}) do
     JobGroup.changeset(job_group, attrs)
   end
+
+  def list_departments do
+    Repo.all(Ims.Accounts.Departments)
+  end
+  def get_department!(id) do
+    Repo.get!(Ims.Accounts.Departments, id)
+  end
 end

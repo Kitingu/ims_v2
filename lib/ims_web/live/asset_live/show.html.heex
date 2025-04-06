@@ -1,0 +1,32 @@
+<.header>
+  Asset {@asset.id}
+  <:subtitle>This is a asset record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/assets/#{@asset}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit asset</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Tag number">{@asset.tag_number}</:item>
+  <:item title="Status">{@asset.status}</:item>
+  <:item title="Serial number">{@asset.serial_number}</:item>
+  <:item title="Original cost">{@asset.original_cost}</:item>
+  <:item title="Purchase date">{@asset.purchase_date}</:item>
+  <:item title="Warranty expiry">{@asset.warranty_expiry}</:item>
+  <:item title="Condition">{@asset.condition}</:item>
+</.list>
+
+<.back navigate={~p"/assets"}>Back to assets</.back>
+
+<.modal :if={@live_action == :edit} id="asset-modal" show on_cancel={JS.patch(~p"/assets/#{@asset}")}>
+  <.live_component
+    module={ImsWeb.AssetLive.FormComponent}
+    id={@asset.id}
+    title={@page_title}
+    action={@live_action}
+    asset={@asset}
+    patch={~p"/assets/#{@asset}"}
+  />
+</.modal>

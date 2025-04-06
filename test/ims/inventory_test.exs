@@ -284,4 +284,70 @@ defmodule Ims.InventoryTest do
       assert %Ecto.Changeset{} = Inventory.change_category(category)
     end
   end
+
+  describe "assets" do
+    alias Ims.Inventory.Asset
+
+    import Ims.InventoryFixtures
+
+    @invalid_attrs %{status: nil, tag_number: nil, serial_number: nil, original_cost: nil, purchase_date: nil, warranty_expiry: nil, condition: nil}
+
+    test "list_assets/0 returns all assets" do
+      asset = asset_fixture()
+      assert Inventory.list_assets() == [asset]
+    end
+
+    test "get_asset!/1 returns the asset with given id" do
+      asset = asset_fixture()
+      assert Inventory.get_asset!(asset.id) == asset
+    end
+
+    test "create_asset/1 with valid data creates a asset" do
+      valid_attrs = %{status: "some status", tag_number: "some tag_number", serial_number: "some serial_number", original_cost: "120.5", purchase_date: ~D[2025-04-05], warranty_expiry: ~D[2025-04-05], condition: "some condition"}
+
+      assert {:ok, %Asset{} = asset} = Inventory.create_asset(valid_attrs)
+      assert asset.status == "some status"
+      assert asset.tag_number == "some tag_number"
+      assert asset.serial_number == "some serial_number"
+      assert asset.original_cost == Decimal.new("120.5")
+      assert asset.purchase_date == ~D[2025-04-05]
+      assert asset.warranty_expiry == ~D[2025-04-05]
+      assert asset.condition == "some condition"
+    end
+
+    test "create_asset/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Inventory.create_asset(@invalid_attrs)
+    end
+
+    test "update_asset/2 with valid data updates the asset" do
+      asset = asset_fixture()
+      update_attrs = %{status: "some updated status", tag_number: "some updated tag_number", serial_number: "some updated serial_number", original_cost: "456.7", purchase_date: ~D[2025-04-06], warranty_expiry: ~D[2025-04-06], condition: "some updated condition"}
+
+      assert {:ok, %Asset{} = asset} = Inventory.update_asset(asset, update_attrs)
+      assert asset.status == "some updated status"
+      assert asset.tag_number == "some updated tag_number"
+      assert asset.serial_number == "some updated serial_number"
+      assert asset.original_cost == Decimal.new("456.7")
+      assert asset.purchase_date == ~D[2025-04-06]
+      assert asset.warranty_expiry == ~D[2025-04-06]
+      assert asset.condition == "some updated condition"
+    end
+
+    test "update_asset/2 with invalid data returns error changeset" do
+      asset = asset_fixture()
+      assert {:error, %Ecto.Changeset{}} = Inventory.update_asset(asset, @invalid_attrs)
+      assert asset == Inventory.get_asset!(asset.id)
+    end
+
+    test "delete_asset/1 deletes the asset" do
+      asset = asset_fixture()
+      assert {:ok, %Asset{}} = Inventory.delete_asset(asset)
+      assert_raise Ecto.NoResultsError, fn -> Inventory.get_asset!(asset.id) end
+    end
+
+    test "change_asset/1 returns a asset changeset" do
+      asset = asset_fixture()
+      assert %Ecto.Changeset{} = Inventory.change_asset(asset)
+    end
+  end
 end
