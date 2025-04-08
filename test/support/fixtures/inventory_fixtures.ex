@@ -99,4 +99,29 @@ defmodule Ims.InventoryFixtures do
 
     asset
   end
+
+  @doc """
+  Generate a asset_log.
+  """
+  def asset_log_fixture(attrs \\ %{}) do
+    {:ok, asset_log} =
+      attrs
+      |> Enum.into(%{
+        abstract_number: "some abstract_number",
+        action: "some action",
+        assigned_at: ~U[2025-04-05 22:33:00Z],
+        date_returned: ~D[2025-04-05],
+        evidence: "some evidence",
+        performed_at: ~U[2025-04-05 22:33:00Z],
+        photo_evidence: "some photo_evidence",
+        police_abstract_photo: "some police_abstract_photo",
+        remarks: "some remarks",
+        revoke_type: "some revoke_type",
+        revoked_until: ~D[2025-04-05],
+        status: "some status"
+      })
+      |> Ims.Inventory.create_asset_log()
+
+    asset_log
+  end
 end

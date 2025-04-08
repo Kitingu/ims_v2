@@ -1,0 +1,37 @@
+<.header>
+  Asset log {@asset_log.id}
+  <:subtitle>This is a asset_log record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/asset_logs/#{@asset_log}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit asset_log</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Action">{@asset_log.action}</:item>
+  <:item title="Remarks">{@asset_log.remarks}</:item>
+  <:item title="Status">{@asset_log.status}</:item>
+  <:item title="Performed at">{@asset_log.performed_at}</:item>
+  <:item title="Assigned at">{@asset_log.assigned_at}</:item>
+  <:item title="Date returned">{@asset_log.date_returned}</:item>
+  <:item title="Evidence">{@asset_log.evidence}</:item>
+  <:item title="Abstract number">{@asset_log.abstract_number}</:item>
+  <:item title="Police abstract photo">{@asset_log.police_abstract_photo}</:item>
+  <:item title="Photo evidence">{@asset_log.photo_evidence}</:item>
+  <:item title="Revoke type">{@asset_log.revoke_type}</:item>
+  <:item title="Revoked until">{@asset_log.revoked_until}</:item>
+</.list>
+
+<.back navigate={~p"/asset_logs"}>Back to asset_logs</.back>
+
+<.modal :if={@live_action == :edit} id="asset_log-modal" show on_cancel={JS.patch(~p"/asset_logs/#{@asset_log}")}>
+  <.live_component
+    module={ImsWeb.AssetLogLive.FormComponent}
+    id={@asset_log.id}
+    title={@page_title}
+    action={@live_action}
+    asset_log={@asset_log}
+    patch={~p"/asset_logs/#{@asset_log}"}
+  />
+</.modal>

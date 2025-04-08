@@ -2,7 +2,9 @@
   <!-- Logo Section -->
   <div class="p-6 border-b border-gray-800 flex items-center space-x-3">
     <.link navigate={~p"/"} class="flex items-center space-x-3">
-      <img src={~p"/images/logo.png"} alt="Logo" class="h-12 w-12 rounded-full shadow-md" />
+      <img 
+      src={Ims.Settings.Setting.get_setting("logo_url")}
+      alt="Logo" class="h-12 w-12 rounded-full shadow-md" />
       <span class="text-2xl font-bold tracking-wide">ODP</span>
     </.link>
   </div>
@@ -74,7 +76,7 @@
 
       <!-- Devices Dropdown -->
       <li>
-        <button @click="openDropdown = openDropdown === 'devices' ? '' : 'devices'"
+        <button @click="openDropdown = openDropdown === 'assets' ? '' : 'assets'"
           class="flex items-center w-full px-4 py-3 text-lg font-medium text-gray-200 rounded-lg hover:bg-gray-800 hover:text-white transition">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
             stroke="currentColor" class="size-4 mr-3">
@@ -84,15 +86,15 @@
 
           <span>Devices</span>
           <svg class="w-4 h-4 ml-auto transform transition-transform"
-            x-bind:class="{ 'rotate-180': openDropdown === 'devices' }" xmlns="http://www.w3.org/2000/svg" fill="none"
+            x-bind:class="{ 'rotate-180': openDropdown === 'assets' }" xmlns="http://www.w3.org/2000/svg" fill="none"
             viewBox="0 0 10 6">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M1 1l4 4 4-4" />
           </svg>
         </button>
-        <ul x-show="openDropdown === 'devices'" class="mt-2 pl-6 space-y-2 text-sm font-light text-gray-400" x-cloak>
+        <ul x-show="openDropdown === 'assets'" class="mt-2 pl-6 space-y-2 text-sm font-light text-gray-400" x-cloak>
           <li>
-            <.link :if={Canada.Can.can?(@current_user, ["index"], "devices" )} navigate={~p"/devices"}
+            <.link :if={Canada.Can.can?(@current_user, ["index"], "devices" )} navigate={~p"/assets"}
               class="flex items-center py-2 rounded-lg hover:text-white hover:bg-gray-800 transition">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor" class="size-4 mr-3">
@@ -100,7 +102,7 @@
                   d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
               </svg>
 
-              Manage Devices
+              Manage Assets
             </.link>
           </li>
           <li>

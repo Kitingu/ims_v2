@@ -2,6 +2,7 @@ defmodule Ims.Inventory.Asset do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
+  alias Ims.Repo
   use Ims.RepoHelpers, repo: Repo
   alias Elixlsx.{Workbook, Sheet}
 
@@ -17,7 +18,6 @@ defmodule Ims.Inventory.Asset do
     belongs_to :asset_name, Ims.Inventory.AssetName
     belongs_to :user, Ims.Accounts.User
     belongs_to :office, Ims.Inventory.Office
-
 
     timestamps(type: :utc_datetime)
   end
@@ -42,7 +42,7 @@ defmodule Ims.Inventory.Asset do
       :serial_number,
       :original_cost,
       :condition,
-      :asset_name_id,
+      :asset_name_id
     ])
   end
 
@@ -202,5 +202,17 @@ defmodule Ims.Inventory.Asset do
     Elixlsx.write_to(workbook, file_path)
 
     {:ok, file_path}
+  end
+
+  def device_in_lost_state?(asset) do
+    # check if the device current user_id is the one that lost the device and alos the device is approved
+    from(a in __MODULE__,
+      where: a.id == ^asset.id and a.status == ^:lost
+    )
+    |> Repo.one()
+    |> case do
+      nil -> false
+      _ -> true
+    end
   end
 end

@@ -523,6 +523,33 @@ defmodule Ims.Inventory do
   """
   def get_asset!(id), do: Repo.get!(Asset, id)
 
+  def get_available_assets() do
+    Asset
+    |> where([a], a.status == :available)
+    |> Repo.all()
+  end
+
+  # def get_available_assets_by_category(category_id) do
+  #   Asset
+  #   |> where([a], a.status == :available)
+  #   |> where([a], a.asset_name.category_id == ^category_id)
+  #   |> Repo.all()
+  # end
+
+
+
+  def get_assigned_assets() do
+    Asset
+    |> where([a], a.status == :assigned)
+    |> Repo.all()
+  end
+
+  def get_lost_assets() do
+    Asset
+    |> where([a], a.status == :lost)
+    |> Repo.all()
+  end
+
   @doc """
   Creates a asset.
 
@@ -591,5 +618,159 @@ defmodule Ims.Inventory do
   def list_device_names() do
     AssetName
     |> Repo.all()
+  end
+
+  alias Ims.Inventory.AssetLog
+
+  @doc """
+  Returns the list of asset_logs.
+
+  ## Examples
+
+      iex> list_asset_logs()
+      [%AssetLog{}, ...]
+
+  """
+  def list_asset_logs do
+    Repo.all(AssetLog)
+  end
+
+  @doc """
+  Gets a single asset_log.
+
+  Raises `Ecto.NoResultsError` if the Asset log does not exist.
+
+  ## Examples
+
+      iex> get_asset_log!(123)
+      %AssetLog{}
+
+      iex> get_asset_log!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_asset_log!(id), do: Repo.get!(AssetLog, id)
+
+  @doc """
+  Creates a asset_log.
+
+  ## Examples
+
+      iex> create_asset_log(%{field: value})
+      {:ok, %AssetLog{}}
+
+      iex> create_asset_log(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+
+  def create_asset_log(%{"action" => "assigned", "asset_id" => asset_id} = log_attrs) do
+    Repo.transaction(fn ->
+      asset = get_asset!(asset_id)
+
+      # Update the asset status to :assigned and link user/office
+      asset_changes =
+        %{}
+        |> maybe_put(:user_id, Map.get(log_attrs, "user_id"))
+        |> maybe_put(:office_id, Map.get(log_attrs, "office_id"))
+        |> Map.put(:status, :assigned)
+
+      asset
+      |> Asset.changeset(asset_changes)
+      |> Repo.update!()
+
+      %AssetLog{}
+      |> AssetLog.changeset(log_attrs)
+      |> Repo.insert!()
+    end)
+  end
+
+  def create_asset_log(%{"action" => "returned", "asset_id" => asset_id} = log_attrs) do
+    Repo.transaction(fn ->
+      asset = get_asset!(asset_id)
+
+      # Update asset to available and unlink user/office
+      asset
+      |> Asset.changeset(%{status: :available, user_id: nil, office_id: nil})
+      |> Repo.update!()
+
+      %AssetLog{}
+      |> AssetLog.changeset(log_attrs)
+      |> Repo.insert!()
+    end)
+  end
+
+  def create_asset_log(%{"action" => "lost", "asset_id" => asset_id} = log_attrs) do
+    Repo.transaction(fn ->
+      asset = get_asset!(asset_id)
+
+      # Update asset status to lost
+      asset
+      |> Asset.changeset(%{status: :lost})
+      |> Repo.update!()
+
+      %AssetLog{}
+      |> AssetLog.changeset(log_attrs)
+      |> Repo.insert!()
+    end)
+  end
+
+  # fallback for other actions
+  def create_asset_log(attrs) do
+    %AssetLog{}
+    |> AssetLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  # Helper
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
+  defp maybe_put(map, key, value) when is_map(value), do: Map.put(map, key, value)
+
+  @doc """
+  Updates a asset_log.
+
+  ## Examples
+
+      iex> update_asset_log(asset_log, %{field: new_value})
+      {:ok, %AssetLog{}}
+
+      iex> update_asset_log(asset_log, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_asset_log(%AssetLog{} = asset_log, attrs) do
+    asset_log
+    |> AssetLog.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a asset_log.
+
+  ## Examples
+
+      iex> delete_asset_log(asset_log)
+      {:ok, %AssetLog{}}
+
+      iex> delete_asset_log(asset_log)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_asset_log(%AssetLog{} = asset_log) do
+    Repo.delete(asset_log)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking asset_log changes.
+
+  ## Examples
+
+      iex> change_asset_log(asset_log)
+      %Ecto.Changeset{data: %AssetLog{}}
+
+  """
+  def change_asset_log(%AssetLog{} = asset_log, attrs \\ %{}) do
+    AssetLog.changeset(asset_log, attrs)
   end
 end

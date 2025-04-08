@@ -1,0 +1,95 @@
+<div class="p-6">
+  <!-- Tabs Navigation -->
+  <div class="flex space-x-4 border-b">
+    <%= for tab <- ["assigned", "returned" , "revoked" , "lost" , "decommissioned" ] do %>
+      <button phx-click="change_tab" phx-value-tab={tab}
+        class={ "whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm " <>
+        if @current_tab == tab do
+        "border-indigo-500 text-indigo-600"
+        else
+        "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+        end
+        }>
+        <%= String.capitalize(tab) %>
+      </button>
+      <% end %>
+  </div>
+
+  <!-- Tabs Content -->
+  <div class="mt-6">
+    <%= case @current_tab do %>
+      <% "assigned" -> %>
+        <.table id="assigned_asset_logs" rows={@asset_logs} resource="asset_logs" current_user={@current_user}
+          actions={[]}>
+          <:col :let={asset_log} label="Action">
+            <%= asset_log.action %>
+          </:col>
+          <:col :let={asset_log} label="Remarks">
+            <%= asset_log.remarks %>
+          </:col>
+
+          <:col :let={asset_log} label="Condition">
+            <%= asset_log.status %>
+          </:col>
+          <:col :let={asset_log} label="Performed At">
+            <%= asset_log.performed_at %>
+          </:col>
+        </.table>
+
+        <% "returned" -> %>
+          <.table id="returned_asset_logs" rows={@asset_logs} resource="asset_logs" current_user={@current_user}
+            actions={[]}>
+            <:col :let={asset_log} label="Action">
+              <%= asset_log.action %>
+            </:col>
+            <:col :let={asset_log} label="Remarks">
+              <%= asset_log.remarks %>
+            </:col>
+            <:col :let={asset_log} label="Returned By">
+              <%= asset_log.performed_by_id %>
+            </:col>
+   
+            <:col :let={asset_log} label="Performed At">
+              <%= asset_log.performed_at %>
+            </:col>
+          </.table>
+
+          <% "revoked" -> %>
+            <.table id="revoked_asset_logs" rows={@asset_logs} resource="asset_logs" current_user={@current_user}
+              actions={[]}>
+              <:col :let={asset_log} label="Action">
+                <%= asset_log.action %>
+              </:col>
+              <:col :let={asset_log} label="Remarks">
+                <%= asset_log.remarks %>
+              </:col>
+              <:col :let={asset_log} label="Revoked By">
+                <%= asset_log.performed_by_id %>
+              </:col>
+              <:col :let={asset_log} label="Performed At">
+                <%= asset_log.performed_at %>
+              </:col>
+            </.table>
+
+            <% _ -> %>
+              <.table id="default_asset_logs" rows={@asset_logs} resource="asset_logs" current_user={@current_user}
+                actions={[]}>
+                <:col :let={asset_log} label="Action">
+                  <%= asset_log.action %>
+                </:col>
+                <:col :let={asset_log} label="Remarks">
+                  <%= asset_log.remarks %>
+                </:col>
+                <:col :let={asset_log} label="Status">
+                  <%= asset_log.status %>
+                </:col>
+                <:col :let={asset_log} label="Performed At">
+                  <%= asset_log.performed_at %>
+                </:col>
+              </.table>
+              <% end %>
+  </div>
+
+
+
+</div>

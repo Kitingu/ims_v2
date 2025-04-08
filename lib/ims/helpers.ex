@@ -1,24 +1,31 @@
 defmodule Ims.Helpers do
   def format_currency(%Decimal{} = amount) do
     amount
-    # Convert Decimal to string with full precision
     |> Decimal.to_string(:normal)
     |> format_currency_string()
   end
 
   def format_currency(amount) when is_float(amount) or is_integer(amount) do
     amount
-    # Ensure 2 decimal places for floats
     |> :erlang.float_to_binary(decimals: 2)
     |> format_currency_string()
   end
 
   defp format_currency_string(amount_string) do
-    amount_string
-    # Add comma separators
-    |> String.replace(~r/(\d)(?=(\d{3})+\.)/, "\\1,")
-    # Prepend "KES"
-    |> then(&"KES #{&1}")
+    {int_part, decimal_part} =
+      case String.split(amount_string, ".") do
+        [int, dec] -> {int, "." <> dec}
+        [int] -> {int, ""}
+      end
+
+    formatted_int =
+      int_part
+      |> String.reverse()
+      |> String.replace(~r/.{1,3}/, "\\0,")
+      |> String.reverse()
+      |> String.trim_leading(",")
+
+    "KES #{formatted_int}#{decimal_part}"
   end
 
   def humanize_date(date),
@@ -55,7 +62,6 @@ defmodule Ims.Helpers do
 
     # regex = ~r/^(?:254|\+254|0)?(7(?:(?:[129][0-9])|(?:0[0-8])|(4[0-1]))[0-9]{6})$/
     regex = ~r/^(?:254|\+254|0)?(7[0-9]{8}|1[0-9]{8})$/
-
 
     case Regex.match?(regex, phone_number) do
       true -> true

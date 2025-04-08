@@ -122,6 +122,17 @@ defmodule ImsWeb.Router do
       live "/assets/:id/edit", AssetLive.Index, :edit
       live "/assets/:id", AssetLive.Show, :show
       live "/assets/:id/show/edit", AssetLive.Show, :edit
+      live "/assets/:id/assign", AssetLive.Index, :assign
+
+
+
+
+      live "/asset_logs", AssetLogLive.Index, :index
+      live "/asset_logs/new", AssetLogLive.Index, :new
+      live "/asset_logs/:id/edit", AssetLogLive.Index, :edit
+      live "/asset_logs/:id", AssetLogLive.Show, :show
+      live "/asset_logs/:id/show/edit", AssetLogLive.Show, :edit
+
 
 
       # live "/devices", DeviceLive.Index, :index

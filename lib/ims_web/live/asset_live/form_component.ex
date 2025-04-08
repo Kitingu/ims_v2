@@ -20,8 +20,6 @@ defmodule ImsWeb.AssetLive.FormComponent do
         phx-submit="save"
       >
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-
           <%!-- add category type to filter asset names. its not a field--%>
 
           <.input
@@ -67,10 +65,35 @@ defmodule ImsWeb.AssetLive.FormComponent do
 
   @impl true
   def update(%{asset: asset} = assigns, socket) do
+    categories = Inventory.list_categories() |> Enum.map(&{&1.name, &1.id})
+
+    default_category_id =
+      case Map.get(asset, :category_id) do
+        nil ->
+          case categories do
+            [{_, id} | _] -> id
+            _ -> nil
+          end
+
+        id ->
+          id
+      end
+
+    asset_names =
+      if default_category_id do
+        Inventory.list_asset_names_by_category(default_category_id)
+        |> Enum.map(&{&1.name, &1.id})
+      else
+        []
+      end
+
+    changeset = Inventory.change_asset(asset)
+
     {:ok,
      socket
      |> assign(assigns)
-     |> assign(:asset_names, Inventory.list_asset_names() |> Enum.map(&{&1.name, &1.id}))
+     |> assign(:categories, categories)
+     |> assign(:asset_names, asset_names)
      |> assign(:status_options, [
        {"Available", "available"},
        {"Assigned", "assigned"},
@@ -85,10 +108,7 @@ defmodule ImsWeb.AssetLive.FormComponent do
        {"Worn", "worn"},
        {"Obsolete", "obsolete"}
      ])
-     |> assign(:categories, Inventory.list_categories() |> Enum.map(&{&1.name, &1.id}))
-     |> assign_new(:form, fn ->
-       to_form(Inventory.change_asset(asset))
-     end)}
+     |> assign_new(:form, fn -> to_form(changeset) end)}
   end
 
   def handle_event("category_changed", %{"asset" => %{"category_id" => category_id}}, socket) do

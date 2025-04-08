@@ -350,4 +350,80 @@ defmodule Ims.InventoryTest do
       assert %Ecto.Changeset{} = Inventory.change_asset(asset)
     end
   end
+
+  describe "asset_logs" do
+    alias Ims.Inventory.AssetLog
+
+    import Ims.InventoryFixtures
+
+    @invalid_attrs %{status: nil, action: nil, remarks: nil, performed_at: nil, assigned_at: nil, date_returned: nil, evidence: nil, abstract_number: nil, police_abstract_photo: nil, photo_evidence: nil, revoke_type: nil, revoked_until: nil}
+
+    test "list_asset_logs/0 returns all asset_logs" do
+      asset_log = asset_log_fixture()
+      assert Inventory.list_asset_logs() == [asset_log]
+    end
+
+    test "get_asset_log!/1 returns the asset_log with given id" do
+      asset_log = asset_log_fixture()
+      assert Inventory.get_asset_log!(asset_log.id) == asset_log
+    end
+
+    test "create_asset_log/1 with valid data creates a asset_log" do
+      valid_attrs = %{status: "some status", action: "some action", remarks: "some remarks", performed_at: ~U[2025-04-05 22:33:00Z], assigned_at: ~U[2025-04-05 22:33:00Z], date_returned: ~D[2025-04-05], evidence: "some evidence", abstract_number: "some abstract_number", police_abstract_photo: "some police_abstract_photo", photo_evidence: "some photo_evidence", revoke_type: "some revoke_type", revoked_until: ~D[2025-04-05]}
+
+      assert {:ok, %AssetLog{} = asset_log} = Inventory.create_asset_log(valid_attrs)
+      assert asset_log.status == "some status"
+      assert asset_log.action == "some action"
+      assert asset_log.remarks == "some remarks"
+      assert asset_log.performed_at == ~U[2025-04-05 22:33:00Z]
+      assert asset_log.assigned_at == ~U[2025-04-05 22:33:00Z]
+      assert asset_log.date_returned == ~D[2025-04-05]
+      assert asset_log.evidence == "some evidence"
+      assert asset_log.abstract_number == "some abstract_number"
+      assert asset_log.police_abstract_photo == "some police_abstract_photo"
+      assert asset_log.photo_evidence == "some photo_evidence"
+      assert asset_log.revoke_type == "some revoke_type"
+      assert asset_log.revoked_until == ~D[2025-04-05]
+    end
+
+    test "create_asset_log/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Inventory.create_asset_log(@invalid_attrs)
+    end
+
+    test "update_asset_log/2 with valid data updates the asset_log" do
+      asset_log = asset_log_fixture()
+      update_attrs = %{status: "some updated status", action: "some updated action", remarks: "some updated remarks", performed_at: ~U[2025-04-06 22:33:00Z], assigned_at: ~U[2025-04-06 22:33:00Z], date_returned: ~D[2025-04-06], evidence: "some updated evidence", abstract_number: "some updated abstract_number", police_abstract_photo: "some updated police_abstract_photo", photo_evidence: "some updated photo_evidence", revoke_type: "some updated revoke_type", revoked_until: ~D[2025-04-06]}
+
+      assert {:ok, %AssetLog{} = asset_log} = Inventory.update_asset_log(asset_log, update_attrs)
+      assert asset_log.status == "some updated status"
+      assert asset_log.action == "some updated action"
+      assert asset_log.remarks == "some updated remarks"
+      assert asset_log.performed_at == ~U[2025-04-06 22:33:00Z]
+      assert asset_log.assigned_at == ~U[2025-04-06 22:33:00Z]
+      assert asset_log.date_returned == ~D[2025-04-06]
+      assert asset_log.evidence == "some updated evidence"
+      assert asset_log.abstract_number == "some updated abstract_number"
+      assert asset_log.police_abstract_photo == "some updated police_abstract_photo"
+      assert asset_log.photo_evidence == "some updated photo_evidence"
+      assert asset_log.revoke_type == "some updated revoke_type"
+      assert asset_log.revoked_until == ~D[2025-04-06]
+    end
+
+    test "update_asset_log/2 with invalid data returns error changeset" do
+      asset_log = asset_log_fixture()
+      assert {:error, %Ecto.Changeset{}} = Inventory.update_asset_log(asset_log, @invalid_attrs)
+      assert asset_log == Inventory.get_asset_log!(asset_log.id)
+    end
+
+    test "delete_asset_log/1 deletes the asset_log" do
+      asset_log = asset_log_fixture()
+      assert {:ok, %AssetLog{}} = Inventory.delete_asset_log(asset_log)
+      assert_raise Ecto.NoResultsError, fn -> Inventory.get_asset_log!(asset_log.id) end
+    end
+
+    test "change_asset_log/1 returns a asset_log changeset" do
+      asset_log = asset_log_fixture()
+      assert %Ecto.Changeset{} = Inventory.change_asset_log(asset_log)
+    end
+  end
 end
