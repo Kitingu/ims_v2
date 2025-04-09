@@ -62,14 +62,11 @@
 
         <!-- Assign Device Action -->
         <li>
-          <%= if "assign_device" in @actions do %>
+          <%= if "assign_device" in @actions && @item.status===:available do %>
             <button phx-click={"assign_device" <> to_string(@item.id)}
               class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
               >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor" class="w-4 h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m6-6H6" />
-              </svg>
+
               Assign Device
             </button>
             <% end %>
@@ -125,31 +122,24 @@
 
         <!-- Mark as Lost Action -->
         <li>
-          <%= if "mark_as_lost" in @actions && @item.status !=="available" &&
-            !Ims.Inventory.Asset.device_in_lost_state?(@item) do %>
+          <%= if "mark_as_lost" in @actions && @item.status==:assigned do %>
             <button phx-click={"mark_as_lost" <> to_string(@item.id)}
               class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
               >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor" class="w-4 h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v7.5m3.75-3.75h-7.5" />
-              </svg>
+
               Mark as Lost
             </button>
             <% end %>
         </li>
 
-         <!-- Revoke Device -->
-         <li>
-          <%= if "revoke_device" in @actions && @item.status !=="available" &&
+        <!-- Revoke Device -->
+        <li>
+          <%= if "revoke_device" in @actions && @item.status !==:available &&
             !Ims.Inventory.Asset.device_in_lost_state?(@item) do %>
             <button phx-click={"revoke_device" <> to_string(@item.id)}
               class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
               >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor" class="w-4 h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v7.5m3.75-3.75h-7.5" />
-              </svg>
+
               Revoke Device
             </button>
             <% end %>
@@ -157,14 +147,11 @@
 
         <!-- Mark as Returned Action -->
         <li>
-          <%= if "return_device" in @actions && @item.status !=="available"  do %>
+          <%= if "return_device" in @actions && @item.status==:assigned do %>
             <button phx-click={"return_device" <> to_string(@item.id)}
               class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
               >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                stroke="currentColor" class="w-4 h-4">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v7.5m3.75-3.75h-7.5" />
-              </svg>
+
               Return Device
             </button>
             <% end %>

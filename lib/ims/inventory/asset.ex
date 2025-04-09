@@ -151,8 +151,8 @@ defmodule Ims.Inventory.Asset do
             accum_query
         end
       end)
-
-    from(q in query, preload: [:asset_name, :user, :office])
+# asset_name has a category_id
+    from(q in query, preload: [ :user, :office, asset_name: :category])
   end
 
   def generate_report(filters \\ %{}) do

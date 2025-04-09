@@ -2,28 +2,39 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
   use ImsWeb, :live_component
 
   alias Ims.Inventory
+  require Logger
+
+  @max_file_size 10_000_000 # 10MB limit
+  @allowed_image_types ~w(.jpg .jpeg .png)
+  @allowed_document_types ~w(.jpg .jpeg .png .pdf)
 
   @impl true
   def mount(socket) do
     socket =
       socket
-      |> allow_upload(:police_abstract_photo, accept: ~w(.jpg .jpeg .png .pdf), max_entries: 1)
-      |> allow_upload(:photo_evidence, accept: ~w(.jpg .jpeg .png), max_entries: 1)
-      |> allow_upload(:evidence, accept: ~w(.jpg .jpeg .png), max_entries: 1)
+      |> allow_upload(:police_abstract_photo,
+           accept: @allowed_document_types,
+           max_entries: 1,
+           max_file_size: @max_file_size
+         )
+      |> allow_upload(:photo_evidence,
+           accept: @allowed_image_types,
+           max_entries: 1,
+           max_file_size: @max_file_size
+         )
+      |> allow_upload(:evidence,
+           accept: @allowed_image_types,
+           max_entries: 1,
+           max_file_size: @max_file_size
+         )
 
     {:ok, socket}
   end
 
   @impl true
   def update(%{asset: asset, action: action, return_to: return_to} = assigns, socket) do
-    # You'll want to create a changeset for the asset log record (not the asset itself)
-    # changeset = Ims.Inventory.change_asset_log(%Ims.Inventory.AssetLog{})
-    IO.inspect("tumefika kerichooo")
-    IO.inspect(action, label: "action")
-    IO.inspect(asset)
-
-    users = Ims.Accounts.list_users() |> Enum.map(&{&1.first_name, &1.id}) |> IO.inspect()
-    offices = Ims.Inventory.list_offices() |> Enum.map(&{&1.name, &1.id}) |> IO.inspect()
+    users = Ims.Accounts.list_users() |> Enum.map(&{&1.first_name, &1.id})
+    offices = Ims.Inventory.list_offices() |> Enum.map(&{&1.name, &1.id})
     asset_log = %Ims.Inventory.AssetLog{}
 
     {:ok,
@@ -37,7 +48,7 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
      |> assign(:current_user, assigns.current_user)
      |> assign(:assign_to, "user")
      |> assign_new(:form, fn ->
-       to_form(Inventory.change_asset_log(%Ims.Inventory.AssetLog{}))
+       to_form(Inventory.change_asset_log(asset_log))
      end)}
   end
 
@@ -55,10 +66,28 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
   def render(assigns) do
     ~H"""
     <div>
-      <%!-- <.header>
-        {@title}
-        <:subtitle>Use this form to manage asset log actions.</:subtitle>
-      </.header> --%>
+      <.header>
+        <%= if @asset do %>
+          <h2 class="text-lg font-semibold text-gray-900">
+            {@asset.asset_name.name} - {@asset.asset_name.category.name}
+          </h2>
+          <p class="mt-1 text-sm text-gray-500">
+            {@asset.serial_number} - {@asset.tag_number}
+            <%= if @asset.user do %>
+              <span class="text-gray-500">Assigned to: {@asset.user.first_name}</span>
+            <% else %>
+              <span class="text-gray-500">Available</span>
+            <% end %>
+          </p>
+          <p class="mt-1 text-sm text-gray-500">
+            <%= if @asset.office do %>
+              <span class="text-gray-500">Office: {@asset.office.name}</span>
+            <% else %>
+              <span class="text-gray-500">No office assigned</span>
+            <% end %>
+          </p>
+        <% end %>
+      </.header>
 
       <.simple_form
         for={@form}
@@ -70,75 +99,15 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
         <.input
           field={@form[:action]}
           type="hidden"
-          value={
-            case @action do
-              :assign_device -> "assigned"
-              :return_device -> "returned"
-              :revoke_device -> "revoked"
-              :decommission_device -> "decommissioned"
-              :lost_device -> "lost"
-              _ -> "assigned"
-            end
-          }
+          value={action_value(@action)}
         />
-        <%= if @action == :assign_device do %>
-          <!-- Regular select input to control assignment -->
-          <div class="mb-4">
-            <label for="assign_to" class="block text-sm font-medium text-gray-700">Assign to</label>
-            <select
-              id="assign_to"
-              name="assign_to"
-              class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              phx-change="assign_to_changed"
-              phx-target={@myself}
-            >
-              <option value="user" selected={@assign_to == "user"}>User</option>
-              <option value="office" selected={@assign_to == "office"}>Office</option>
-            </select>
-          </div>
-
-          <%= if @assign_to == "user" do %>
-            <.input field={@form[:user_id]} type="select" label="User" options={@users} />
-          <% else %>
-            <.input field={@form[:office_id]} type="select" label="Office" options={@offices} />
-          <% end %>
-
-          <.input field={@form[:assigned_at]} type="hidden" value={now_naive()} />
-          <.input field={@form[:performed_at]} type="hidden" value={now_naive()} />
-          <.input field={@form[:status]} type="hidden" value="active" />
-          <.input field={@form[:remarks]} type="textarea" label="Remarks" required />
-        <% end %>
 
         <.input field={@form[:asset_id]} type="hidden" value={@asset.id} />
-
         <.input field={@form[:performed_by_id]} type="hidden" value={@current_user.id} />
 
-        <%= if @action == :lost do %>
-          <div>
-            <label class="block font-semibold">Evidence (e.g., return photo)</label>
-            <.live_file_input upload={@uploads.evidence} />
-          </div>
+        <%= render_action_specific_fields(assigns) %>
 
-          <div>
-            <label class="block font-semibold">Other Photo Evidence</label>
-            <.live_file_input upload={@uploads.photo_evidence} />
-          </div>
-        <% end %>
-
-    <!-- Assign To: user or office -->
-
-        <%= if @form[:action].value == "lost" do %>
-          <.input field={@form[:abstract_number]} type="text" label="Abstract number" />
-          <div>
-            <label class="block font-semibold">Police Abstract Photo</label>
-            <.live_file_input upload={@uploads.police_abstract_photo} />
-          </div>
-        <% end %>
-
-        <%= if @form[:action].value == "revoked" do %>
-          <.input field={@form[:revoke_type]} type="text" label="Revoke type" />
-          <.input field={@form[:revoked_until]} type="date" label="Revoked until" />
-        <% end %>
+        <.input field={@form[:remarks]} type="textarea" label="Remarks" required />
 
         <:actions>
           <.button phx-disable-with="Saving...">Save Asset Log</.button>
@@ -148,12 +117,138 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     """
   end
 
+  defp action_value(:assign_device), do: "assigned"
+  defp action_value(:return_device), do: "returned"
+  defp action_value(:revoke_device), do: "revoked"
+  defp action_value(:decommission_device), do: "decommissioned"
+  defp action_value(:lost_device), do: "lost"
+  defp action_value(_), do: "assigned"
+
+  defp render_action_specific_fields(%{action: :assign_device} = assigns) do
+    ~H"""
+    <div class="mb-4">
+      <label for="assign_to" class="block text-sm font-medium text-gray-700">Assign to</label>
+      <select
+        id="assign_to"
+        name="assign_to"
+        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+        phx-change="assign_to_changed"
+        phx-target={@myself}
+      >
+        <option value="user" selected={@assign_to == "user"}>User</option>
+        <option value="office" selected={@assign_to == "office"}>Office</option>
+      </select>
+    </div>
+
+    <%= if @assign_to == "user" do %>
+      <.input field={@form[:user_id]} type="select" label="User" options={@users} />
+    <% else %>
+      <.input field={@form[:office_id]} type="select" label="Office" options={@offices} />
+    <% end %>
+
+    <.input field={@form[:assigned_at]} type="hidden" value={now_naive()} />
+    <.input field={@form[:status]} type="hidden" value="active" />
+    """
+  end
+
+  defp render_action_specific_fields(%{action: :mark_as_lost} = assigns) do
+    ~H"""
+    <.input field={@form[:abstract_number]} type="text" label="Abstract number" />
+    <.input field={@form[:performed_by_id]} type="hidden" value={@asset.user_id} />
+
+    <div>
+      <label for="police_abstract" class="block text-sm font-medium text-gray-700">
+        Police Abstract
+      </label>
+      <div class="mt-1">
+        <.live_file_input
+          upload={@uploads.police_abstract_photo}
+          class="block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        />
+      </div>
+      <%= for entry <- @uploads.police_abstract_photo.entries do %>
+        <div class="mt-2">
+          <.live_img_preview entry={entry} class="h-20" />
+          <button
+            type="button"
+            phx-click="remove-police-abstract"
+            phx-value-ref={entry.ref}
+            class="text-red-600 hover:text-red-800 text-sm"
+          >
+            Remove
+          </button>
+        </div>
+      <% end %>
+    </div>
+
+    <div>
+      <label for="evidence" class="block text-sm font-medium text-gray-700">
+        Evidence
+      </label>
+      <div class="mt-1">
+        <.live_file_input
+          upload={@uploads.evidence}
+          class="block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        />
+      </div>
+      <%= for entry <- @uploads.evidence.entries do %>
+        <div class="mt-2">
+          <.live_img_preview entry={entry} class="h-20" />
+          <button
+            type="button"
+            phx-click="remove-evidence"
+            phx-value-ref={entry.ref}
+            class="text-red-600 hover:text-red-800 text-sm"
+          >
+            Remove
+          </button>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp render_action_specific_fields(%{action: :return_device} = assigns) do
+    ~H"""
+    <.input field={@form[:date_returned]} type="date" label="Date returned" />
+
+    <div>
+      <label for="evidence" class="block text-sm font-medium text-gray-700">Evidence</label>
+      <div class="mt-1">
+        <.live_file_input
+          upload={@uploads.evidence}
+          class="block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        />
+      </div>
+      <%= for entry <- @uploads.evidence.entries do %>
+        <div class="mt-2">
+          <.live_img_preview entry={entry} class="h-20" />
+          <button
+            type="button"
+            phx-click="remove-evidence"
+            phx-value-ref={entry.ref}
+            class="text-red-600 hover:text-red-800 text-sm"
+          >
+            Remove
+          </button>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp render_action_specific_fields(%{form: %{source: %{changes: %{action: "revoked"}}}} = assigns) do
+    ~H"""
+    <.input field={@form[:revoke_type]} type="text" label="Revoke type" />
+    <.input field={@form[:revoked_until]} type="date" label="Revoked until" />
+    """
+  end
+
+  defp render_action_specific_fields(_assigns), do: nil
+
   @impl true
   def handle_event("validate", %{"asset_log" => asset_log_params}, socket) do
-    changeset =
-      Inventory.change_asset_log(socket.assigns.asset_log, asset_log_params)
-      |> IO.inspect(label: "changeset")
-
+    changeset = Inventory.change_asset_log(socket.assigns.asset_log, asset_log_params)
     {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
   end
 
@@ -163,84 +258,113 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
   end
 
   @impl true
+  def handle_event("remove-police-abstract", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :police_abstract_photo, ref)}
+  end
+
+  @impl true
+  def handle_event("remove-evidence", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :evidence, ref)}
+  end
+
+  @impl true
   def handle_event("save", %{"asset_log" => asset_log_params}, socket) do
-    uploads = socket.assigns.uploads
-
-    police_path =
-      case uploads.police_abstract_photo.entries do
-        [entry | _] -> consume_upload(socket, :police_abstract_photo, entry, "abstract")
-        _ -> nil
-      end
-
-    photo_path =
-      case uploads.photo_evidence.entries do
-        [entry | _] -> consume_upload(socket, :photo_evidence, entry, "evidence")
-        _ -> nil
-      end
-
-    evidence_path =
-      case uploads.evidence.entries do
-        [entry | _] -> consume_upload(socket, :evidence, entry, "return")
-        _ -> nil
-      end
-
-    asset_log_params =
-      asset_log_params
-      |> Map.put("police_abstract_photo", police_path)
-      |> Map.put("photo_evidence", photo_path)
-      |> Map.put("evidence", evidence_path)
-
     save_asset_log(socket, socket.assigns.action, asset_log_params)
   end
 
-  defp save_asset_log(socket, :edit, asset_log_params) do
-    case Inventory.update_asset_log(socket.assigns.asset_log, asset_log_params) do
+
+  defp save_asset_log(socket, action, asset_log_params) do
+    asset_log_params = process_uploads(socket, action, asset_log_params)
+    |> IO.inspect(label: "Processed Asset Log Params")
+
+    IO.inspect(action, label: "Action")
+
+    case apply_save_action(action, socket, asset_log_params) do
       {:ok, asset_log} ->
         notify_parent({:saved, asset_log})
-
         {:noreply,
          socket
-         |> put_flash(:info, "Asset log updated successfully")
-         |> push_patch(to: socket.assigns.patch)}
+         |> put_flash(:info, "Asset log #{save_message(action)} successfully")
+         |> push_patch(to: socket.assigns.return_to)}
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply,
-         assign(socket, form: to_form(changeset))
-         |> put_flash(:error, "Update failed. Check the form.")}
-    end
-  end
-
-  defp save_asset_log(socket, :assign_device, asset_log_params) do
-    case Inventory.create_asset_log(asset_log_params) do
-      {:ok, asset_log} ->
-        notify_parent({:saved, asset_log})
-
+      {:error, changeset} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Asset log created successfully")
-         |> push_patch(to: socket.assigns.patch)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply,
-         assign(socket, form: to_form(changeset))
+         |> assign(form: to_form(changeset))
          |> put_flash(:error, "Save failed. Check the form.")}
     end
   end
 
-  defp save_asset_log(socket, :new, asset_log_params) do
-    case Inventory.create_asset_log(asset_log_params) do
-      {:ok, asset_log} ->
-        notify_parent({:saved, asset_log})
+  defp apply_save_action(:edit, socket, params) do
+    Inventory.update_asset_log(socket.assigns.asset_log, params)
+  end
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Asset log created successfully")
-         |> push_patch(to: socket.assigns.patch)}
+  defp apply_save_action(_action, socket, params) do
+    Inventory.create_asset_log(params)
+  end
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply,
-         assign(socket, form: to_form(changeset))
-         |> put_flash(:error, "Save failed. Check the form.")}
+  defp save_message(:edit), do: "updated"
+  defp save_message(_), do: "created"
+
+  defp process_uploads(socket, action, params) do
+    case action do
+      :return_device ->
+        process_evidence_upload(socket, params)
+      :mark_as_lost ->
+        params
+        |> process_police_abstract_upload(socket)
+        |> process_evidence_upload(socket)
+      _ -> params
+    end
+  end
+
+  defp process_evidence_upload(socket, params) do
+    case uploaded_entries(socket, :evidence) do
+      {[entry], []} ->
+        case consume_upload(socket, :evidence, entry) do
+          {:ok, path} -> Map.put(params, "evidence", path)
+          _ -> params
+        end
+      _ -> params
+    end
+  end
+
+  defp process_police_abstract_upload(params, socket) do
+    case uploaded_entries(socket, :police_abstract_photo) do
+      {[entry], []} ->
+        case consume_upload(socket, :police_abstract_photo, entry) do
+          {:ok, path} -> Map.put(params, "police_abstract_photo", path)
+          _ -> params
+        end
+      _ -> params
+    end
+  end
+
+  defp consume_upload(socket, field, entry) do
+    ensure_uploads_folder_exists()
+
+    consume_uploaded_entry(socket, entry, fn %{path: temp_path} ->
+      extension = Path.extname(entry.client_name)
+      unique_name = "#{Ecto.UUID.generate()}#{extension}"
+      dest = Path.join([:code.priv_dir(:ims), "static/uploads", unique_name])
+
+      case File.cp(temp_path, dest) do
+        :ok -> {:ok, "/uploads/#{unique_name}"}
+        {:error, reason} ->
+          Logger.error("Failed to copy #{field} upload: #{reason}")
+          {:error, "Failed to save file"}
+      end
+    end)
+  end
+
+  defp ensure_uploads_folder_exists do
+    upload_path = Path.join(:code.priv_dir(:ims), "static/uploads")
+
+    case File.mkdir_p(upload_path) do
+      :ok -> :ok
+      {:error, reason} ->
+        Logger.error("Failed to create uploads directory: #{reason}")
+        {:error, "Failed to create upload directory"}
     end
   end
 
@@ -250,16 +374,5 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     DateTime.utc_now()
     |> DateTime.truncate(:second)
     |> DateTime.to_naive()
-    |> NaiveDateTime.to_string()
-  end
-
-  defp consume_upload(socket, upload_key, entry, prefix) do
-    Phoenix.LiveView.consume_uploaded_entry(socket, upload_key, entry, fn %{path: path} ->
-      File.mkdir_p!("priv/static/uploads")
-
-      dest = Path.join("priv/static/uploads", "#{prefix}_#{entry.client_name}")
-      File.cp!(path, dest)
-      {:ok, "/uploads/#{prefix}_#{entry.client_name}"}
-    end)
   end
 end

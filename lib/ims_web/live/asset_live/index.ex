@@ -84,6 +84,31 @@ defmodule ImsWeb.AssetLive.Index do
   end
 
   @impl true
+  def handle_info(
+    {ImsWeb.AssetLogLive.FormComponent, {:saved, %Ims.Inventory.AssetLog{} = asset_log}},
+    socket
+  ) do
+    assets = fetch_records(socket.assigns.filters, @paginator_opts)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "Asset log saved successfully")
+     |> assign(:assets, assets)}
+  end
+
+  @impl true
+  # {:saved, %Ims.Inventory.AssetLog{}}
+  def handle_info({:saved, %Ims.Inventory.AssetLog{}}, socket) do
+    assets =
+      fetch_records(socket.assigns.filters, @paginator_opts)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "Asset saved successfully")
+     |> assign(:assets, assets)}
+  end
+
+  @impl true
   def handle_info({ImsWeb.AssetLive.FormComponent, {:saved, _device}}, socket) do
     assets =
       fetch_records(socket.assigns.filters, @paginator_opts)
@@ -98,35 +123,45 @@ defmodule ImsWeb.AssetLive.Index do
   def handle_event("assign_device" <> id, _, socket) do
     IO.inspect(id, label: "id")
     asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)
-    {:noreply, socket |> assign(:asset, asset) |> assign(:show_modal, true)
-    |> assign(:page_title, "Assign Asset")
-    |> assign(:live_action, :assign_device)}
+
+    {:noreply,
+     socket
+     |> assign(:asset, asset)
+     |> assign(:show_modal, true)
+     |> assign(:page_title, "Assign Asset")
+     |> assign(:live_action, :assign_device)}
   end
 
   @impl true
   def handle_event("return_device" <> id, _, socket) do
     IO.inspect(id, label: "id")
     asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)
-    {:noreply, socket |> assign(:asset, asset) |> assign(:show_modal, true)
-    |> assign(:page_title, "Assign Asset")
-    |> assign(:live_action, :return_device)}
+
+    {:noreply,
+     socket
+     |> assign(:asset, asset)
+     |> assign(:show_modal, true)
+     |> assign(:page_title, "Return Asset")
+     |> assign(:live_action, :return_device)}
   end
 
   @impl true
   def handle_event("mark_as_lost" <> id, _, socket) do
     IO.inspect(id, label: "id")
     asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)
-    {:noreply, socket |> assign(:asset, asset) |> assign(:show_modal, true)
-    |> assign(:page_title, "Assign Asset")
-    |> assign(:live_action, :mark_as_lost)}
+
+    {:noreply,
+     socket
+     |> assign(:asset, asset)
+     |> assign(:show_modal, true)
+     |> assign(:page_title, "Mark Asset as Lost")
+     |> assign(:live_action, :mark_as_lost)}
   end
 
   @impl true
   def handle_event("close_modal", _, socket) do
     {:noreply, socket |> assign(:show_modal, false)}
   end
-
-
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
@@ -138,10 +173,20 @@ defmodule ImsWeb.AssetLive.Index do
 
   defp fetch_records(filters, opts) do
     IO.inspect(opts, label: "opts")
+    filters = atomize_keys(filters)
     query = Asset.search(filters)
     opts = Keyword.merge(@paginator_opts, opts)
 
     query
     |> Ims.Repo.paginate(opts)
   end
+
+  defp atomize_keys(map) do
+    for {k, v} <- map, into: %{} do
+      {maybe_atom(k), v}
+    end
+  end
+
+  defp maybe_atom(k) when is_binary(k), do: String.to_existing_atom(k)
+  defp maybe_atom(k), do: k
 end

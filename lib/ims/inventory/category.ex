@@ -2,6 +2,7 @@ defmodule Ims.Inventory.Category do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
+  alias Ims.Repo
   use Ims.RepoHelpers, repo: Repo
 
   schema "categories" do

@@ -521,7 +521,10 @@ defmodule Ims.Inventory do
       ** (Ecto.NoResultsError)
 
   """
-  def get_asset!(id), do: Repo.get!(Asset, id)
+  def get_asset!(id) do
+    Repo.get!(Asset, id)
+    |> Repo.preload([:user, :office, asset_name: :category])
+  end
 
   def get_available_assets() do
     Asset
@@ -686,6 +689,8 @@ defmodule Ims.Inventory do
   end
 
   def create_asset_log(%{"action" => "returned", "asset_id" => asset_id} = log_attrs) do
+    IO.inspect(log_attrs, label: "log_attrs")
+    IO.inspect("REturn device")
     Repo.transaction(fn ->
       asset = get_asset!(asset_id)
 
@@ -700,7 +705,7 @@ defmodule Ims.Inventory do
     end)
   end
 
-  def create_asset_log(%{"action" => "lost", "asset_id" => asset_id} = log_attrs) do
+  def create_asset_log(%{"action" => "mark_as_lost", "asset_id" => asset_id} = log_attrs) do
     Repo.transaction(fn ->
       asset = get_asset!(asset_id)
 
@@ -717,6 +722,8 @@ defmodule Ims.Inventory do
 
   # fallback for other actions
   def create_asset_log(attrs) do
+    IO.inspect(attrs, label: "attrs for fallback")
+    IO.inspect("Fallback")
     %AssetLog{}
     |> AssetLog.changeset(attrs)
     |> Repo.insert()

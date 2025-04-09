@@ -80,10 +80,20 @@ defmodule ImsWeb.AssetLogLive.Index do
 
   defp fetch_records(filters, opts) do
     IO.inspect(opts, label: "opts")
+    filters = atomize_keys(filters)
     query = AssetLog.search(filters)
     opts = Keyword.merge(@paginator_opts, opts)
 
     query
     |> Ims.Repo.paginate(opts)
   end
+
+  defp atomize_keys(map) do
+    for {k, v} <- map, into: %{} do
+      {maybe_atom(k), v}
+    end
+  end
+
+  defp maybe_atom(k) when is_binary(k), do: String.to_existing_atom(k)
+  defp maybe_atom(k), do: k
 end
