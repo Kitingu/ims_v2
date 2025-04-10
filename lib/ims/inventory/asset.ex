@@ -14,10 +14,12 @@ defmodule Ims.Inventory.Asset do
     field :purchase_date, :date
     field :warranty_expiry, :date
     field :condition, :string
+
     # associations
     belongs_to :asset_name, Ims.Inventory.AssetName
     belongs_to :user, Ims.Accounts.User
     belongs_to :office, Ims.Inventory.Office
+    belongs_to :category, Ims.Inventory.Category
 
     timestamps(type: :utc_datetime)
   end
@@ -35,6 +37,7 @@ defmodule Ims.Inventory.Asset do
       :warranty_expiry,
       :user_id,
       :office_id,
+      :category_id,
       :condition
     ])
     |> validate_required([
@@ -42,6 +45,7 @@ defmodule Ims.Inventory.Asset do
       :serial_number,
       :original_cost,
       :condition,
+      :category_id,
       :asset_name_id
     ])
   end
@@ -82,22 +86,19 @@ defmodule Ims.Inventory.Asset do
             from(a in accum_query, where: ilike(a.status, ^"%#{v}%"))
 
           k == :category_id ->
-            from(a in accum_query,
-              join: an in Ims.Inventory.AssetName,
-              on: a.asset_name_id == an.id,
-              where: an.category_id == ^v
-            )
+            from(a in accum_query, where: a.category_id == ^v)
 
           k == :category_name ->
             from(a in accum_query,
-              join: an in Ims.Inventory.AssetName,
-              on: a.asset_name_id == an.id,
               join: c in Ims.Inventory.Category,
-              on: an.category_id == c.id,
+              on: a.category_id == c.id,
               where: ilike(c.name, ^"%#{v}%")
             )
 
           k == :user_id ->
+            from(a in accum_query, where: a.user_id == ^v)
+
+          k == :assigned_user_id ->
             from(a in accum_query, where: a.user_id == ^v)
 
           k == :user_name ->
@@ -105,6 +106,13 @@ defmodule Ims.Inventory.Asset do
               join: u in Ims.Accounts.User,
               on: a.user_id == u.id,
               where: ilike(u.first_name, ^"%#{v}%")
+            )
+
+          k == :department_id ->
+            from(a in accum_query,
+              join: u in Ims.Accounts.User,
+              on: a.user_id == u.id,
+              where: u.department_id == ^v
             )
 
           k == :office_id ->
@@ -151,8 +159,9 @@ defmodule Ims.Inventory.Asset do
             accum_query
         end
       end)
-# asset_name has a category_id
-    from(q in query, preload: [ :user, :office, asset_name: :category])
+
+    # asset_name has a category_id
+    from(q in query, preload: [:user, :office, asset_name: :category])
   end
 
   def generate_report(filters \\ %{}) do
@@ -161,8 +170,7 @@ defmodule Ims.Inventory.Asset do
       __MODULE__
       |> search(filters)
       |> Repo.all()
-      # Adjust association names as needed
-      |> Repo.preload([:category, assigned_user: [:department]])
+      |> Repo.preload([:category, user: [:department]])
 
     headers = [
       "Assigned User Name",
@@ -180,15 +188,15 @@ defmodule Ims.Inventory.Asset do
       devices
       |> Enum.map(fn device ->
         [
-          (device.assigned_user && device.assigned_user.first_name) || "N/A",
-          (device.assigned_user && device.assigned_user.designation) || "N/A",
-          (device.assigned_user && device.assigned_user.department &&
-             device.assigned_user.department.name) || "N/A",
-          (device.assigned_user && device.assigned_user.personal_number) || "N/A",
-          (device.device_name && device.device_name.name) || "N/A",
+          (device.user && device.user.first_name) || "N/A",
+          (device.user && device.user.designation) || "N/A",
+          (device.user && device.user.department &&
+             device.user.department.name) || "N/A",
+          (device.user && device.user.personal_number) || "N/A",
+          (device.asset_name && device.asset_name.name) || "N/A",
           device.serial_number,
-          device.status,
-          Decimal.to_string(device.original_cost),
+          to_string(device.status),
+          Ims.Helpers.format_currency(device.original_cost),
           # Fetch category name
           (device.category && device.category.name) || "N/A"
           # Fetch assigned user name

@@ -539,8 +539,6 @@ defmodule Ims.Inventory do
   #   |> Repo.all()
   # end
 
-
-
   def get_assigned_assets() do
     Asset
     |> where([a], a.status == :assigned)
@@ -668,8 +666,22 @@ defmodule Ims.Inventory do
   """
 
   def create_asset_log(%{"action" => "assigned", "asset_id" => asset_id} = log_attrs) do
+    asset = get_asset!(asset_id)
+
+    # if category.name != "catridge" do
+    #   check_device_limit!(request.user_id, device.category_id)
+    # end
+
     Repo.transaction(fn ->
-      asset = get_asset!(asset_id)
+      category =
+        asset
+        |> Repo.preload([:asset_name])
+        |> Map.get(:asset_name)
+        |> Repo.preload([:category])
+        |> Map.get(:category)
+        |> IO.inspect(label: "category")
+
+      # unless category is tonner or catridge, check device limit
 
       # Update the asset status to :assigned and link user/office
       asset_changes =
@@ -691,6 +703,7 @@ defmodule Ims.Inventory do
   def create_asset_log(%{"action" => "returned", "asset_id" => asset_id} = log_attrs) do
     IO.inspect(log_attrs, label: "log_attrs")
     IO.inspect("REturn device")
+
     Repo.transaction(fn ->
       asset = get_asset!(asset_id)
 
@@ -724,6 +737,7 @@ defmodule Ims.Inventory do
   def create_asset_log(attrs) do
     IO.inspect(attrs, label: "attrs for fallback")
     IO.inspect("Fallback")
+
     %AssetLog{}
     |> AssetLog.changeset(attrs)
     |> Repo.insert()
@@ -780,4 +794,19 @@ defmodule Ims.Inventory do
   def change_asset_log(%AssetLog{} = asset_log, attrs \\ %{}) do
     AssetLog.changeset(asset_log, attrs)
   end
+
+  # def check_device_limit!(user_id, category_id) do
+  #   assigned_devices =
+  #     Repo.one(
+  #       from a in Asset,
+  #         where:
+  #           a.user_id == ^user_id and a.category_id == ^category_id and
+  #             a.status == "assigned",
+  #         select: count(d.id)
+  #     )
+
+  #   if assigned_devices > 0 do
+  #     Repo.rollback("User already has a device assigned in this category.")
+  #   end
+  # end
 end

@@ -14,7 +14,7 @@
   <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
 
     <!-- Filters Form -->
-    <form method="get" class="flex flex-wrap items-end gap-3">
+    <form phx-submit="apply_filters" class="flex flex-wrap items-end gap-3">
       <!-- Search -->
       <div>
         <label class="block text-xs text-gray-600 mb-1">Search</label>
@@ -115,6 +115,14 @@
   <:col :let={ asset} label="Serial number">{asset.serial_number}</:col>
   <:col :let={ asset} label="Original cost">{ Ims.Helpers.format_currency(asset.original_cost)}</:col>
   <:col :let={ asset} label="Purchase date">{asset.purchase_date}</:col>
+  <:col :let={ asset} label="Assigned User">
+    <%= if asset.user do %>
+      <%= asset.user.first_name %>
+        <%= asset.user.last_name %>
+          <% else %>
+            N/A
+            <% end %>
+  </:col>
   <:col :let={ asset} label="Warranty expiry">{asset.warranty_expiry}</:col>
   <:col :let={ asset} label="Condition">{asset.condition}</:col>
 

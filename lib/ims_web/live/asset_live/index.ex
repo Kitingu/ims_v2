@@ -27,30 +27,27 @@ defmodule ImsWeb.AssetLive.Index do
     {:ok, socket}
   end
 
-  # @impl true
-  # def handle_params(params, _url, socket) do
-  #   {:noreply, apply_action(socket, socket.assigns.live_action, params)}
-  # end
-
   @impl true
   def handle_params(params, _url, socket) do
-    params =
-      Map.take(params, ["name", "status", "category_id", "assigned_user_id", "department_id"])
+    page = String.to_integer(params["page"] || "1")
+
+    filter_params =
+      params
+      |> Map.take(["name", "status", "category_id", "user_id", "department_id", "assigned_user_id"])
       |> Enum.reject(fn {_k, v} -> v in [nil, ""] end)
       |> Enum.into(%{})
 
     filters =
       case Canada.Can.can?(socket.assigns.current_user, ["list_all"], "devices") do
-        true -> params
-        false -> Map.put(params, "assigned_user_id", socket.assigns.current_user.id)
+        true -> filter_params
+        false -> Map.put(filter_params, "assigned_user_id", socket.assigns.current_user.id)
       end
-
-    devices = fetch_records(filters, @paginator_opts)
 
     socket =
       socket
+      |> assign(:page, page)
       |> assign(:filters, filters)
-      |> assign(:devices, devices)
+      |> assign(:assets, fetch_records(filters, Keyword.put(@paginator_opts, :page, page)))
 
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
@@ -74,9 +71,7 @@ defmodule ImsWeb.AssetLive.Index do
   end
 
   defp apply_action(socket, :assign, params) do
-    IO.inspect(params, label: "params")
     id = params["id"]
-
     socket
     |> assign(:page_title, "Assign Asset")
     |> assign(:asset, Ims.Inventory.get_asset!(id))
@@ -85,9 +80,9 @@ defmodule ImsWeb.AssetLive.Index do
 
   @impl true
   def handle_info(
-    {ImsWeb.AssetLogLive.FormComponent, {:saved, %Ims.Inventory.AssetLog{} = asset_log}},
-    socket
-  ) do
+        {ImsWeb.AssetLogLive.FormComponent, {:saved, %Ims.Inventory.AssetLog{} = asset_log}},
+        socket
+      ) do
     assets = fetch_records(socket.assigns.filters, @paginator_opts)
 
     {:noreply,
@@ -97,11 +92,8 @@ defmodule ImsWeb.AssetLive.Index do
   end
 
   @impl true
-  # {:saved, %Ims.Inventory.AssetLog{}}
   def handle_info({:saved, %Ims.Inventory.AssetLog{}}, socket) do
-    assets =
-      fetch_records(socket.assigns.filters, @paginator_opts)
-
+    assets = fetch_records(socket.assigns.filters, @paginator_opts)
     {:noreply,
      socket
      |> put_flash(:info, "Asset saved successfully")
@@ -110,9 +102,7 @@ defmodule ImsWeb.AssetLive.Index do
 
   @impl true
   def handle_info({ImsWeb.AssetLive.FormComponent, {:saved, _device}}, socket) do
-    assets =
-      fetch_records(socket.assigns.filters, @paginator_opts)
-
+    assets = fetch_records(socket.assigns.filters, @paginator_opts)
     {:noreply,
      socket
      |> put_flash(:info, "Asset saved successfully")
@@ -121,9 +111,7 @@ defmodule ImsWeb.AssetLive.Index do
 
   @impl true
   def handle_event("assign_device" <> id, _, socket) do
-    IO.inspect(id, label: "id")
     asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)
-
     {:noreply,
      socket
      |> assign(:asset, asset)
@@ -134,9 +122,7 @@ defmodule ImsWeb.AssetLive.Index do
 
   @impl true
   def handle_event("return_device" <> id, _, socket) do
-    IO.inspect(id, label: "id")
     asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)
-
     {:noreply,
      socket
      |> assign(:asset, asset)
@@ -147,9 +133,7 @@ defmodule ImsWeb.AssetLive.Index do
 
   @impl true
   def handle_event("mark_as_lost" <> id, _, socket) do
-    IO.inspect(id, label: "id")
     asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)
-
     {:noreply,
      socket
      |> assign(:asset, asset)
@@ -167,24 +151,60 @@ defmodule ImsWeb.AssetLive.Index do
   def handle_event("delete", %{"id" => id}, socket) do
     asset = Inventory.get_asset!(id)
     {:ok, _} = Inventory.delete_asset(asset)
-
     {:noreply, stream_delete(socket, :assets, asset)}
   end
 
+  @impl true
+  def handle_event("apply_filters", %{} = filter_params, socket) do
+
+    IO.inspect(filter_params, label: "Filter Params")
+    filters =
+      filter_params
+      |> Enum.reject(fn {_, v} -> v in [nil, ""] end)
+      |> Enum.into(%{})
+
+    filters =
+      if Canada.Can.can?(socket.assigns.current_user, ["list_all"], "devices") do
+        filters
+      else
+        Map.put(filters, "assigned_user_id", socket.assigns.current_user.id)
+      end
+
+    {:noreply,
+     socket
+     |> assign(:filters, filters)
+     |> assign(:assets, fetch_records(filters, Keyword.put(@paginator_opts, :page, 1)))}
+  end
+
+  @impl true
+  def handle_event("clear_filters", _, socket) do
+    {:noreply,
+     socket
+     |> assign(:filters, %{})
+     |> assign(:assets, fetch_records(%{}, @paginator_opts))}
+  end
+
   defp fetch_records(filters, opts) do
-    IO.inspect(opts, label: "opts")
     filters = atomize_keys(filters)
     query = Asset.search(filters)
     opts = Keyword.merge(@paginator_opts, opts)
-
-    query
-    |> Ims.Repo.paginate(opts)
+    query |> Ims.Repo.paginate(opts)
   end
 
   defp atomize_keys(map) do
-    for {k, v} <- map, into: %{} do
-      {maybe_atom(k), v}
-    end
+    Enum.reduce(map, %{}, fn {k, v}, acc ->
+      key =
+        cond do
+          is_binary(k) ->
+            try do
+              String.to_existing_atom(k)
+            rescue
+              ArgumentError -> k
+            end
+          true -> k
+        end
+      Map.put(acc, key, v)
+    end)
   end
 
   defp maybe_atom(k) when is_binary(k), do: String.to_existing_atom(k)

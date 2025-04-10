@@ -1,13 +1,13 @@
 defmodule ImsWeb.ReportsController do
   use ImsWeb, :controller
 
-  alias Ims.Inventory.Device
+  alias Ims.Inventory.Asset
   alias Ims.Trainings.TrainingApplication
 
 
   def index(conn, params) do
     filters = Map.take(params, ["name", "status", "category_id", "assigned_user_id"])
-    devices = Device.search(filters)
+    devices = Asset.search(filters)
 
     render(conn, "index.html", devices: devices, filters: filters)
   end
@@ -16,7 +16,7 @@ defmodule ImsWeb.ReportsController do
   def download_report(conn, %{"filters" => filters_json}) do
     filters = Jason.decode!(filters_json)
 
-    case Device.generate_report(filters) do
+    case Asset.generate_report(filters) do
       {:ok, file_path} ->
         conn
         |> put_resp_content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
