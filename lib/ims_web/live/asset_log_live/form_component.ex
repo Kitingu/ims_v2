@@ -4,7 +4,8 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
   alias Ims.Inventory
   require Logger
 
-  @max_file_size 10_000_000 # 10MB limit
+  # 10MB limit
+  @max_file_size 10_000_000
   @allowed_image_types ~w(.jpg .jpeg .png)
   @allowed_document_types ~w(.jpg .jpeg .png .pdf)
 
@@ -13,20 +14,20 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     socket =
       socket
       |> allow_upload(:police_abstract_photo,
-           accept: @allowed_document_types,
-           max_entries: 1,
-           max_file_size: @max_file_size
-         )
+        accept: @allowed_document_types,
+        max_entries: 1,
+        max_file_size: @max_file_size
+      )
       |> allow_upload(:photo_evidence,
-           accept: @allowed_image_types,
-           max_entries: 1,
-           max_file_size: @max_file_size
-         )
+        accept: @allowed_image_types,
+        max_entries: 1,
+        max_file_size: @max_file_size
+      )
       |> allow_upload(:evidence,
-           accept: @allowed_image_types,
-           max_entries: 1,
-           max_file_size: @max_file_size
-         )
+        accept: @allowed_image_types,
+        max_entries: 1,
+        max_file_size: @max_file_size
+      )
 
     {:ok, socket}
   end
@@ -69,7 +70,7 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
       <.header>
         <%= if @asset do %>
           <h2 class="text-lg font-semibold text-gray-900">
-            {@asset.asset_name.name} - {@asset.asset_name.category.name}
+            {@asset.asset_name.name} - {@asset.category.name}
           </h2>
           <p class="mt-1 text-sm text-gray-500">
             {@asset.serial_number} - {@asset.tag_number}
@@ -96,16 +97,12 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-        <.input
-          field={@form[:action]}
-          type="hidden"
-          value={action_value(@action)}
-        />
+        <.input field={@form[:action]} type="hidden" value={action_value(@action)} />
 
         <.input field={@form[:asset_id]} type="hidden" value={@asset.id} />
         <.input field={@form[:performed_by_id]} type="hidden" value={@current_user.id} />
 
-        <%= render_action_specific_fields(assigns) %>
+        {render_action_specific_fields(assigns)}
 
         <.input field={@form[:remarks]} type="textarea" label="Remarks" required />
 
@@ -211,6 +208,8 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
   defp render_action_specific_fields(%{action: :return_device} = assigns) do
     ~H"""
     <.input field={@form[:date_returned]} type="date" label="Date returned" />
+    <.input field={@form[:user_id]} type="hidden" value={@asset.user_id} || nil />
+    <.input field={@form[:office_id]} type="hidden" value={@asset.office_id} || nil />
 
     <div>
       <label for="evidence" class="block text-sm font-medium text-gray-700">Evidence</label>
@@ -237,7 +236,9 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     """
   end
 
-  defp render_action_specific_fields(%{form: %{source: %{changes: %{action: "revoked"}}}} = assigns) do
+  defp render_action_specific_fields(
+         %{form: %{source: %{changes: %{action: "revoked"}}}} = assigns
+       ) do
     ~H"""
     <.input field={@form[:revoke_type]} type="text" label="Revoke type" />
     <.input field={@form[:revoked_until]} type="date" label="Revoked until" />
@@ -272,28 +273,64 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     save_asset_log(socket, socket.assigns.action, asset_log_params)
   end
 
-
   defp save_asset_log(socket, action, asset_log_params) do
     asset_log_params = process_uploads(socket, action, asset_log_params)
-    |> IO.inspect(label: "Processed Asset Log Params")
-
-    IO.inspect(action, label: "Action")
 
     case apply_save_action(action, socket, asset_log_params) do
       {:ok, asset_log} ->
         notify_parent({:saved, asset_log})
+
         {:noreply,
          socket
-         |> put_flash(:info, "Asset log #{save_message(action)} successfully")
+         |> put_flash(:info, "Asset assigned successfully")
+         |> push_patch(to: socket.assigns.return_to)}
+
+      {:error, %Ecto.Changeset{errors: [user_id: {error_message, _}]}} ->
+        # Handle device limit error - close form and show message
+        {:noreply,
+         socket
+         |> put_flash(:error, error_message)
          |> push_patch(to: socket.assigns.return_to)}
 
       {:error, changeset} ->
+        # Handle all other validation errors - keep form open
         {:noreply,
          socket
          |> assign(form: to_form(changeset))
-         |> put_flash(:error, "Save failed. Check the form.")}
+         |> put_flash(:error, "Please check the form for errors")}
     end
   end
+
+  # defp save_asset_log(socket, action, asset_log_params) do
+  #   asset_log_params =
+  #     process_uploads(socket, action, asset_log_params)
+  #     |> IO.inspect(label: "Processed Asset Log Params")
+
+  #   IO.inspect(action, label: "Action")
+
+  #   case apply_save_action(action, socket, asset_log_params) |> IO.inspect() do
+  #     {:ok, asset_log} ->
+  #       notify_parent({:saved, asset_log})
+
+  #       {:noreply,
+  #        socket
+  #        |> put_flash(:info, "Asset log #{save_message(action)} successfully")
+  #        |> push_patch(to: socket.assigns.return_to)}
+
+  #     {:error, %Ecto.Changeset{errors: [user_id: {error_message, _}]}} ->
+  #       # This matches the device limit error from check_device_limit
+  #       {:noreply,
+  #        socket
+  #        |> put_flash(:error, error_message)
+  #        |> push_patch(to: socket.assigns.return_to)}
+
+  #     {:error, changeset} ->
+  #       {:noreply,
+  #        socket
+  #        |> assign(form: to_form(changeset))
+  #        |> put_flash(:error, "Save failed. Check the form.")}
+  #   end
+  # end
 
   defp apply_save_action(:edit, socket, params) do
     Inventory.update_asset_log(socket.assigns.asset_log, params)
@@ -310,11 +347,14 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     case action do
       :return_device ->
         process_evidence_upload(socket, params)
+
       :mark_as_lost ->
         params
         |> process_police_abstract_upload(socket)
         |> process_evidence_upload(socket)
-      _ -> params
+
+      _ ->
+        params
     end
   end
 
@@ -325,7 +365,9 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
           {:ok, path} -> Map.put(params, "evidence", path)
           _ -> params
         end
-      _ -> params
+
+      _ ->
+        params
     end
   end
 
@@ -336,7 +378,9 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
           {:ok, path} -> Map.put(params, "police_abstract_photo", path)
           _ -> params
         end
-      _ -> params
+
+      _ ->
+        params
     end
   end
 
@@ -349,7 +393,9 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
       dest = Path.join([:code.priv_dir(:ims), "static/uploads", unique_name])
 
       case File.cp(temp_path, dest) do
-        :ok -> {:ok, "/uploads/#{unique_name}"}
+        :ok ->
+          {:ok, "/uploads/#{unique_name}"}
+
         {:error, reason} ->
           Logger.error("Failed to copy #{field} upload: #{reason}")
           {:error, "Failed to save file"}
@@ -361,7 +407,9 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     upload_path = Path.join(:code.priv_dir(:ims), "static/uploads")
 
     case File.mkdir_p(upload_path) do
-      :ok -> :ok
+      :ok ->
+        :ok
+
       {:error, reason} ->
         Logger.error("Failed to create uploads directory: #{reason}")
         {:error, "Failed to create upload directory"}

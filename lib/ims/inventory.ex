@@ -523,7 +523,7 @@ defmodule Ims.Inventory do
   """
   def get_asset!(id) do
     Repo.get!(Asset, id)
-    |> Repo.preload([:user, :office, asset_name: :category])
+    |> Repo.preload([:user, :office, :category, :asset_name])
   end
 
   def get_available_assets() do
@@ -668,22 +668,20 @@ defmodule Ims.Inventory do
   def create_asset_log(%{"action" => "assigned", "asset_id" => asset_id} = log_attrs) do
     asset = get_asset!(asset_id)
 
-    # if category.name != "catridge" do
-    #   check_device_limit!(request.user_id, device.category_id)
-    # end
-
     Repo.transaction(fn ->
-      category =
-        asset
-        |> Repo.preload([:asset_name])
-        |> Map.get(:asset_name)
-        |> Repo.preload([:category])
-        |> Map.get(:category)
-        |> IO.inspect(label: "category")
+      # Validate user/device limit
+      if log_attrs["user_id"] && asset.category.name not in ["toner", "cartridge"] do
+        case check_device_limit(log_attrs["user_id"], asset.asset_name.category_id) do
+          :ok ->
+            :ok
 
-      # unless category is tonner or catridge, check device limit
+          {:error, message} ->
+            # Create a clean error structure that's easy to handle upstream
+            Repo.rollback({:device_limit_error, message})
+        end
+      end
 
-      # Update the asset status to :assigned and link user/office
+      # Proceed with assignment if validation passes
       asset_changes =
         %{}
         |> maybe_put(:user_id, Map.get(log_attrs, "user_id"))
@@ -698,6 +696,24 @@ defmodule Ims.Inventory do
       |> AssetLog.changeset(log_attrs)
       |> Repo.insert!()
     end)
+    |> case do
+      {:ok, result} ->
+        {:ok, result}
+
+      {:error, {:device_limit_error, message}} ->
+        # Return a changeset with just the user_id error
+        {:error,
+         AssetLog.changeset(%AssetLog{}, log_attrs)
+         |> Ecto.Changeset.add_error(:user_id, message)}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, changeset}
+
+      {:error, other} ->
+        {:error,
+         AssetLog.changeset(%AssetLog{}, log_attrs)
+         |> Ecto.Changeset.add_error(:base, "An unexpected error occurred")}
+    end
   end
 
   def create_asset_log(%{"action" => "returned", "asset_id" => asset_id} = log_attrs) do
@@ -795,18 +811,18 @@ defmodule Ims.Inventory do
     AssetLog.changeset(asset_log, attrs)
   end
 
-  # def check_device_limit!(user_id, category_id) do
-  #   assigned_devices =
-  #     Repo.one(
-  #       from a in Asset,
-  #         where:
-  #           a.user_id == ^user_id and a.category_id == ^category_id and
-  #             a.status == "assigned",
-  #         select: count(d.id)
-  #     )
+  def check_device_limit(user_id, category_id) do
+    assigned_count =
+      from(a in Asset,
+        where: a.user_id == ^user_id and a.category_id == ^category_id and a.status == :assigned,
+        select: count(a.id)
+      )
+      |> Repo.one()
 
-  #   if assigned_devices > 0 do
-  #     Repo.rollback("User already has a device assigned in this category.")
-  #   end
-  # end
+    if assigned_count > 0 do
+      {:error, "User already has a device assigned in this category."}
+    else
+      :ok
+    end
+  end
 end

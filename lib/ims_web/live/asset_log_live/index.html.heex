@@ -27,10 +27,17 @@
           <:col :let={asset_log} label="Remarks">
             <%= asset_log.remarks %>
           </:col>
+          <:col :let={asset_log} label="Assigned To">
+            <%= asset_log.user.first_name %>
+          </:col>
 
           <:col :let={asset_log} label="Condition">
             <%= asset_log.status %>
           </:col>
+          <:col :let={asset_log} label="Actioned By">
+            <%= asset_log.performed_by.first_name %> - <%= asset_log.performed_by.designation %>
+          </:col>
+
           <:col :let={asset_log} label="Performed At">
             <%= asset_log.performed_at %>
           </:col>
@@ -42,13 +49,26 @@
             <:col :let={asset_log} label="Action">
               <%= asset_log.action %>
             </:col>
+
+            <:col :let={asset_log} label="Returned From">
+              <%= if asset_log.user_id do %>
+                <%= asset_log.user.first_name %>
+                  <% else %>
+                    <%= if asset_log.office_id do %>
+                      <%= asset_log.office.name %>
+                        <% else %>
+                          N/A
+                          <% end %>
+                            <% end %>
+            </:col>
+
             <:col :let={asset_log} label="Remarks">
               <%= asset_log.remarks %>
             </:col>
-            <:col :let={asset_log} label="Returned By">
-              <%= asset_log.performed_by_id %>
+            <:col :let={asset_log} label="Actioned By">
+              <%= asset_log.performed_by.first_name %> - <%= asset_log.performed_by.designation %>
             </:col>
-   
+
             <:col :let={asset_log} label="Performed At">
               <%= asset_log.performed_at %>
             </:col>
@@ -60,11 +80,22 @@
               <:col :let={asset_log} label="Action">
                 <%= asset_log.action %>
               </:col>
+              <:col :let={asset_log} label="Revoked From">
+                <%= if asset_log.user_id do %>
+                  <%= asset_log.user.first_name %>
+                    <% else %>
+                      <%= if asset_log.office_id do %>
+                        <%= asset_log.office.name %>
+                          <% else %>
+                            N/A
+                            <% end %>
+                              <% end %>
+              </:col>
               <:col :let={asset_log} label="Remarks">
                 <%= asset_log.remarks %>
               </:col>
-              <:col :let={asset_log} label="Revoked By">
-                <%= asset_log.performed_by_id %>
+              <:col :let={asset_log} label="Actioned By">
+                <%= asset_log.performed_by.first_name %> - <%= asset_log.performed_by.designation %>
               </:col>
               <:col :let={asset_log} label="Performed At">
                 <%= asset_log.performed_at %>
@@ -83,6 +114,10 @@
                 <:col :let={asset_log} label="Status">
                   <%= asset_log.status %>
                 </:col>
+                <:col :let={asset_log} label="Actioned By">
+                  <%= asset_log.performed_by.first_name %> - <%= asset_log.performed_by.designation %>
+                </:col>
+
                 <:col :let={asset_log} label="Performed At">
                   <%= asset_log.performed_at %>
                 </:col>

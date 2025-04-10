@@ -109,6 +109,23 @@ defmodule ImsWeb.AssetLive.Index do
      |> assign(:assets, assets)}
   end
 
+  def handle_event("department_id", %{"department_id" => department_id}, socket) do
+    # apply filters to the asset list
+
+    filters = socket.assigns.filters
+    filters = Map.put(filters, "department_id", department_id)
+
+    # fetch_records(filters, @paginator_opts)
+    # assets = fetch_records(filters, @paginator_opts)
+
+    {:noreply,
+     socket
+     |> assign(:filters, filters)
+  }
+
+
+  end
+
   @impl true
   def handle_event("assign_device" <> id, _, socket) do
     asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)

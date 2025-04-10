@@ -52,31 +52,34 @@
       <%= if Canada.Can.can?(@current_user, ["list_all"], "devices" ) do %>
         <div>
           <label class="block text-xs text-gray-600 mb-1">Department</label>
-          <select name="department_id"
+          <select name="department_id" id="department_id" phx-hook="select2JS" phx-update="ignore"
+            data-placeholder="Select Department" data-input-for="department_id"
             class="w-36 border rounded-md p-1.5 text-xs shadow-sm focus:ring-1 focus:ring-blue-400">
             <option value="">All</option>
             <%= for department <- @departments do %>
-              <option value={department.id} selected={@filters["department_id"]=="#{department.id}" }>
+              <option value={department.id}>
                 <%= department.name %>
               </option>
               <% end %>
           </select>
         </div>
-
-        <!-- Assigned User -->
-        <div>
-          <label class="block text-xs text-gray-600 mb-1">Assigned User</label>
-          <select name="assigned_user_id"
-            class="w-36 border rounded-md p-1.5 text-xs shadow-sm focus:ring-1 focus:ring-blue-400">
-            <option value="">All</option>
-            <%= for user <- @users do %>
-              <option value={user.id} selected={@filters["assigned_user_id"]=="#{user.id}" }>
-                <%= user.first_name %>
-              </option>
-              <% end %>
-          </select>
-        </div>
         <% end %>
+
+
+          <!-- Assigned User -->
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Assigned User</label>
+            <select name="assigned_user_id"
+              class="w-36 border rounded-md p-1.5 text-xs shadow-sm focus:ring-1 focus:ring-blue-400">
+              <option value="">All</option>
+              <%= for user <- @users do %>
+                <option value={user.id} selected={@filters["assigned_user_id"]=="#{user.id}" }>
+                  <%= user.first_name %>
+                </option>
+                <% end %>
+            </select>
+          </div>
+
 
           <!-- Apply Button -->
           <div>
@@ -133,8 +136,8 @@
     action={@live_action} asset={@asset} patch={~p"/assets"} />
 </.modal>
 
-<.modal :if={@live_action in [:assign_device,:return_device, :mark_as_lost ]} id="assign-device-modal" show={@show_modal}
-  on_cancel={JS.push("close_modal")}>
+<.modal :if={@live_action in [:assign_device,:return_device, :mark_as_lost ]} id="assign-device-modal"
+  show={@show_modal} on_cancel={JS.push("close_modal")}>
   <div class="p-6">
     <h3 class="text-lg font-semibold leading-6 text-gray-900">
       <%= @page_title %>

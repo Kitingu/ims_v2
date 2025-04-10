@@ -24,92 +24,55 @@ let hooks = {
 
 hooks.select2JS = {
   mounted() {
-    let context = this;
-    console.log("🔥 select2JS mounted", context);
+    this.initSelect2();
 
-    // Initialize Select2
-    $(this.el).select2({
-      placeholder: this.el.getAttribute('placeholder'),
-      tags: true,
-      dropdownParent: $(this.el).parent(), // Ensure the dropdown is attached to the parent element
-    });
-
-    // Handle selection changes
-    $(this.el).on('select2:select', (event) => {
-      this.onChangeCallback(event, context);
-    });
-
-    // Prevent the dropdown from closing when clicking inside the search bar
-    $(this.el).on('select2:opening', (event) => {
-      console.log("Select2 opening");
-      // Ensure the dropdown stays open when interacting with the search bar
-      $(document).on('click', '.select2-search__field', (e) => {
-        e.stopPropagation(); // Prevent clicks on the search bar from closing the dropdown
-      });
-    });
-
-    // Handle LiveView events to update Select2 options
-    
-    this.handleEvent("update_select2", ({ targetEl, data }) => {
-      console.log(`🔄 Received update_select2 event for: ${targetEl}`);
-      console.log(`🛠 Current Select2 element ID: ${context.el.id}`);
-      console.log("📌 New Data:", data);
-
-      if (context.el.id === targetEl) {
-        console.log(`✅ Updating Select2 options for: ${targetEl}`);
-
-        $(context.el).select2("destroy").empty(); // Clear existing options
-
-        $(context.el)
-          .select2({
-            data: data,
-            placeholder: this.el.getAttribute("data-placeholder"),
-            tags: true
-          })
-          .on("select2:select", (event) => this.onChangeCallback(event, context));
-      } else {
-        console.warn(`⚠️ update_select2 event received, but targetEl ${targetEl} does not match ${context.el.id}`);
+    // Handle LiveView updates
+    this.handleEvent("update_select_options", ({ options, selected_value }) => {
+      if (this.el.id === options.target_id) {
+        this.updateOptions(options.data, selected_value);
       }
     });
   },
 
+  initSelect2() {
+    const el = this.el;
+    const placeholder = el.dataset.placeholder || "Select an option";
+
+    $(el).select2({
+      placeholder: placeholder,
+      dropdownParent: $(el).parent(),
+      width: '100%'
+    }).on('change', (e) => {
+      const eventName = el.dataset.phxEvent || "select_changed";
+      const payloadKey = el.name || "value";
+
+      this.pushEventTo(el, eventName, {
+        [payloadKey]: e.target.value,
+        select_id: el.id
+      });
+    });
+  },
+
+  updateOptions(options, selectedValue) {
+    $(this.el).empty().select2('destroy');
+
+    // Add new options
+    options.forEach(opt => {
+      const isSelected = opt.id === selectedValue;
+      $(this.el).append(new Option(opt.text, opt.id, false, isSelected));
+    });
+
+    this.initSelect2();
+
+    // Trigger change if there's a selected value
+    if (selectedValue) {
+      $(this.el).val(selectedValue).trigger('change');
+    }
+  },
+
   destroyed() {
     $(this.el).select2('destroy');
-  },
-
-  onChangeCallback(event, context) {
-    event.stopPropagation(); // Prevent event propagation
-    console.log("🔥 select2 onChangeCallback triggered", event);
-
-    let inputFor = event.target.getAttribute('data-input-for');
-    let value = event.params.data.id; // Ensure we get the correct ID, not text
-
-    console.log(`✅ Input for: ${inputFor}, Selected ID: ${value}`);
-
-    if (!value || value === "") {
-      console.error("❌ Error: Selected value is empty!");
-      return;
-    }
-
-    switch (inputFor) {
-      case 'user-id':
-        console.log(`🚀 Pushing Event: selected_user with user_id: ${value}`);
-        context.pushEventTo(context.el, "user_selected", { user_id: value });
-        break;
-
-      case 'device_id':
-        console.log(`🚀 Pushing Event: selected_device with device_id: ${value}`);
-        context.pushEventTo(context.el, "device_selected", { device_id: value });
-        break;
-
-
-
-      default:
-        console.log(`⚠️ Default case, pushing event: ${inputFor} with value: ${value}`);
-        context.pushEventTo(context.el, inputFor, { [inputFor]: value });
-        break;
-    }
-  },
+  }
 };
 
 

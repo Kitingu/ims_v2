@@ -31,6 +31,7 @@ defmodule Ims.Inventory.AssetLog do
     belongs_to :user, Ims.Accounts.User
     belongs_to :approved_by, Ims.Accounts.User
     belongs_to :performed_by, Ims.Accounts.User
+    belongs_to :office, Ims.Inventory.Office
 
 
     timestamps(type: :utc_datetime)
@@ -132,6 +133,7 @@ defmodule Ims.Inventory.AssetLog do
       preload: [
         :asset,
         :user,
+        :office,
         :approved_by,
         :performed_by
       ]
