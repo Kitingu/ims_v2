@@ -28,12 +28,18 @@
             <%= asset_log.remarks %>
           </:col>
           <:col :let={asset_log} label="Assigned To">
-            <%= asset_log.user.first_name %>
+            <%= if asset_log.user_id do %>
+              <%= asset_log.user.first_name %>
+                <% else %>
+                  <%= if asset_log.office_id do %>
+                    <%= asset_log.office.name %>
+                      <% else %>
+                        N/A
+                        <% end %>
+                          <% end %>
           </:col>
 
-          <:col :let={asset_log} label="Condition">
-            <%= asset_log.status %>
-          </:col>
+
           <:col :let={asset_log} label="Actioned By">
             <%= asset_log.performed_by.first_name %> - <%= asset_log.performed_by.designation %>
           </:col>

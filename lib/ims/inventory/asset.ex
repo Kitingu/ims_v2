@@ -24,6 +24,22 @@ defmodule Ims.Inventory.Asset do
     timestamps(type: :utc_datetime)
   end
 
+  def furniture_changeset(asset, attrs) do
+    asset
+    |> cast(attrs, [
+      :tag_number,
+      :asset_name_id,
+      :status,
+      :serial_number,
+      :original_cost,
+      :purchase_date,
+      :warranty_expiry,
+      :user_id,
+      :office_id,
+      :category_id
+    ])
+  end
+
   @doc false
   def changeset(asset, attrs) do
     asset
@@ -48,6 +64,29 @@ defmodule Ims.Inventory.Asset do
       :category_id,
       :asset_name_id
     ])
+    |> validate_purchase_date_not_in_future()
+    |> validate_warranty_after_purchase()
+  end
+
+  defp validate_purchase_date_not_in_future(changeset) do
+    validate_change(changeset, :purchase_date, fn :purchase_date, purchase_date ->
+      if Date.compare(purchase_date, Date.utc_today()) == :gt do
+        [purchase_date: "cannot be in the future"]
+      else
+        []
+      end
+    end)
+  end
+
+  defp validate_warranty_after_purchase(changeset) do
+    purchase_date = get_field(changeset, :purchase_date)
+    warranty_expiry = get_field(changeset, :warranty_expiry)
+
+    if purchase_date && warranty_expiry && Date.compare(warranty_expiry, purchase_date) == :lt do
+      add_error(changeset, :warranty_expiry, "must be after purchase date")
+    else
+      changeset
+    end
   end
 
   def search(queryable \\ __MODULE__, filters) do

@@ -666,42 +666,61 @@ defmodule Ims.Inventory do
   """
 
   def create_asset_log(%{"action" => "assigned", "asset_id" => asset_id} = log_attrs) do
-    asset = get_asset!(asset_id)
+    asset = get_asset!(asset_id) |> Repo.preload([:category, :asset_name])
 
     Repo.transaction(fn ->
       # Validate user/device limit
-      if log_attrs["user_id"] && asset.category.name not in ["toner", "cartridge"] do
+      if log_attrs["user_id"] &&
+           asset.category.name not in [
+             "tonner",
+             "cartridge",
+             "catridges",
+             "tonners",
+             "Tonner",
+             "Tonners"
+           ] do
         case check_device_limit(log_attrs["user_id"], asset.asset_name.category_id) do
           :ok ->
             :ok
 
           {:error, message} ->
-            # Create a clean error structure that's easy to handle upstream
             Repo.rollback({:device_limit_error, message})
         end
       end
 
-      # Proceed with assignment if validation passes
+      # Check if asset is assigned to office
+      if asset.office_id do
+        Repo.rollback({:device_limit_error, "Asset is already assigned to an office"})
+      end
+
+      # Create the log first
+      log =
+        %AssetLog{}
+        |> AssetLog.changeset(log_attrs)
+        |> Repo.insert!()
+
+      # Update the asset with new log reference and status
       asset_changes =
         %{}
         |> maybe_put(:user_id, Map.get(log_attrs, "user_id"))
         |> maybe_put(:office_id, Map.get(log_attrs, "office_id"))
         |> Map.put(:status, :assigned)
+        # Set the current_log_id
+        |> Map.put(:current_log_id, log.id)
 
-      asset
-      |> Asset.changeset(asset_changes)
-      |> Repo.update!()
+      updated_asset =
+        asset
+        |> Asset.changeset(asset_changes)
+        |> Repo.update!()
 
-      %AssetLog{}
-      |> AssetLog.changeset(log_attrs)
-      |> Repo.insert!()
+      # Return both records
+      %{asset: updated_asset, log: log}
     end)
     |> case do
-      {:ok, result} ->
-        {:ok, result}
+      {:ok, %{asset: asset, log: log}} ->
+        {:ok, log}
 
       {:error, {:device_limit_error, message}} ->
-        # Return a changeset with just the user_id error
         {:error,
          AssetLog.changeset(%AssetLog{}, log_attrs)
          |> Ecto.Changeset.add_error(:user_id, message)}
@@ -715,6 +734,9 @@ defmodule Ims.Inventory do
          |> Ecto.Changeset.add_error(:base, "An unexpected error occurred")}
     end
   end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
   def create_asset_log(%{"action" => "returned", "asset_id" => asset_id} = log_attrs) do
     IO.inspect(log_attrs, label: "log_attrs")
@@ -827,5 +849,24 @@ defmodule Ims.Inventory do
     else
       :ok
     end
+  end
+
+  def get_asset_logs_by_asset_id(asset_id) do
+    AssetLog
+    |> where([a], a.asset_id == ^asset_id)
+    |> Repo.all(order_by: [desc: :inserted_at])
+    |> Repo.preload([:user, :office, :performed_by])
+  end
+
+  def get_asset_logs_by_user_id(user_id) do
+    AssetLog
+    |> where([a], a.user_id == ^user_id)
+    |> Repo.all()
+  end
+
+  def get_asset_logs_by_user_id_and_asset_id(user_id, asset_id) do
+    AssetLog
+    |> where([a], a.user_id == ^user_id and a.asset_id == ^asset_id)
+    |> Repo.all()
   end
 end

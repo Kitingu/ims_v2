@@ -5,8 +5,10 @@ defmodule Ims.Inventory.AssetLog do
   alias Ims.Repo
   use Ims.RepoHelpers, repo: Repo
 
+  @approved "approved"
+
   schema "asset_logs" do
-    field :status, :string, default: "pending"
+    field :status, :string, default: @approved
 
     field :action, Ecto.Enum,
       values: [
@@ -32,7 +34,6 @@ defmodule Ims.Inventory.AssetLog do
     belongs_to :approved_by, Ims.Accounts.User
     belongs_to :performed_by, Ims.Accounts.User
     belongs_to :office, Ims.Inventory.Office
-
 
     timestamps(type: :utc_datetime)
   end
@@ -61,16 +62,25 @@ defmodule Ims.Inventory.AssetLog do
     |> validate_required([
       :action,
       :performed_by_id,
-      :asset_id,
+      :asset_id
     ])
+    |> maybe_put_performed_at()
+  end
+
+  defp maybe_put_performed_at(%Ecto.Changeset{changes: %{performed_at: _}} = changeset),
+    do: changeset
+
+  defp maybe_put_performed_at(changeset) do
+    put_change(changeset, :performed_at, DateTime.utc_now() |> DateTime.truncate(:second))
   end
 
   def search(queryable \\ __MODULE__, filters) do
-
     IO.inspect(filters, label: "filters")
+
     query =
       Enum.reduce(filters, queryable, fn {k, v}, accum_query ->
         IO.inspect({k, v}, label: "filter")
+
         cond do
           v in ["", nil] ->
             accum_query
@@ -139,7 +149,6 @@ defmodule Ims.Inventory.AssetLog do
       ]
   end
 end
-
 
 # defmodule ImsWeb.AssetLogLive.FormComponent do
 #   use ImsWeb, :live_component

@@ -41,7 +41,7 @@ defmodule ImsWeb.AssetLive.FormComponent do
           <.input field={@form[:serial_number]} type="text" label="Serial number" />
           <.input field={@form[:tag_number]} type="text" label="Tag number" />
 
-          <.input field={@form[:status]} type="select" label="Status" options={@status_options} />
+
           <.input
             field={@form[:condition]}
             type="select"
@@ -50,9 +50,10 @@ defmodule ImsWeb.AssetLive.FormComponent do
           />
 
           <.input field={@form[:original_cost]} type="number" label="Original cost" step="any" />
-          <.input field={@form[:purchase_date]} type="date" label="Purchase date" />
+          <.input field={@form[:purchase_date]} type="date" label="Purchase date"  max={Date.utc_today()} />
 
           <.input field={@form[:warranty_expiry]} type="date" label="Warranty expiry" />
+          <.input field={@form[:status]} type="hidden" value="available"/>
         </div>
 
         <:actions>

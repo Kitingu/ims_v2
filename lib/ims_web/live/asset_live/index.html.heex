@@ -116,22 +116,31 @@
 
 
 <.table id="assets" rows={@assets} resource="asset" current_user={@current_user}
-  actions={["assign_device", "mark_as_lost" , "decommission" , "revoke" , "return_device" ]}>
+  actions={["assign_device", "view", "mark_as_lost" , "decommission" , "revoke" , "return_device" ]}>
   <:col :let={ asset} label="ID">{asset.id}</:col>
-  <:col :let={ asset} label="Name">{asset.asset_name.name} </:col>
+
+  <:col :let={asset} label="Name">
+    <span class="inline-block max-w-[150px] truncate" title={asset.asset_name.name}>
+      <%= asset.asset_name.name %>
+    </span>
+  </:col>
   <:col :let={asset} label="Status">
     <ImsWeb.Components.StatusLabel.status_label status={asset.status} />
   </:col>
   <:col :let={ asset} label="Serial number">{asset.serial_number}</:col>
   <:col :let={ asset} label="Original cost">{ Ims.Helpers.format_currency(asset.original_cost)}</:col>
   <:col :let={ asset} label="Purchase date">{asset.purchase_date}</:col>
-  <:col :let={ asset} label="Assigned User">
+  <:col :let={ asset} label="Assigned User" class="truncate w-[100px] whitespace-nowrap overflow-hidden">
     <%= if asset.user do %>
-      <%= asset.user.first_name %>
-        <%= asset.user.last_name %>
-          <% else %>
-            N/A
-            <% end %>
+  <%= "#{asset.user.first_name} #{asset.user.last_name}" %>
+<% else %>
+  <%= if asset.office do %>
+    <%= asset.office.name %>
+  <% else %>
+    <span class="text-gray-500">Unassigned</span>
+  <% end %>
+<% end %>
+
   </:col>
   <:col :let={ asset} label="Warranty expiry">{asset.warranty_expiry}</:col>
   <:col :let={ asset} label="Condition">{asset.condition}</:col>

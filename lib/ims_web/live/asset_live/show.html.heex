@@ -1,32 +1,93 @@
 <.header>
-  Asset {@asset.id}
-  <:subtitle>This is a asset record from your database.</:subtitle>
+  Asset: #{@asset.asset_name && @asset.asset_name.name || "Unknown"}
+  <:subtitle>Summary and history of this asset.</:subtitle>
   <:actions>
     <.link patch={~p"/assets/#{@asset}/show/edit"} phx-click={JS.push_focus()}>
-      <.button>Edit asset</.button>
+      <.button>Edit Asset</.button>
     </.link>
   </:actions>
 </.header>
 
-<.list>
-  <:item title="Tag number">{@asset.tag_number}</:item>
-  <:item title="Status">{@asset.status}</:item>
-  <:item title="Serial number">{@asset.serial_number}</:item>
-  <:item title="Original cost">{@asset.original_cost}</:item>
-  <:item title="Purchase date">{@asset.purchase_date}</:item>
-  <:item title="Warranty expiry">{@asset.warranty_expiry}</:item>
-  <:item title="Condition">{@asset.condition}</:item>
-</.list>
+<div class="grid grid-cols-2 gap-4 bg-white p-4 rounded shadow">
+  <div><strong>Tag Number:</strong>
+    <%= @asset.tag_number %>
+  </div>
+  <div><strong>Status:</strong>
+    <%= @asset.status %>
+  </div>
+  <div><strong>Serial Number:</strong>
+    <%= @asset.serial_number %>
+  </div>
+  <div><strong>Original Cost:</strong>
+    <%= Ims.Helpers.format_currency(@asset.original_cost) %>
+  </div>
+  <div><strong>Condition:</strong>
+    <%= @asset.condition %>
+  </div>
+  <div><strong>Assigned To:</strong>
+    <%= @asset.user && "#{@asset.user.first_name} #{@asset.user.last_name}" || "—" %>
+  </div>
+  <div><strong>Office:</strong>
+    <%= @asset.office && @asset.office.name || "—" %>
+  </div>
+  <div><strong>Purchase Date:</strong>
+    <%= Ims.Helpers.humanize_datetime(@asset.purchase_date) %>
+  </div>
+  <div><strong>Warranty Expiry:</strong>
+    <%= Ims.Helpers.humanize_datetime(@asset.warranty_expiry) %>
+  </div>
+</div>
 
-<.back navigate={~p"/assets"}>Back to assets</.back>
+<h3 class="mt-8 text-lg font-semibold">Asset Log History</h3>
 
-<.modal :if={@live_action == :edit} id="asset-modal" show on_cancel={JS.patch(~p"/assets/#{@asset}")}>
-  <.live_component
-    module={ImsWeb.AssetLive.FormComponent}
-    id={@asset.id}
-    title={@page_title}
-    action={@live_action}
-    asset={@asset}
-    patch={~p"/assets/#{@asset}"}
-  />
-</.modal>
+<%= if Enum.empty?(@asset_logs) do %>
+  <div class="text-gray-500 mt-2">No logs found for this asset.</div>
+  <% else %>
+    <div class="overflow-auto rounded shadow mt-2">
+      <table class="min-w-full divide-y divide-gray-200 bg-white text-sm">
+        <thead class="bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase">
+          <tr>
+            <th class="px-4 py-2">Date</th>
+            <th class="px-4 py-2">Action</th>
+            <th class="px-4 py-2">Performed By</th>
+            <th class="px-4 py-2">Assigned To</th>
+            <th class="px-4 py-2">Office</th>
+            <th class="px-4 py-2">Remarks</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <%= for log <- @asset_logs do %>
+            <tr>
+              <td class="px-4 py-2 whitespace-nowrap">
+                <%= if log.performed_at, do: Ims.Helpers.humanize_datetime(log.performed_at), else: "—" %>
+              </td>
+              <td class="px-4 py-2 capitalize">
+                <%= log.action %>
+              </td>
+              <td class="px-4 py-2">
+                <%= if log.performed_by, do: "#{log.performed_by.first_name} #{log.performed_by.last_name}" , else: "—"
+                  %>
+              </td>
+              <td class="px-4 py-2">
+                <%= if log.user, do: "#{log.user.first_name} #{log.user.last_name}" , else: "—" %>
+              </td>
+              <td class="px-4 py-2">
+                <%= if log.office, do: log.office.name, else: "—" %>
+              </td>
+              <td class="px-4 py-2">
+                <%= log.remarks || "—" %>
+              </td>
+            </tr>
+            <% end %>
+        </tbody>
+      </table>
+    </div>
+    <% end %>
+
+
+      <.back navigate={~p"/assets"}>Back to Assets</.back>
+
+      <.modal :if={@live_action==:edit} id="asset-modal" show on_cancel={JS.patch(~p"/assets/#{@asset}")}>
+        <.live_component module={ImsWeb.AssetLive.FormComponent} id={@asset.id} title={@page_title}
+          action={@live_action} asset={@asset} patch={~p"/assets/#{@asset}"} />
+      </.modal>

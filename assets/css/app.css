@@ -4,6 +4,11 @@
 
 /* assets/css/app.css */
 
+*{
+    font-size: 1 rem;
+    font-family: 'Poppins', sans-serif;
+}
+
 /* Adjust the height of the Select2 single select */
 /* .select2-container .select2-selection--single {
     height: 36px !important;  

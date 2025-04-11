@@ -27,6 +27,8 @@ defmodule ImsWeb.AssetLive.Index do
     {:ok, socket}
   end
 
+
+
   @impl true
   def handle_params(params, _url, socket) do
     page = String.to_integer(params["page"] || "1")
@@ -170,6 +172,12 @@ defmodule ImsWeb.AssetLive.Index do
   end
 
   @impl true
+  def handle_event("view" <> id, _, socket) do
+    asset_logs = get_asset_logs_by_asset_id(id)
+    {:noreply, push_navigate(socket, to: ~p"/assets/#{id}")}
+  end
+
+  @impl true
   def handle_event("select_changed", %{"department_id" => department_id}, socket) do
     # apply filters to the asset list
     filters = socket.assigns.filters
@@ -238,6 +246,10 @@ defmodule ImsWeb.AssetLive.Index do
     query = Asset.search(filters)
     opts = Keyword.merge(@paginator_opts, opts)
     query |> Ims.Repo.paginate(opts)
+  end
+
+  def get_asset_logs_by_asset_id(asset_id) do
+    Inventory.get_asset_logs_by_asset_id(asset_id)
   end
 
   defp atomize_keys(map) do
