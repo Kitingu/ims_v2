@@ -552,6 +552,12 @@ defmodule Ims.Accounts do
     Repo.all(Ims.Accounts.Departments)
   end
 
+  def create_departments(attrs \\ %{}) do
+    %Ims.Accounts.Departments{}
+    |> Ims.Accounts.Departments.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def change_departments(%Ims.Accounts.Departments{} = departments, attrs \\ %{}) do
     Ims.Accounts.Departments.changeset(departments, attrs)
   end

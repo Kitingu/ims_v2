@@ -723,6 +723,9 @@ defmodule Ims.Inventory do
     Repo.transaction(fn ->
       asset = get_asset!(asset_id)
 
+      # TODO:
+      #  Update asset_log status to returned
+
       # Update asset to available and unlink user/office
       asset
       |> Asset.changeset(%{status: :available, user_id: nil, office_id: nil})
