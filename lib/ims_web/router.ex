@@ -104,11 +104,12 @@ defmodule ImsWeb.Router do
       live "/locations/:id", LocationLive.Show, :show
       live "/locations/:id/show/edit", LocationLive.Show, :edit
 
-      live "/offices", OfficeLive.Index, :index
-      live "/offices/new", OfficeLive.Index, :new
-      live "/offices/:id/edit", OfficeLive.Index, :edit
-      live "/offices/:id", OfficeLive.Show, :show
-      live "/offices/:id/show/edit", OfficeLive.Show, :edit
+
+      live "/departments", DepartmentsLive.Index, :index
+      live "/departments/new", DepartmentsLive.Index, :new
+      live "/departments/:id/edit", DepartmentsLive.Index, :edit
+      live "/departments/:id", DepartmentsLive.Show, :show
+      live "/departments/:id/show/edit", DepartmentsLive.Show, :edit
 
 
       live "/categories", CategoryLive.Index, :index

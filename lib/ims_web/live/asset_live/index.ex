@@ -33,7 +33,14 @@ defmodule ImsWeb.AssetLive.Index do
 
     filter_params =
       params
-      |> Map.take(["name", "status", "category_id", "user_id", "department_id", "assigned_user_id"])
+      |> Map.take([
+        "name",
+        "status",
+        "category_id",
+        "user_id",
+        "department_id",
+        "assigned_user_id"
+      ])
       |> Enum.reject(fn {_k, v} -> v in [nil, ""] end)
       |> Enum.into(%{})
 
@@ -72,6 +79,7 @@ defmodule ImsWeb.AssetLive.Index do
 
   defp apply_action(socket, :assign, params) do
     id = params["id"]
+
     socket
     |> assign(:page_title, "Assign Asset")
     |> assign(:asset, Ims.Inventory.get_asset!(id))
@@ -94,6 +102,7 @@ defmodule ImsWeb.AssetLive.Index do
   @impl true
   def handle_info({:saved, %Ims.Inventory.AssetLog{}}, socket) do
     assets = fetch_records(socket.assigns.filters, @paginator_opts)
+
     {:noreply,
      socket
      |> put_flash(:info, "Asset saved successfully")
@@ -103,6 +112,7 @@ defmodule ImsWeb.AssetLive.Index do
   @impl true
   def handle_info({ImsWeb.AssetLive.FormComponent, {:saved, _device}}, socket) do
     assets = fetch_records(socket.assigns.filters, @paginator_opts)
+
     {:noreply,
      socket
      |> put_flash(:info, "Asset saved successfully")
@@ -120,15 +130,13 @@ defmodule ImsWeb.AssetLive.Index do
 
     {:noreply,
      socket
-     |> assign(:filters, filters)
-  }
-
-
+     |> assign(:filters, filters)}
   end
 
   @impl true
   def handle_event("assign_device" <> id, _, socket) do
     asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)
+
     {:noreply,
      socket
      |> assign(:asset, asset)
@@ -140,6 +148,7 @@ defmodule ImsWeb.AssetLive.Index do
   @impl true
   def handle_event("return_device" <> id, _, socket) do
     asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)
+
     {:noreply,
      socket
      |> assign(:asset, asset)
@@ -151,12 +160,35 @@ defmodule ImsWeb.AssetLive.Index do
   @impl true
   def handle_event("mark_as_lost" <> id, _, socket) do
     asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)
+
     {:noreply,
      socket
      |> assign(:asset, asset)
      |> assign(:show_modal, true)
      |> assign(:page_title, "Mark Asset as Lost")
      |> assign(:live_action, :mark_as_lost)}
+  end
+
+  @impl true
+  def handle_event("select_changed", %{"department_id" => department_id}, socket) do
+    # apply filters to the asset list
+    filters = socket.assigns.filters
+    filters = Map.put(filters, "department_id", department_id)
+
+    {:noreply,
+     socket
+     |> assign(:filters, filters)}
+  end
+
+  @impl true
+  def handle_event("select_changed", %{"user_id" => user_id}, socket) do
+    # apply filters to the asset list
+    filters = socket.assigns.filters
+    filters = Map.put(filters, "user_id", user_id)
+
+    {:noreply,
+     socket
+     |> assign(:filters, filters)}
   end
 
   @impl true
@@ -173,8 +205,8 @@ defmodule ImsWeb.AssetLive.Index do
 
   @impl true
   def handle_event("apply_filters", %{} = filter_params, socket) do
-
     IO.inspect(filter_params, label: "Filter Params")
+
     filters =
       filter_params
       |> Enum.reject(fn {_, v} -> v in [nil, ""] end)
@@ -218,8 +250,11 @@ defmodule ImsWeb.AssetLive.Index do
             rescue
               ArgumentError -> k
             end
-          true -> k
+
+          true ->
+            k
         end
+
       Map.put(acc, key, v)
     end)
   end

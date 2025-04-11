@@ -551,6 +551,11 @@ defmodule Ims.Accounts do
   def list_departments do
     Repo.all(Ims.Accounts.Departments)
   end
+
+  def change_departments(%Ims.Accounts.Departments{} = departments, attrs \\ %{}) do
+    Ims.Accounts.Departments.changeset(departments, attrs)
+  end
+
   def get_department!(id) do
     Repo.get!(Ims.Accounts.Departments, id)
   end

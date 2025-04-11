@@ -4,9 +4,23 @@ defmodule ImsWeb.DepartmentsLive.Index do
   alias Ims.Accounts
   alias Ims.Accounts.Departments
 
+  @paginator_opts [order_by: [desc: :inserted_at], page_size: 10]
+
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :departments_collection, Accounts.list_departments())}
+
+    departments = Accounts.list_departments() |> Ims.Repo.paginate(@paginator_opts)
+    |> IO.inspect(label: "departments")
+
+
+    socket =
+      socket
+      |> assign(:all_departments, departments)
+      |> assign(:current_user, socket.assigns.current_user)
+      |> assign(:page, 1)
+      |> assign(:csrf_token, Plug.CSRFProtection.get_csrf_token())
+
+    {:ok, socket}
   end
 
   @impl true
@@ -33,8 +47,13 @@ defmodule ImsWeb.DepartmentsLive.Index do
   end
 
   @impl true
-  def handle_info({ImsWeb.DepartmentsLive.FormComponent, {:saved, departments}}, socket) do
-    {:noreply, stream_insert(socket, :departments_collection, departments)}
+  def handle_info({ImsWeb.DepartmentsLive.FormComponent, {:saved, _departments}}, socket) do
+    departments = Accounts.list_departments() |> Ims.Repo.paginate(@paginator_opts)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "Departments updated successfully")
+     |> assign(:all_departments, departments)}
   end
 
   @impl true
