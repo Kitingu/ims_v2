@@ -1,47 +1,73 @@
-<.header>
-  Listing Leave applications
-  <:actions>
-    <.link patch={~p"/leave_applications/new"}>
-      <.button>New Leave application</.button>
-    </.link>
-  </:actions>
-</.header>
+<%= if @live_action in [:new, :edit] do %>
+  <div class="container mx-auto max-w-3xl p-6 bg-white shadow-lg rounded-lg mt-6">
+    <.header class="bg-white shadow-md py-4 px-6">
+      <h1 class="text-xl font-bold text-gray-800">
+        <%= @page_title %>
+      </h1>
+    </.header>
 
-<.table
-  id="leave_applications"
-  rows={@streams.leave_applications}
-  row_click={fn {_id, leave_application} -> JS.navigate(~p"/leave_applications/#{leave_application}") end}
->
-  <:col :let={{_id, leave_application}} label="Days requested">{leave_application.days_requested}</:col>
-  <:col :let={{_id, leave_application}} label="Status">{leave_application.status}</:col>
-  <:col :let={{_id, leave_application}} label="Comment">{leave_application.comment}</:col>
-  <:col :let={{_id, leave_application}} label="Start date">{leave_application.start_date}</:col>
-  <:col :let={{_id, leave_application}} label="End date">{leave_application.end_date}</:col>
-  <:col :let={{_id, leave_application}} label="Resumption date">{leave_application.resumption_date}</:col>
-  <:col :let={{_id, leave_application}} label="Proof document">{leave_application.proof_document}</:col>
-  <:action :let={{_id, leave_application}}>
-    <div class="sr-only">
-      <.link navigate={~p"/leave_applications/#{leave_application}"}>Show</.link>
+    <.live_component module={ImsWeb.LeaveApplicationLive.FormComponent} id={@leave_application.id || :new}
+      title={@page_title} action={@live_action} current_user={@current_user} resource={@leave_applications}
+      leave_application={@leave_application} patch={~p"/leave_applications"} />
+
+    <div class="mt-4">
+      <a href="/" class="text-blue-600 hover:text-blue-800">← Back to Profile</a>
     </div>
-    <.link patch={~p"/leave_applications/#{leave_application}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={{id, leave_application}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: leave_application.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
-      Delete
-    </.link>
-  </:action>
-</.table>
+  </div>
+  <% else %>
+    <.header>
+      Listing Leave applications
+      <:actions>
+        <.link patch={~p"/leave_applications/new"}>
+          <.button>New Leave application</.button>
+        </.link>
+      </:actions>
+    </.header>
 
-<.modal :if={@live_action in [:new, :edit]} id="leave_application-modal" show on_cancel={JS.patch(~p"/leave_applications")}>
-  <.live_component
-    module={ImsWeb.LeaveApplicationLive.FormComponent}
-    id={@leave_application.id || :new}
-    title={@page_title}
-    action={@live_action}
-    leave_application={@leave_application}
-    patch={~p"/leave_applications"}
-  />
-</.modal>
+    <.table id="leave_applications" rows={@leave_applications} resource="leave_applications"
+      current_user={@current_user} actions={["approve", "reject" ]}>
+      <:col :let={leave_application} label="ID">
+        <%= leave_application.id %>
+      </:col>
+      <:col :let={leave_application} label="Employee">
+        <%= leave_application.user.first_name %>
+      </:col>
+
+      <:col :let={leave_application} label="Days requested">
+        <%= leave_application.days_requested %>
+      </:col>
+
+      <:col :let={leave_application} label="Leave Type">
+        <%= leave_application.leave_type.name %>
+      </:col>
+
+      <:col :let={leave_application} label="Comment">
+        <%= leave_application.comment %>
+      </:col>
+      <:col :let={leave_application} label="Start date">
+        <%= leave_application.start_date %>
+      </:col>
+      <:col :let={leave_application} label="End date">
+        <%= leave_application.end_date %>
+      </:col>
+      <:col :let={leave_application} label="Resumption date">
+        <%= leave_application.resumption_date %>
+      </:col>
+      <:col :let={leave_application} label="Status">
+
+        <div class="px-2 py-1">
+          <span class={ case leave_application.status do "pending" -> "px-2 py-0.5 text-xs font-semibold text-yellow-800
+            bg-yellow-100
+            rounded-full"
+            "approved" -> "px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full"
+            "rejected" -> "px-2 py-0.5 text-xs font-semibold text-red-800 bg-red-100 rounded-full"
+            _ -> "px-2 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 rounded-full"
+            end
+            }>
+            <%= leave_application.status %>
+          </span>
+        </div>
+      </:col>
+
+    </.table>
+    <% end %>

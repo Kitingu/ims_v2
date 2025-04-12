@@ -6,7 +6,11 @@ defmodule ImsWeb.LeaveTypeLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :leave_types, Leave.list_leave_types())}
+    socket
+    |> assign(:leave_types, Leave.list_leave_types()|>  Ims.Repo.paginate())
+    |> assign(:page_title, "Listing Leave types")
+
+    {:ok, socket}
   end
 
   @impl true
@@ -29,6 +33,7 @@ defmodule ImsWeb.LeaveTypeLive.Index do
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:page_title, "Listing Leave types")
+    |> assign(:leave_types, Leave.list_leave_types()|>  Ims.Repo.paginate())
     |> assign(:leave_type, nil)
   end
 

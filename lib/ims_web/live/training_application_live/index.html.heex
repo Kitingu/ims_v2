@@ -1,0 +1,104 @@
+<div class="flex flex-wrap justify-between items-center bg-white shadow-md p-6 rounded-lg">
+  <!-- Title and New Application Button -->
+  <div class="flex items-center w-full">
+    <!-- Title -->
+    <h1 class="text-2xl font-bold text-gray-800">Training Applications</h1>
+
+    <!-- New Training Application Button (Pushed to the Far Right) -->
+    <a href="/hr/training_applications/new" class="ml-auto">
+      <button class="bg-blue-600 text-white px-4 py-2 rounded-md shadow-md hover:bg-blue-700 transition">
+        + New Application
+      </button>
+    </a>
+  </div>
+
+  <!-- Filters, Search, and Export Buttons -->
+  <div class="flex flex-wrap gap-4 items-center w-full mt-4">
+    <!-- User Filter -->
+    <form phx-change="filter_user" class="flex items-center gap-2">
+      <label class="text-gray-600">User:</label>
+      <select name="user_id"
+        class="border border-gray-300 rounded-md px-4 py-2 w-48 focus:ring focus:ring-blue-300">
+        <option value="">All Users</option>
+        <%= for {name, id} <- @user_options do %>
+          <option value={id} selected={@selected_user == id}>
+            <%= name %>
+          </option>
+        <% end %>
+      </select>
+    </form>
+
+    <!-- Search Form -->
+    <form phx-change="search" class="flex items-center gap-2">
+      <input type="text" name="query" placeholder="Search Institution, Course..."
+        class="border border-gray-300 rounded-md px-4 py-2 w-64 focus:ring focus:ring-blue-300" />
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+        Search
+      </button>
+    </form>
+
+    <!-- Export Button -->
+    <a href="/reports/training_applications"
+      class="bg-yellow-600 text-white px-4 py-2 rounded-md shadow-md hover:bg-yellow-700 transition">
+      Export Excel
+    </a>
+  </div>
+</div>
+
+<!-- Table Container -->
+<div class="overflow-x-auto bg-white shadow-md rounded-lg mt-6 w-full max-w-7xl mx-auto p-4">
+  <table class="w-full border border-gray-200 rounded-lg">
+    <thead class="bg-gray-100 text-gray-700 text-left">
+      <tr class="border-b border-gray-200">
+        <th class="px-4 py-3">ID</th>
+        <th class="px-4 py-3">Staff Name</th>
+        <th class="px-4 py-3">Staff Number</th>
+        <th class="px-4 py-3">Course Approved</th>
+        <th class="px-4 py-3">Institution</th>
+        <th class="px-4 py-3">Program Title</th>
+        <th class="px-4 py-3">Financial Year</th>
+        <th class="px-4 py-3">Quarter</th>
+        <th class="px-4 py-3">Period</th>
+        <th class="px-4 py-3">Costs</th>
+        <th class="px-4 py-3">Authority Reference</th>
+        <th class="px-4 py-3">Memo Reference</th>
+        <th class="px-4 py-3 text-center">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <%= for training_application <- @training_applications do %>
+        <tr class="border-b hover:bg-gray-50 text-gray-700">
+          <td class="px-4 py-3"><%= training_application.id %></td>
+          <td class="px-4 py-3"><%= training_application.user.first_name %></td>
+          <td class="px-4 py-3"><%= training_application.user.personal_number %></td>
+          <td class="px-4 py-3"><%= training_application.course_approved %></td>
+          <td class="px-4 py-3"><%= training_application.institution %></td>
+          <td class="px-4 py-3"><%= training_application.program_title %></td>
+          <td class="px-4 py-3"><%= training_application.financial_year %></td>
+          <td class="px-4 py-3"><%= training_application.quarter %></td>
+          <td class="px-4 py-3"><%= training_application.period_of_study |> days_to_period() |> elem(0) %></td>
+          <td class="px-4 py-3"><%= training_application.costs %></td>
+          <td class="px-4 py-3"><%= training_application.authority_reference %></td>
+          <td class="px-4 py-3"><%= training_application.memo_reference %></td>
+          <td class="px-4 py-3 flex justify-center gap-4">
+            <.link patch={~p"/training_applications/#{training_application}/edit"}
+              class="text-blue-600 hover:underline">
+              Edit
+            </.link>
+            <.link phx-click={JS.push("delete", value: %{id: training_application.id}) |> hide("##{training_application.id}")}
+              data-confirm="Are you sure?" class="text-red-600 hover:underline">
+              Delete
+            </.link>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal -->
+<.modal :if={@live_action in [:new, :edit]} id="training_application-modal" show on_cancel={JS.patch(~p"/training_applications")}>
+  <.live_component module={ImsWeb.TrainingApplicationLive.FormComponent} id={@training_application.id || :new}
+    title={@page_title} action={@live_action} training_application={@training_application}
+    patch={~p"/training_applications"} />
+</.modal>

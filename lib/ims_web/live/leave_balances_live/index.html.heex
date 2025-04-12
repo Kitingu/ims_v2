@@ -1,0 +1,30 @@
+<!-- lib/ims_web/live/leave_balances_live/index.html.heex -->
+<div class="p-4">
+    <h1 class="text-xl font-bold mb-4">Leave Balances</h1>
+  
+    <table class="table-auto w-full border text-sm">
+      <thead>
+        <tr>
+          <th class="p-2 border">Personal No.</th>
+          <th class="p-2 border">First Name</th>
+          <th class="p-2 border">Last Name</th>
+          <%= for col <- @columns do %>
+            <th class="p-2 border"><%= col %></th>
+          <% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for row <- @rows do %>
+          <tr>
+            <td class="p-2 border"><%= row.personal_number %></td>
+            <td class="p-2 border"><%= row.first_name %></td>
+            <td class="p-2 border"><%= row.last_name %></td>
+            <%= for col <- @columns do %>
+              <td class="p-2 border"><%= Map.get(row, col, 0) %></td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  

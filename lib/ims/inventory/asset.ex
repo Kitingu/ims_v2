@@ -7,7 +7,7 @@ defmodule Ims.Inventory.Asset do
   alias Elixlsx.{Workbook, Sheet}
 
   schema "assets" do
-    field :status, Ecto.Enum, values: [:available, :assigned, :revoked, :lost, :decommissioned]
+    field :status, Ecto.Enum, values: [:available, :assigned, :temporarily_assigned, :pending_requisition, :revoked, :lost, :decommissioned]
     field :tag_number, :string
     field :serial_number, :string
     field :original_cost, :decimal

@@ -135,8 +135,11 @@ defmodule Ims.Leave do
 
   def get_leave_balance(user_id, leave_type_id) do
     case Repo.get_by(Ims.Leave.LeaveBalance, user_id: user_id, leave_type_id: leave_type_id) do
-      nil -> 0
-      %Ims.Leave.LeaveBalance{remaining_days: remaining_days} -> Decimal.to_integer(remaining_days)
+      nil ->
+        0
+
+      %Ims.Leave.LeaveBalance{remaining_days: remaining_days} ->
+        Decimal.to_integer(remaining_days)
     end
   end
 
@@ -175,8 +178,6 @@ defmodule Ims.Leave do
     |> LeaveBalance.changeset(attrs)
     |> Repo.update()
   end
-
-
 
   @doc """
   Deletes a leave_balance.
@@ -237,9 +238,8 @@ defmodule Ims.Leave do
 
   """
   def get_leave_application!(id) do
-
-   Repo.get!(LeaveApplication, id)
-   |> Repo.preload(:leave_type)
+    Repo.get!(LeaveApplication, id)
+    |> Repo.preload(:leave_type)
   end
 
   @doc """
@@ -307,22 +307,80 @@ defmodule Ims.Leave do
     LeaveApplication.changeset(leave_application, attrs)
   end
 
-   # Get leave balance for a user and type
-   def get_leave_by_user_and_type(user_id, leave_type_id) do
+  # Get leave balance for a user and type
+  def get_leave_by_user_and_type(user_id, leave_type_id) do
     Repo.get_by(LeaveApplication, user_id: user_id, leave_type_id: leave_type_id)
   end
 
   # Insert a new leave balance if not found
   def insert_leave_days(user_id, leave_type_id, days_remaining) do
-    changeset = %LeaveApplication{}
-    |> LeaveApplication.changeset(%{
-      user_id: user_id,
-      leave_type_id: leave_type_id,
-      remaining_days: days_remaining
-    })
+    changeset =
+      %LeaveApplication{}
+      |> LeaveApplication.changeset(%{
+        user_id: user_id,
+        leave_type_id: leave_type_id,
+        remaining_days: days_remaining
+      })
 
     Repo.insert(changeset)
   end
 
+  def get_user_leave_balances(user_id) do
+    from(l in LeaveBalance,
+      where: l.user_id == ^user_id,
+      preload: [:leave_type]
+    )
+    |> Repo.all()
+  end
 
+  def get_all_leave_balances do
+    # Fetch all leave balances group by user_id
+    from(l in LeaveBalance,
+      group_by: l.user_id,
+      select: %{
+        user_id: l.user_id,
+        leave_type_id: l.leave_type_id,
+        remaining_days: sum(l.remaining_days)
+      }
+    )
+    |> Repo.all()
+    |> Enum.map(fn leave_balance ->
+      %{
+        user_id: leave_balance.user_id,
+        leave_type_id: leave_balance.leave_type_id,
+        remaining_days: Decimal.to_integer(leave_balance.remaining_days)
+      }
+    end)
+  end
+
+  def get_leave_balances_matrix do
+    Ims.Repo.all(
+      from lb in Ims.Leave.LeaveBalance,
+        join: u in assoc(lb, :user),
+        join: lt in assoc(lb, :leave_type),
+        preload: [user: u, leave_type: lt]
+    )
+  end
+
+  def build_matrix(balances) do
+    balances
+    |> Enum.group_by(& &1.user.id)
+    |> Enum.map(fn {_user_id, user_balances} ->
+      user = hd(user_balances).user
+
+      leave_days =
+        user_balances
+        |> Enum.map(fn b -> {b.leave_type.name, Decimal.to_integer(b.remaining_days)} end)
+        |> Enum.into(%{})
+
+      Map.merge(
+        %{
+          personal_number: user.personal_number,
+          first_name: user.first_name,
+          last_name: user.last_name
+        },
+        leave_days
+      )
+    end)
+  end
 end

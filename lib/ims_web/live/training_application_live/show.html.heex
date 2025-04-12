@@ -1,0 +1,36 @@
+<.header>
+  Training application {@training_application.id}
+  <:subtitle>This is a training_application record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/training_applications/#{@training_application}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit training_application</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Course approved">{@training_application.course_approved}</:item>
+  <:item title="Institution">{@training_application.institution}</:item>
+  <:item title="Program title">{@training_application.program_title}</:item>
+  <:item title="Financial year">{@training_application.financial_year}</:item>
+  <:item title="Quarter">{@training_application.quarter}</:item>
+  <:item title="Disability">{@training_application.disability}</:item>
+  <:item title="Period of study">{@training_application.period_of_study}</:item>
+  <:item title="Costs">{@training_application.costs}</:item>
+  <:item title="Authority reference">{@training_application.authority_reference}</:item>
+  <:item title="Memo reference">{@training_application.memo_reference}</:item>
+  <:item title="Status">{@training_application.status}</:item>
+</.list>
+
+<.back navigate={~p"/training_applications"}>Back to training_applications</.back>
+
+<.modal :if={@live_action == :edit} id="training_application-modal" show on_cancel={JS.patch(~p"/training_applications/#{@training_application}")}>
+  <.live_component
+    module={ImsWeb.TrainingApplicationLive.FormComponent}
+    id={@training_application.id}
+    title={@page_title}
+    action={@live_action}
+    training_application={@training_application}
+    patch={~p"/training_applications/#{@training_application}"}
+  />
+</.modal>

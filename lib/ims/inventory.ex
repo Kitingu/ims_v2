@@ -903,4 +903,83 @@ defmodule Ims.Inventory do
     |> where([a], a.user_id == ^user_id and a.asset_id == ^asset_id)
     |> Repo.all()
   end
+
+  # stats
+  def get_status_counts() do
+    %{
+      lost: Repo.aggregate(from(a in Asset, where: a.status == :lost), :count, :id),
+      available: Repo.aggregate(from(a in Asset, where: a.status == :available), :count, :id),
+      assigned: Repo.aggregate(from(a in Asset, where: a.status == :assigned), :count, :id),
+      pending_requisition:
+        Repo.aggregate(from(a in Asset, where: a.status == :pending_requisition), :count, :id),
+      temporarily_assigned:
+        Repo.aggregate(from(a in Asset, where: a.status == :temporarily_assigned), :count, :id)
+    }
+  end
+
+  def get_department_stats() do
+    Repo.all(
+      from(a in Asset,
+        join: d in "departments",
+        on: a.department_id == d.id,
+        group_by: d.name,
+        select: %{
+          department: d.name,
+          total: count(a.id),
+          assigned: fragment("COUNT(*) FILTER (WHERE ? = 'assigned')", a.status),
+          lost: fragment("COUNT(*) FILTER (WHERE ? = 'lost')", a.status),
+          available: fragment("COUNT(*) FILTER (WHERE ? = 'available')", a.status)
+        }
+      )
+    )
+  end
+
+  def get_category_stats() do
+    # Repo.all(
+    #   from(a in Asset,
+    #     join: c in "categories",
+    #     on: a.category_id == c.id,
+    #     group_by: c.name,
+    #     select: %{
+    #       category: c.name,
+    #       total: count(a.id),
+    #       assigned: fragment("COUNT(*) FILTER (WHERE ? = 'assigned')", a.status),
+    #       lost: fragment("COUNT(*) FILTER (WHERE ? = 'lost')", a.status),
+    #       available: fragment("COUNT(*) FILTER (WHERE ? = 'available')", a.status)
+    #     }
+    #   )
+    # )
+  end
+
+  def get_top_departments() do
+    # Repo.all(
+    #   from(al in AssetLog,
+    #     join: u in assoc(al, :user),
+    #     join: d in assoc(u, :department),
+    #     where: al.action == "assigned",
+    #     group_by: [d.name],
+    #     order_by: [desc: count(al.id)],
+    #     limit: 5,
+    #     select: %{
+    #       department: d.name,
+    #       total_devices: count(al.id)
+    #     }
+    #     where: al.action == "assigned"
+    #   )
+    # )
+  end
+
+  def get_top_users() do
+    # from(al in AssetLog,
+    #   join: u in assoc(al, :user),
+    #   where: al.action == "assigned",
+    #   group_by: [u.first_name, u.last_name],
+    #   order_by: [desc: count(al.id)],
+    #   limit: 5,
+    #   select: %{
+    #     user: fragment("? || ' ' || ?", u.first_name, u.last_name),
+    #     total_devices: count(al.id)
+    #   }
+    # )
+  end
 end

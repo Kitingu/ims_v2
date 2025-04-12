@@ -104,13 +104,11 @@ defmodule ImsWeb.Router do
       live "/locations/:id", LocationLive.Show, :show
       live "/locations/:id/show/edit", LocationLive.Show, :edit
 
-
       live "/departments", DepartmentsLive.Index, :index
       live "/departments/new", DepartmentsLive.Index, :new
       live "/departments/:id/edit", DepartmentsLive.Index, :edit
       live "/departments/:id", DepartmentsLive.Show, :show
       live "/departments/:id/show/edit", DepartmentsLive.Show, :edit
-
 
       live "/categories", CategoryLive.Index, :index
       live "/categories/new", CategoryLive.Index, :new
@@ -125,14 +123,13 @@ defmodule ImsWeb.Router do
       live "/assets/:id/show/edit", AssetLive.Show, :edit
       live "/assets/:id/assign", AssetLive.Index, :assign
 
-
-
-
       live "/asset_logs", AssetLogLive.Index, :index
       live "/asset_logs/new", AssetLogLive.Index, :new
       live "/asset_logs/:id/edit", AssetLogLive.Index, :edit
       live "/asset_logs/:id", AssetLogLive.Show, :show
       live "/asset_logs/:id/show/edit", AssetLogLive.Show, :edit
+
+
 
 
 
@@ -164,8 +161,8 @@ defmodule ImsWeb.Router do
       # live "/returned_devices/:id", ReturnedDeviceLive.Show, :show
       # live "/returned_devices/:id/show/edit", ReturnedDeviceLive.Show, :edit
 
-      # live "/leave_applications", LeaveApplicationLive.Index, :index
-      # live "/leave_applications/new", LeaveApplicationLive.Index, :new
+      live "/leave_applications", LeaveApplicationLive.Index, :index
+      live "/leave_applications/new", LeaveApplicationLive.Index, :new
 
       # live "/training_applications", TrainingApplicationLive.Index, :index
       # live "/training_applications/new", TrainingApplicationLive.Index, :new
@@ -244,12 +241,12 @@ defmodule ImsWeb.Router do
 
     live_session :hr,
       on_mount: [{ImsWeb.UserAuth, :mount_current_user}] do
-      # live "/leave_applications", LeaveApplicationLive.Index, :index
+      live "/leave_applications", LeaveApplicationLive.Index, :index
 
-      # live "/leave_applications/:id/edit", LeaveApplicationLive.Index, :edit
+      live "/leave_applications/:id/edit", LeaveApplicationLive.Index, :edit
 
-      # live "/leave_applications/:id", LeaveApplicationLive.Show, :show
-      # live "/leave_applications/:id/show/edit", LeaveApplicationLive.Show, :edit
+      live "/leave_applications/:id", LeaveApplicationLive.Show, :show
+      live "/leave_applications/:id/show/edit", LeaveApplicationLive.Show, :edit
 
       live "/leave_types", LeaveTypeLive.Index, :index
       live "/leave_types/new", LeaveTypeLive.Index, :new
@@ -258,9 +255,17 @@ defmodule ImsWeb.Router do
       live "/leave_types/:id", LeaveTypeLive.Show, :show
       live "/leave_types/:id/show/edit", LeaveTypeLive.Show, :edit
 
-      # live "/leave_balances", LeaveBalanceLive.Index, :index
-      # live "/leave_balances/new", LeaveBalanceLive.Index, :new
-      # live "/leave_balances/:id/edit", LeaveBalanceLive.Index, :edit
+      live "/leave_balances", LeaveBalanceLive.Index, :index
+      live "/leave_balances/new", LeaveBalanceLive.Index, :new
+      live "/leave_balances/:id/edit", LeaveBalanceLive.Index, :edit
+
+      live "/training_applications", TrainingApplicationLive.Index, :index
+      live "/training_applications/new", TrainingApplicationLive.Index, :new
+      live "/training_applications/:id/edit", TrainingApplicationLive.Index, :edit
+      live "/training_applications/:id", TrainingApplicationLive.Show, :show
+      live "/training_applications/:id/show/edit", TrainingApplicationLive.Show, :edit
+
+
     end
   end
 

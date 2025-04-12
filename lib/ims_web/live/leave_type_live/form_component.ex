@@ -8,7 +8,7 @@ defmodule ImsWeb.LeaveTypeLive.FormComponent do
     ~H"""
     <div>
       <.header>
-        {@title}
+        <%= @title %>
         <:subtitle>Use this form to manage leave_type records in your database.</:subtitle>
       </.header>
 

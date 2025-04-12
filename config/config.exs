@@ -43,7 +43,6 @@ config :ims, Ims.Mailer,
   tls_options: [verify: :verify_none],
   auth: :always
 
-
 # Configure esbuild (the version is required)
 config :esbuild,
   version: "0.17.11",
@@ -73,6 +72,21 @@ config :logger, :console,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+
+config :ims, Oban,
+  repo: Ims.Repo,
+  plugins: [
+    Oban.Plugins.Pruner,
+    {Oban.Plugins.Cron,
+     crontab: [
+       # Run on the 1st of every month at 1 AM
+       {"0 1 1 * *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "monthly"}},
+
+       # Run on Jan 1st every year at 1 AM
+       {"0 1 1 1 *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "year_end"}}
+     ]}
+  ],
+  queues: [default: 10]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
