@@ -38,7 +38,7 @@ defmodule Ims.Helpers do
   def humanize_datetime(datetime) when datetime in [nil, ""], do: nil
 
   def humanize_datetime(datetime) do
-    datetime |> Timex.format!("{Mshort} {0D}, {YYYY} at {h12}:{m}{am}")
+    datetime |> Timex.format!("{Mshort} {0D}, {YYYY}")
   end
 
   #  def generate_qr_code(qr_content) do

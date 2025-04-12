@@ -159,6 +159,17 @@
 
 
         <li>
+          <%= if "decommission_device" in @actions && @item.status==:assigned  do %>
+            <button phx-click={"return_device" <> to_string(@item.id)}
+              class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
+              >
+
+              Decommission Device
+            </button>
+            <% end %>
+        </li>
+
+        <li>
           <%= if "view_evidence" in @actions && @item.evidence do %>
             <button phx-click={"view_evidence" <> to_string(@item.id)}
 

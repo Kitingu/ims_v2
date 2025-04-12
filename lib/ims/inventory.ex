@@ -759,13 +759,47 @@ defmodule Ims.Inventory do
     end)
   end
 
-  def create_asset_log(%{"action" => "mark_as_lost", "asset_id" => asset_id} = log_attrs) do
+  def create_asset_log(%{"action" => "revoked", "asset_id" => asset_id} = log_attrs) do
     Repo.transaction(fn ->
       asset = get_asset!(asset_id)
 
       # Update asset status to lost
       asset
       |> Asset.changeset(%{status: :lost})
+      |> Repo.update!()
+
+      %AssetLog{}
+      |> AssetLog.changeset(log_attrs)
+      |> Repo.insert!()
+    end)
+  end
+
+  def create_asset_log(%{"action" => "lost", "asset_id" => asset_id} = log_attrs) do
+    IO.inspect(log_attrs, label: "log_attrs ------ lost")
+
+    Repo.transaction(fn ->
+      asset = get_asset!(asset_id)
+
+      # Update asset status and free assigned user/office
+      asset
+      |> Asset.changeset(%{status: :lost, user_id: nil, office_id: nil})
+      |> Repo.update!()
+
+      %AssetLog{}
+      |> AssetLog.changeset(log_attrs)
+      |> Repo.insert!()
+    end)
+  end
+
+  def create_asset_log(%{"action" => "decommissioned", "asset_id" => asset_id} = log_attrs) do
+    IO.inspect(log_attrs, label: "log_attrs ------ decommissioned")
+
+    Repo.transaction(fn ->
+      asset = get_asset!(asset_id)
+
+      # Update asset status and free assigned user/office
+      asset
+      |> Asset.changeset(%{status: :decommissioned, user_id: nil, office_id: nil})
       |> Repo.update!()
 
       %AssetLog{}

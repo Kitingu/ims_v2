@@ -116,7 +116,7 @@
 
 
 <.table id="assets" rows={@assets} resource="asset" current_user={@current_user}
-  actions={["assign_device", "view", "mark_as_lost" , "decommission" , "revoke" , "return_device" ]}>
+  actions={["assign_device", "view", "mark_as_lost" , "decommission_device" , "revoke" , "return_device" ]}>
   <:col :let={ asset} label="ID">{asset.id}</:col>
 
   <:col :let={asset} label="Name">

@@ -96,6 +96,7 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
         phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
+        onsubmit={"return confirm('Are you sure you want to #{action_value(@action)} this asset?');"}
       >
         <.input field={@form[:action]} type="hidden" value={action_value(@action)} />
 
@@ -118,7 +119,7 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
   defp action_value(:return_device), do: "returned"
   defp action_value(:revoke_device), do: "revoked"
   defp action_value(:decommission_device), do: "decommissioned"
-  defp action_value(:lost_device), do: "lost"
+  defp action_value(:mark_as_lost), do: "lost"
   defp action_value(_), do: "assigned"
 
   defp render_action_specific_fields(%{action: :assign_device} = assigns) do
@@ -152,11 +153,13 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     ~H"""
     <.input field={@form[:abstract_number]} type="text" label="Abstract number" />
     <.input field={@form[:performed_by_id]} type="hidden" value={@asset.user_id} />
+    <.input field={@form[:user_id]} type="hidden" value={@asset.user_id} || nil />
+    <.input field={@form[:office_id]} type="hidden" value={@asset.office_id} || nil />
+
+
 
     <div>
-      <label for="police_abstract" class="block text-sm font-medium text-gray-700">
-        Police Abstract
-      </label>
+      <label for="police_abstract_photo" class="block text-sm font-medium text-gray-700"> Police abstract photo</label>
       <div class="mt-1">
         <.live_file_input
           upload={@uploads.police_abstract_photo}
@@ -168,7 +171,7 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
           <.live_img_preview entry={entry} class="h-20" />
           <button
             type="button"
-            phx-click="remove-police-abstract"
+            phx-click="remove-police_abstract_photo"
             phx-value-ref={entry.ref}
             class="text-red-600 hover:text-red-800 text-sm"
           >
@@ -179,9 +182,7 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     </div>
 
     <div>
-      <label for="evidence" class="block text-sm font-medium text-gray-700">
-        Evidence
-      </label>
+      <label for="evidence" class="block text-sm font-medium text-gray-700">Evidence</label>
       <div class="mt-1">
         <.live_file_input
           upload={@uploads.evidence}
@@ -207,7 +208,7 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
 
   defp render_action_specific_fields(%{action: :return_device} = assigns) do
     ~H"""
-    <.input field={@form[:date_returned]} type="date" label="Date returned" />
+    <.input field={@form[:date_returned]} type="date" label="Date returned" max={Date.utc_today()} />
     <.input field={@form[:user_id]} type="hidden" value={@asset.user_id} || nil />
     <.input field={@form[:office_id]} type="hidden" value={@asset.office_id} || nil />
 
@@ -349,9 +350,8 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
         process_evidence_upload(socket, params)
 
       :mark_as_lost ->
-        params
-        |> process_police_abstract_upload(socket)
-        |> process_evidence_upload(socket)
+        params = process_police_abstract_upload(params, socket)
+        process_evidence_upload(socket, params)
 
       _ ->
         params
