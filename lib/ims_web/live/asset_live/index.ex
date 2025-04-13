@@ -193,27 +193,27 @@ defmodule ImsWeb.AssetLive.Index do
     {:noreply, push_navigate(socket, to: ~p"/assets/#{id}")}
   end
 
-  @impl true
-  def handle_event("select_changed", %{"department_id" => department_id}, socket) do
-    # apply filters to the asset list
-    filters = socket.assigns.filters
-    filters = Map.put(filters, "department_id", department_id)
+  # @impl true
+  # def handle_event("select_changed", %{"department_id" => department_id}, socket) do
+  #   # apply filters to the asset list
+  #   filters = socket.assigns.filters
+  #   filters = Map.put(filters, "department_id", department_id)
 
-    {:noreply,
-     socket
-     |> assign(:filters, filters)}
-  end
+  #   {:noreply,
+  #    socket
+  #    |> assign(:filters, filters)}
+  # end
 
-  @impl true
-  def handle_event("select_changed", %{"user_id" => user_id}, socket) do
-    # apply filters to the asset list
-    filters = socket.assigns.filters
-    filters = Map.put(filters, "user_id", user_id)
+  # @impl true
+  # def handle_event("select_changed", %{"user_id" => user_id}, socket) do
+  #   # apply filters to the asset list
+  #   filters = socket.assigns.filters
+  #   filters = Map.put(filters, "user_id", user_id)
 
-    {:noreply,
-     socket
-     |> assign(:filters, filters)}
-  end
+  #   {:noreply,
+  #    socket
+  #    |> assign(:filters, filters)}
+  # end
 
   @impl true
   def handle_event("close_modal", _, socket) do

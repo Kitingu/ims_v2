@@ -17,7 +17,6 @@ defmodule ImsWeb.TrainingApplicationLive.Index do
       |> assign(:selected_user, "")
       |> assign(:user_options, Enum.map(Accounts.list_users(), &{&1.first_name, &1.id}))
       |> assign(:page_title, "Listing Training applications")
-      |> IO.inspect(label: "socket")
 
     {:ok, socket}
   end

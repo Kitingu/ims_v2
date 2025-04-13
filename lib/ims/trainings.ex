@@ -19,6 +19,7 @@ defmodule Ims.Trainings do
   """
   def list_training_applications do
     Repo.all(TrainingApplication) |> Repo.preload(:user)
+    |> IO.inspect(label: "Training applications")
   end
 
   @doc """

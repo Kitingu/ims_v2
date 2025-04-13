@@ -10,7 +10,7 @@ defmodule ImsWeb.TrainingApplicationLive.FormComponent do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
         <:subtitle>Use this form to manage training_application records in your database.</:subtitle>
       </.header>
 
@@ -20,35 +20,32 @@ defmodule ImsWeb.TrainingApplicationLive.FormComponent do
         phx-target={@myself}
         phx-change="validate"
         phx-submit="save"
-        class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md"
       >
         <h2 class="text-xl font-semibold text-gray-700 mb-6">Training Application Form</h2>
 
-        <div phx-update="ignore" id="select_user_id">
+        <div class="relative" phx-update="ignore" id="select_user_container">
           <.input
             field={@form[:user_id]}
             type="select"
+            id="select_user_id"
             phx-hook="select2JS"
             options={@user_options}
-            phx-target={@myself}
-            style="width: 100%;"
+            data-phx-event="select_changed"
             data-placeholder="Select User"
-            data-input-for="user-id"
-            label="User"
-            prompt="Select User"
+            class="w-full hidden"
           />
         </div>
 
-        <div phx-update="ignore" id="select_ethnicity_id">
+        <div class="relative" phx-update="ignore" id="select_ethinity_container">
           <.input
             field={@form[:ethnicity_id]}
             type="select"
+            id="select_ethinity_id"
             phx-hook="select2JS"
             options={@ethnicities}
-            phx-target={@myself}
-            style="width: 100%;"
-            data-placeholder="Select Ethnicity"
-            data-input-for="ethnicity_id"
+            data-phx-event="select_changed"
+            data-placeholder="Select ethinity"
+            class="w-full hidden"
           />
         </div>
 
@@ -117,9 +114,12 @@ defmodule ImsWeb.TrainingApplicationLive.FormComponent do
         value -> value in [true, "true"]
       end
 
+    csrf_token = Plug.CSRFProtection.get_csrf_token()
+
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:csrf_token, csrf_token)
      |> assign(:user_options, Enum.map(Accounts.list_users(), &{&1.first_name, &1.id}))
      |> assign(ethnicities: Enum.map(Demographics.list_ethnicities(), &{&1.name, &1.id}))
      |> assign(:show_disability_details, show_disability_details)
@@ -131,9 +131,10 @@ defmodule ImsWeb.TrainingApplicationLive.FormComponent do
 
   @impl true
   def handle_event("validate", %{"training_application" => training_application_params}, socket) do
-    IO.inspect(training_application_params, label: "🔥 Running validate with params")
-
     # Ensure period_of_study is converted before validation
+
+    IO.inspect(training_application_params, label: "Training application params")
+
     training_application_params =
       Map.update(training_application_params, "period_of_study", nil, &convert_period_to_days/1)
 
@@ -143,38 +144,69 @@ defmodule ImsWeb.TrainingApplicationLive.FormComponent do
         training_application_params
       )
       |> Map.put(:action, :validate)
+      |> IO.inspect(label: "Changeset")
 
     {:noreply, assign(socket, form: to_form(changeset))}
   end
 
   @impl true
-  def handle_event("user_selected", %{"user_id" => user_id}, socket) do
-    IO.inspect(user_id, label: "user ud")
+  def handle_event(
+        "select_changed",
+        %{
+          "select_id" => "select_user_id",
+          "training_application[user_id]" => user_id
+        },
+        socket
+      ) do
+    IO.inspect(user_id, label: "Selected user_id")
 
-    updated_form =
-      socket.assigns.form
-      |> Map.update!(:params, fn params -> Map.put(params, "user_id", user_id) end)
+    # Merge into form params
+    updated_params =
+      socket.assigns.form.params
+      |> Map.put("user_id", user_id)
+
+    # Re-validate the changeset using updated params
+    changeset =
+      socket.assigns.training_application
+      |> Trainings.change_training_application(updated_params)
 
     {:noreply,
      socket
-     |> assign(:selected_user, user_id)
-     |> assign(:form, updated_form)}
+     |> assign(:form, to_form(changeset))
+     |> assign(:selected_user, user_id)}
   end
 
   @impl true
-  def handle_event("ethnicity_id", %{"ethnicity_id" => ethnicity_id}, socket) do
-    updated_form =
-      socket.assigns.form
-      |> Map.update!(:params, fn params -> Map.put(params, "ethnicity_id", ethnicity_id) end)
+  def handle_event(
+        "select_changed",
+        %{
+          "select_id" => "select_ethinity_id",
+          "training_application[ethnicity_id]" => ethnicity_id
+        },
+        socket
+      ) do
+    IO.inspect(ethnicity_id, label: "Selected ethnicity_id")
+
+    updated_params =
+      socket.assigns.form.params
+      |> Map.put("ethnicity_id", ethnicity_id)
+
+    changeset =
+      socket.assigns.training_application
+      |> Trainings.change_training_application(updated_params)
 
     {:noreply,
      socket
-     |> assign(:selected_ethnicity, ethnicity_id)
-     |> assign(:form, updated_form)}
+     |> assign(:form, to_form(changeset))
+     |> assign(:selected_ethnicity, ethnicity_id)}
   end
 
   @impl true
-  def handle_event("toggle_disability", %{"training_application" => %{"disability" => disability}}, socket) do
+  def handle_event(
+        "toggle_disability",
+        %{"training_application" => %{"disability" => disability}},
+        socket
+      ) do
     # Convert the disability value to a boolean
     disability_boolean = disability in ["true", true]
 

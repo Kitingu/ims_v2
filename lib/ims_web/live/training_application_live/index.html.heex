@@ -81,7 +81,7 @@
           <td class="px-4 py-3"><%= training_application.authority_reference %></td>
           <td class="px-4 py-3"><%= training_application.memo_reference %></td>
           <td class="px-4 py-3 flex justify-center gap-4">
-            <.link patch={~p"/training_applications/#{training_application}/edit"}
+            <.link patch={~p"/hr/training_applications/#{training_application}/edit"}
               class="text-blue-600 hover:underline">
               Edit
             </.link>
@@ -97,8 +97,8 @@
 </div>
 
 <!-- Modal -->
-<.modal :if={@live_action in [:new, :edit]} id="training_application-modal" show on_cancel={JS.patch(~p"/training_applications")}>
+<.modal :if={@live_action in [:new, :edit]} id="training_application-modal" show on_cancel={JS.patch(~p"/hr/training_applications")}>
   <.live_component module={ImsWeb.TrainingApplicationLive.FormComponent} id={@training_application.id || :new}
     title={@page_title} action={@live_action} training_application={@training_application}
-    patch={~p"/training_applications"} />
+    patch={~p"/hr/training_applications"} />
 </.modal>
