@@ -121,10 +121,86 @@ defmodule Ims.Trainings.TrainingApplication do
 
     case format do
       :csv -> generate_csv(applications)
-      :excel -> generate_excel_report(applications)
+      :excel -> generate_excel_with_logo(applications)
       _ -> {:error, "Unsupported format"}
     end
   end
+
+  defp generate_excel_with_logo(applications) do
+    logo_url = Ims.Settings.Setting.get_setting("logo_url")
+
+    logo_temp_path = "/tmp/excel_logo.png"
+    json_path = "/tmp/training_data.json"
+    output_path = "/tmp/training_applications.xlsx"
+    script_path = "assets/js/excel_generator.js"
+
+    # Download the logo
+    case :httpc.request(:get, {to_charlist(logo_url), []}, [], [{:body_format, :binary}]) do
+      {:ok, {{_, 200, _}, _headers, body}} -> File.write!(logo_temp_path, body)
+      {:error, reason} -> IO.inspect(reason, label: "Failed to fetch logo"); {:error, "Failed to download logo"}
+    end
+
+    # Define custom order of columns
+    ordered_keys = [
+      "ID",
+      "First Name",
+      "Last Name",
+      "Personal Number",
+      "Designation",
+      "Department",
+      "Job Group",
+      "Institution",
+      "Program Title",
+      "Course Approved",
+      "Financial Year",
+      "Quarter",
+      "Period of Study (Days)",
+      "Costs (KSH)",
+      "Memo Reference",
+      "Authority Reference",
+      "Status"
+    ]
+
+    # Transform and sort data
+    data =
+      applications
+      |> Enum.sort_by(& &1.user.last_name) # 🔃 sort by last name
+      |> Enum.map(fn app ->
+        %{
+          "ID" => app.id,
+          "First Name" => app.user.first_name |> String.capitalize(),
+          "Last Name" => app.user.last_name |> String.capitalize(),
+          "Personal Number" => app.user.personal_number,
+          "Designation" => app.user.designation,
+          "Job Group" => app.user.job_group_id || "N/A",
+          "Department" => app.user.department.name || "N/A",
+          "Institution" => app.institution,
+          "Program Title" => app.program_title,
+          "Course Approved" => app.course_approved,
+          "Financial Year" => app.financial_year,
+          "Quarter" => app.quarter,
+          "Period of Study (Days)" => app.period_of_study,
+          "Costs (KSH)" => "KES #{Decimal.to_string(app.costs)}",
+          "Memo Reference" => app.memo_reference,
+          "Authority Reference" => app.authority_reference,
+          "Status" => app.status
+        }
+      end)
+      |> Enum.map(fn row ->
+        # 🔄 Ensure final structure follows your custom column order
+        Enum.into(ordered_keys, %{}, fn key -> {key, Map.get(row, key)} end)
+      end)
+
+    # Write JSON
+    File.write!(json_path, Jason.encode!(data))
+
+    # Run Node
+    case System.cmd("node", [script_path, json_path, output_path, logo_temp_path]) do
+      {_, 0} -> File.read(output_path)
+      {error_msg, _} -> {:error, error_msg}
+    end
+  end
+
 
   # ✅ Generate CSV Report
   defp generate_csv(applications) do

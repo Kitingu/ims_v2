@@ -46,54 +46,25 @@
 </div>
 
 <!-- Table Container -->
-<div class="overflow-x-auto bg-white shadow-md rounded-lg mt-6 w-full max-w-7xl mx-auto p-4">
-  <table class="w-full border border-gray-200 rounded-lg">
-    <thead class="bg-gray-100 text-gray-700 text-left">
-      <tr class="border-b border-gray-200">
-        <th class="px-4 py-3">ID</th>
-        <th class="px-4 py-3">Staff Name</th>
-        <th class="px-4 py-3">Staff Number</th>
-        <th class="px-4 py-3">Course Approved</th>
-        <th class="px-4 py-3">Institution</th>
-        <th class="px-4 py-3">Program Title</th>
-        <th class="px-4 py-3">Financial Year</th>
-        <th class="px-4 py-3">Quarter</th>
-        <th class="px-4 py-3">Period</th>
-        <th class="px-4 py-3">Costs</th>
-        <th class="px-4 py-3">Authority Reference</th>
-        <th class="px-4 py-3">Memo Reference</th>
-        <th class="px-4 py-3 text-center">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <%= for training_application <- @training_applications do %>
-        <tr class="border-b hover:bg-gray-50 text-gray-700">
-          <td class="px-4 py-3"><%= training_application.id %></td>
-          <td class="px-4 py-3"><%= training_application.user.first_name %></td>
-          <td class="px-4 py-3"><%= training_application.user.personal_number %></td>
-          <td class="px-4 py-3"><%= training_application.course_approved %></td>
-          <td class="px-4 py-3"><%= training_application.institution %></td>
-          <td class="px-4 py-3"><%= training_application.program_title %></td>
-          <td class="px-4 py-3"><%= training_application.financial_year %></td>
-          <td class="px-4 py-3"><%= training_application.quarter %></td>
-          <td class="px-4 py-3"><%= training_application.period_of_study |> days_to_period() |> elem(0) %></td>
-          <td class="px-4 py-3"><%= training_application.costs %></td>
-          <td class="px-4 py-3"><%= training_application.authority_reference %></td>
-          <td class="px-4 py-3"><%= training_application.memo_reference %></td>
-          <td class="px-4 py-3 flex justify-center gap-4">
-            <.link patch={~p"/hr/training_applications/#{training_application}/edit"}
-              class="text-blue-600 hover:underline">
-              Edit
-            </.link>
-            <.link phx-click={JS.push("delete", value: %{id: training_application.id}) |> hide("##{training_application.id}")}
-              data-confirm="Are you sure?" class="text-red-600 hover:underline">
-              Delete
-            </.link>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+<div class="mt-6">
+  <.table id="training-applications" 
+    class="w-full bg-white shadow-md rounded-lg overflow-hidden"
+    resource="training_applications" current_user={@current_user}
+    actions={["edit", "delete"]}
+  rows={@training_applications}>
+    <:col :let={t} label="ID"><%= t.id %></:col>
+    <:col :let={t} label="Staff Name"><%= t.user.first_name %></:col>
+    <:col :let={t} label="Staff Number"><%= t.user.personal_number %></:col>
+    <:col :let={t} label="Course Approved"><%= t.course_approved %></:col>
+    <:col :let={t} label="Institution"><%= t.institution %></:col>
+    <:col :let={t} label="Program Title"><%= t.program_title %></:col>
+    <:col :let={t} label="Financial Year"><%= t.financial_year %></:col>
+    <:col :let={t} label="Period"><%= t.period_of_study |> days_to_period() |> elem(0) %></:col>
+    <:col :let={t} label="Costs"><%= t.costs %></:col>
+
+
+  </.table>
+
 </div>
 
 <!-- Modal -->

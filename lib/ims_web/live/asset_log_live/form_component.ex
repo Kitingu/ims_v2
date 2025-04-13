@@ -11,6 +11,8 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
 
   @impl true
   def mount(socket) do
+    IO.inspect(socket, label: "Mount socket")
+
     socket =
       socket
       |> allow_upload(:police_abstract_photo,
@@ -38,6 +40,8 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     offices = Ims.Inventory.list_offices() |> Enum.map(&{&1.name, &1.id})
     asset_log = %Ims.Inventory.AssetLog{}
 
+    IO.inspect(assigns, label: "Update assigns")
+
     {:ok,
      socket
      |> assign(assigns)
@@ -55,6 +59,8 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
 
   @impl true
   def update(%{asset_log: asset_log} = assigns, socket) do
+    IO.inspect(assigns, label: "Update assigns")
+
     {:ok,
      socket
      |> assign(assigns)
@@ -156,10 +162,10 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     <.input field={@form[:user_id]} type="hidden" value={@asset.user_id} || nil />
     <.input field={@form[:office_id]} type="hidden" value={@asset.office_id} || nil />
 
-
-
     <div>
-      <label for="police_abstract_photo" class="block text-sm font-medium text-gray-700"> Police abstract photo</label>
+      <label for="police_abstract_photo" class="block text-sm font-medium text-gray-700">
+        Police abstract photo
+      </label>
       <div class="mt-1">
         <.live_file_input
           upload={@uploads.police_abstract_photo}
@@ -212,6 +218,33 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     <.input field={@form[:user_id]} type="hidden" value={@asset.user_id} || nil />
     <.input field={@form[:office_id]} type="hidden" value={@asset.office_id} || nil />
 
+    <div>
+      <label for="evidence" class="block text-sm font-medium text-gray-700">Evidence</label>
+      <div class="mt-1">
+        <.live_file_input
+          upload={@uploads.evidence}
+          class="block w-full px-3 py-2 text-gray-900 border border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        />
+      </div>
+      <%= for entry <- @uploads.evidence.entries do %>
+        <div class="mt-2">
+          <.live_img_preview entry={entry} class="h-20" />
+          <button
+            type="button"
+            phx-click="remove-evidence"
+            phx-value-ref={entry.ref}
+            class="text-red-600 hover:text-red-800 text-sm"
+          >
+            Remove
+          </button>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp render_action_specific_fields(%{action: :decommission_device} = assigns) do
+    ~H"""
     <div>
       <label for="evidence" class="block text-sm font-medium text-gray-700">Evidence</label>
       <div class="mt-1">
@@ -351,6 +384,9 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
 
       :mark_as_lost ->
         params = process_police_abstract_upload(params, socket)
+        process_evidence_upload(socket, params)
+
+      :decommission_device ->
         process_evidence_upload(socket, params)
 
       _ ->

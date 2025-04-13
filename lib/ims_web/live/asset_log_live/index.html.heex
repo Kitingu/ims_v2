@@ -1,5 +1,7 @@
 <div class="p-6">
   <!-- Tabs Navigation -->
+
+  <h1 class="text-2xl font-semibold text-gray-800"> Asset Movement History</h1>
   <div class="flex space-x-4 border-b">
     <%= for tab <- ["assigned", "returned" , "revoked" , "lost" , "decommissioned" ] do %>
       <button phx-click="change_tab" phx-value-tab={tab}
@@ -21,8 +23,15 @@
       <% "assigned" -> %>
         <.table id="assigned_asset_logs" rows={@asset_logs} resource="asset_logs" current_user={@current_user}
           actions={[]}>
-          <:col :let={asset_log} label="Action">
-            <%= asset_log.action %>
+
+          <:col :let={asset_log} label="Asset Name">
+            <span class="inline-block max-w-[150px] truncate text-gray-700" title={asset_log.asset.asset_name.name}>
+              <%= asset_log.asset.asset_name.name %>
+            </span>
+          </:col>
+
+          <:col :let={asset_log} label="Serial Number">
+            <%= asset_log.asset.serial_number %>
           </:col>
 
           <:col :let={asset_log} label="Remarks">
@@ -58,6 +67,16 @@
           <.table id="returned_asset_logs" rows={@asset_logs} resource="asset_logs" current_user={@current_user}
             actions={[]}>
 
+            <:col :let={asset_log} label="Asset Name">
+              <span class="inline-block max-w-[150px] truncate text-gray-700" title={asset_log.asset.asset_name.name}>
+                <%= asset_log.asset.asset_name.name %>
+              </span>
+            </:col>
+  
+            <:col :let={asset_log} label="Serial Number">
+              <%= asset_log.asset.serial_number %>
+            </:col>
+
 
             <:col :let={asset_log} label="Assigned to ">
               <%= if asset_log.user_id do %>
@@ -90,6 +109,16 @@
           <% "revoked" -> %>
             <.table id="revoked_asset_logs" rows={@asset_logs} resource="asset_logs" current_user={@current_user}
               actions={[]}>
+              <:col :let={asset_log} label="Asset Name">
+                <span class="inline-block max-w-[150px] truncate text-gray-700" title={asset_log.asset.asset_name.name}>
+                  <%= asset_log.asset.asset_name.name %>
+                </span>
+              </:col>
+    
+              <:col :let={asset_log} label="Serial Number">
+                <%= asset_log.asset.serial_number %>
+              </:col>
+
               <:col :let={asset_log} label="Action">
                 <%= asset_log.action %>
               </:col>
@@ -111,7 +140,7 @@
                 <%= asset_log.performed_by.first_name %> - <%= asset_log.performed_by.designation %>
               </:col>
               <:col :let={asset_log} label="Performed At">
-                <%= asset_log.performed_at %>
+                <%= Ims.Helpers.humanize_datetime(asset_log.performed_at) %>
               </:col>
             </.table>
 
@@ -119,6 +148,17 @@
             <% "lost" -> %>
             <.table id="revoked_asset_logs" rows={@asset_logs} resource="asset_logs" current_user={@current_user}
               actions={[]}>
+
+              <:col :let={asset_log} label="Asset Name">
+                <span class="inline-block max-w-[150px] truncate text-gray-700" title={asset_log.asset.asset_name.name}>
+                  <%= asset_log.asset.asset_name.name %>
+                </span>
+              </:col>
+    
+              <:col :let={asset_log} label="Serial Number">
+                <%= asset_log.asset.serial_number %>
+              </:col>
+
               <:col :let={asset_log} label="Action">
                 <%= asset_log.action %>
               </:col>
@@ -140,13 +180,23 @@
                 <%= asset_log.performed_by.first_name %> - <%= asset_log.performed_by.designation %>
               </:col>
               <:col :let={asset_log} label="Performed At">
-                <%= asset_log.performed_at %>
+                <%= Ims.Helpers.humanize_datetime(asset_log.performed_at) %>
               </:col>
             </.table>
 
             <% _ -> %>
               <.table id="default_asset_logs" rows={@asset_logs} resource="asset_logs" current_user={@current_user}
                 actions={[]}>
+
+                <:col :let={asset_log} label="Asset Name">
+                  <span class="inline-block max-w-[150px] truncate text-gray-700" title={asset_log.asset.asset_name.name}>
+                    <%= asset_log.asset.asset_name.name %>
+                  </span>
+                </:col>
+      
+                <:col :let={asset_log} label="Serial Number">
+                  <%= asset_log.asset.serial_number %>
+                </:col>
                 <:col :let={asset_log} label="Action">
                   <%= asset_log.action %>
                 </:col>
@@ -161,7 +211,7 @@
                 </:col>
 
                 <:col :let={asset_log} label="Performed At">
-                  <%= asset_log.performed_at %>
+                  <%= Ims.Helpers.humanize_datetime(asset_log.performed_at) %>
                 </:col>
               </.table>
               <% end %>

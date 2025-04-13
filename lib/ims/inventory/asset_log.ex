@@ -139,14 +139,18 @@ defmodule Ims.Inventory.AssetLog do
         end
       end)
 
-    from a in query,
+      from a in query,
       preload: [
-        :asset,
         :user,
         :office,
         :approved_by,
-        :performed_by
+        :performed_by,
+        asset: [
+          :category,
+          :asset_name
+        ]
       ]
+
   end
 end
 

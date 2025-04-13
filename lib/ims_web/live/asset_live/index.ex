@@ -176,15 +176,13 @@ defmodule ImsWeb.AssetLive.Index do
   @impl true
   def handle_event("decommission_device" <> id, _, socket) do
     asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)
-    IO.inspect("Marking as lost")
-    IO.inspect(asset, label: "Asset")
 
     {:noreply,
      socket
      |> assign(:asset, asset)
      |> assign(:show_modal, true)
-     |> assign(:page_title, "Mark Asset as Lost")
-     |> assign(:live_action, :mark_as_lost)}
+     |> assign(:page_title, "Decommission Asset")
+     |> assign(:live_action, :decommission_device)}
   end
 
   @impl true

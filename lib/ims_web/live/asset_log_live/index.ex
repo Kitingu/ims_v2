@@ -70,6 +70,37 @@ defmodule ImsWeb.AssetLogLive.Index do
      |> assign(:asset_logs, asset_logs)}
   end
 
+  def handle_event("resize_table", %{"size" => size}, socket) do
+    asset_logs =
+      fetch_records(socket.assigns.filters, page_size: String.to_integer(size)) |> IO.inspect()
+
+    {:noreply, assign(socket, asset_logs: asset_logs)}
+  end
+
+  def handle_event("render_page", %{"page" => page}, socket) do
+    IO.inspect("page: #{page}")
+
+    new_page =
+      case page do
+        "next" -> socket.assigns.page + 1
+        "previous" -> socket.assigns.page - 1
+        # Convert string to integer for other cases
+        _ -> String.to_integer(page)
+      end
+
+    IO.inspect("new_page: #{new_page}")
+
+    opts = Keyword.merge(@paginator_opts, page: new_page)
+    asset_logs = fetch_records(socket.assigns.filters, opts)
+
+    socket =
+      socket
+      |> assign(:asset_logs, asset_logs)
+
+    # No need for String.to_integer here
+    {:noreply, socket}
+  end
+
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     asset_log = Inventory.get_asset_log!(id)

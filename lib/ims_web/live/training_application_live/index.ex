@@ -56,8 +56,11 @@ defmodule ImsWeb.TrainingApplicationLive.Index do
   end
 
   def handle_event("filter_user", %{"user_id" => user_id}, socket) do
+    IO.inspect(user_id, label: "user_id")
     filters = if user_id == "", do: %{}, else: %{"user_id" => user_id}
-    applications = Ims.Trainings.TrainingApplication.search(filters)
+    |> IO.inspect(label: "filters")
+
+    applications = Ims.Trainings.TrainingApplication.search(filters) |> Ims.Repo.paginate()
     {:noreply, assign(socket, training_applications: applications, selected_user: user_id)}
   end
 
@@ -95,8 +98,11 @@ defmodule ImsWeb.TrainingApplicationLive.Index do
     end
   end
 
-
-
+  @impl true
+  def handle_event("edit" <> id, _, socket) do
+    training_application = Trainings.get_training_application!(id)
+    {:noreply, assign(socket, training_application: training_application, live_action: :edit)}
+  end
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
