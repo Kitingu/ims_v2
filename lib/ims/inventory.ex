@@ -761,13 +761,38 @@ defmodule Ims.Inventory do
 
   def create_asset_log(%{"action" => "revoked", "asset_id" => asset_id} = log_attrs) do
     Repo.transaction(fn ->
-      asset = get_asset!(asset_id)
+      asset = get_asset!(asset_id) |> Repo.preload([:user, :office])
 
-      # Update asset status to lost
-      asset
-      |> Asset.changeset(%{status: :lost})
-      |> Repo.update!()
+      case log_attrs["revoke_type"] do
+        "permanent" ->
+          # Permanent revocation - make available for new assignment
+          asset
+          |> Asset.changeset(%{
+            status: :available,
+            # Clear current assignment
+            user_id: nil,
+            # Clear office assignment
+            office_id: nil,
+            # Clear any revocation date
+            revoked_until: nil
+          })
+          |> Repo.update!()
 
+        "temporary" ->
+          # Temporary revocation - keep assigned but mark as unavailable
+          asset
+          |> Asset.changeset(%{
+            status: :revoked_temporarily,
+            # Required field
+            revoked_until: log_attrs["revoked_until"]
+          })
+          |> Repo.update!()
+
+        _ ->
+          raise "Invalid revoke_type"
+      end
+
+      # Create the audit log
       %AssetLog{}
       |> AssetLog.changeset(log_attrs)
       |> Repo.insert!()
