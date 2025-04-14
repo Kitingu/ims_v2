@@ -174,6 +174,20 @@ defmodule ImsWeb.AssetLive.Index do
   end
 
   @impl true
+  def handle_event("revoke_device" <> id, _, socket) do
+    asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)
+    IO.inspect("Revoke assets")
+    IO.inspect(asset, label: "Asset")
+
+    {:noreply,
+     socket
+     |> assign(:asset, asset)
+     |> assign(:show_modal, true)
+     |> assign(:page_title, "Revoke Asset")
+     |> assign(:live_action, :revoke_device)}
+  end
+
+  @impl true
   def handle_event("decommission_device" <> id, _, socket) do
     asset = Inventory.get_asset!(id) |> Ims.Repo.preload(:asset_name)
 

@@ -50,6 +50,8 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
      |> assign(:users, users)
      |> assign(:asset_log, asset_log)
      |> assign(:offices, offices)
+     # Add this line
+     |> assign(:revoke_type, nil)
      |> assign(:current_user, assigns.current_user)
      |> assign(:assign_to, "user")
      |> assign_new(:form, fn ->
@@ -270,12 +272,20 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     """
   end
 
-  defp render_action_specific_fields(
-         %{form: %{source: %{changes: %{action: "revoked"}}}} = assigns
-       ) do
+  defp render_action_specific_fields(%{action: :revoke_device} = assigns) do
     ~H"""
-    <.input field={@form[:revoke_type]} type="text" label="Revoke type" />
-    <.input field={@form[:revoked_until]} type="date" label="Revoked until" />
+    <.input
+      field={@form[:revoke_type]}
+      type="select"
+      label="Revoke type"
+      options={[{"Permanent", "permanent"}, {"Temporary", "temporary"}]}
+      phx-change="revoke_type_changed"
+      phx-target={@myself}
+    />
+
+    <%= if @revoke_type == "temporary" || @form[:revoke_type].value == "temporary" do %>
+      <.input field={@form[:revoked_until]} type="date" label="Revoked until" />
+    <% end %>
     """
   end
 
@@ -285,6 +295,20 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
   def handle_event("validate", %{"asset_log" => asset_log_params}, socket) do
     changeset = Inventory.change_asset_log(socket.assigns.asset_log, asset_log_params)
     {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
+  end
+
+  # @impl true
+  # def handle_event("revoke_type_changed", %{"revoke_type" => revoke_type}, socket) do
+  #   {:noreply, assign(socket, :revoke_type, revoke_type)}
+  # end
+
+  @impl true
+  def handle_event(
+        "revoke_type_changed",
+        %{"asset_log" => %{"revoke_type" => revoke_type}},
+        socket
+      ) do
+    {:noreply, assign(socket, :revoke_type, revoke_type)}
   end
 
   @impl true

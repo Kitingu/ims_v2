@@ -151,7 +151,7 @@
     action={@live_action} asset={@asset} patch={~p"/assets"} />
 </.modal>
 
-<.modal :if={@live_action in [:assign_device,:return_device, :decommission_device, :mark_as_lost ]} id="assign-device-modal"
+<.modal :if={@live_action in [:assign_device, :return_device, :revoke_device, :decommission_device, :mark_as_lost ]} id="assign-device-modal"
   show={@show_modal} on_cancel={JS.push("close_modal")}>
   <div class="p-6">
     <h3 class="text-lg font-semibold leading-6 text-gray-900">
