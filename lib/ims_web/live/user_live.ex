@@ -35,9 +35,13 @@ defmodule ImsWeb.UserLive do
     {:noreply, assign(socket, show_modal: true, modal_user_id: String.to_integer(user_id))}
   end
 
-  def handle_event("close_modal", _, socket) do
-    {:noreply, assign(socket, show_modal: false, modal_user_id: nil)}
+  def handle_event("close_modal", _params, socket) do
+    {:noreply, assign(socket, live_action: nil, live_params: nil)}
   end
+
+  # def handle_event("close_modal", _, socket) do
+  #   {:noreply, assign(socket, show_modal: false, modal_user_id: nil)}
+  # end
 
   def handle_event("clear_flash", _params, socket) do
     {:noreply, assign(socket, :message, nil)}
@@ -90,7 +94,7 @@ defmodule ImsWeb.UserLive do
 
       <%= if @message do %>
         <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded flex justify-between items-center">
-          <p><%= @message %></p>
+          <p>{@message}</p>
           <button
             phx-click="clear_flash"
             class="ml-4 text-green-700 hover:text-green-900 font-bold rounded"
@@ -108,45 +112,56 @@ defmodule ImsWeb.UserLive do
         actions={["edit", "assign_role"]}
       >
         <:col :let={user} label="ID">
-          <%= user.id %>
+          {user.id}
         </:col>
 
         <:col :let={user} label="Staff Number">
-          <%= user.personal_number %>
+          {user.personal_number}
         </:col>
         <:col :let={user} label=" Name">
-          <%= user.first_name %>  <%= user.last_name %>
+          {user.first_name} {user.last_name}
         </:col>
 
         <:col :let={user} label="Phone">
-          <%= user.msisdn %>
+          {user.msisdn}
         </:col>
-
 
         <:col :let={user} label="Designation">
-          <%= user.designation %>
+          {user.designation}
         </:col>
-
 
         <:col :let={user} label="Department">
-          <%= user.department.name %>
+          {user.department.name}
         </:col>
-
 
         <:col :let={user} label="Role">
           <%= if Enum.empty?(user.roles) do %>
             No Role
           <% else %>
-            <%= Enum.map(user.roles, & &1.name) |> Enum.join(", ") %>
+            {Enum.map(user.roles, & &1.name) |> Enum.join(", ")}
           <% end %>
         </:col>
       </.table>
 
       <%= if @live_action == "UserRegistrationLive" do %>
-        <%= live_render(@socket, ImsWeb.UserRegistrationLive,
-          id: "user-registration-#{@live_params["user_id"] || "new"}",
-          session: %{"user_id" => @live_params["user_id"]}
-        ) %>
+        <div
+          class="fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center"
+          phx-click="close_modal"
+        >
+          <div
+            phx-click-away="close_modal"
+            phx-window-keydown="close_modal"
+            phx-key="escape"
+            class="relative bg-white w-full max-w-3xl rounded-lg shadow-xl overflow-y-auto max-h-[90vh] p-6"
+            phx-capture-click
+          >
+            {live_render(@socket, ImsWeb.UserRegistrationLive,
+              id: "user-registration-#{@live_params["user_id"] || "new"}",
+              session: %{"user_id" => @live_params["user_id"]},
+              container: {:div, class: "w-full"}
+            )}
+          </div>
+        </div>
       <% end %>
 
       <%= if @show_modal do %>
@@ -161,7 +176,7 @@ defmodule ImsWeb.UserLive do
                 <select name="role" id="role" class="w-full px-3 py-2 border rounded">
                   <%= for role <- @roles do %>
                     <option value={role.id}>
-                      <%= role.name %>
+                      {role.name}
                     </option>
                   <% end %>
                 </select>

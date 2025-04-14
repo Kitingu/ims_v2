@@ -24,7 +24,7 @@ defmodule Ims.Accounts do
 
   """
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email) |> Repo.preload(:roles, :leave_balances)
+    Repo.get_by(User, email: email)
   end
 
   @doc """
@@ -41,7 +41,7 @@ defmodule Ims.Accounts do
   """
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email) |> Repo.preload(:roles, :leave_balances)
+    user = Repo.get_by(User, email: email)
     if User.valid_password?(user, password), do: user
   end
 
@@ -59,8 +59,7 @@ defmodule Ims.Accounts do
       ** (Ecto.NoResultsError)
 
   """
-  def get_user!(id), do: Repo.get!(User, id) |> Repo.preload(:roles, :leave_balances)
-
+  def get_user!(id), do: Repo.get!(User, id) |> Repo.preload([:roles, :department, :job_group])
   ## User registration
 
   @doc """
@@ -552,11 +551,6 @@ defmodule Ims.Accounts do
     Repo.all(Ims.Accounts.Departments)
   end
 
-  def create_departments(attrs \\ %{}) do
-    %Ims.Accounts.Departments{}
-    |> Ims.Accounts.Departments.changeset(attrs)
-    |> Repo.insert()
-  end
 
   def change_departments(%Ims.Accounts.Departments{} = departments, attrs \\ %{}) do
     Ims.Accounts.Departments.changeset(departments, attrs)

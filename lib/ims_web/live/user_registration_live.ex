@@ -41,7 +41,7 @@ defmodule ImsWeb.UserRegistrationLive do
   <.input
     field={@form[:gender]}
     type="select"
-    label="Job Group"
+    label="Gender"
     options={[
       {:Male, "Male"},
       {:Female, "Female"}

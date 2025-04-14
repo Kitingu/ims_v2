@@ -90,7 +90,6 @@ defmodule Ims.Accounts.User do
     |> validate_email(opts)
     |> validate_msisdn()
     |> validate_inclusion(:gender, ["Male", "Female"])
-    |> put_assoc(:leave_balances, default_leave_balances())
     |> unique_constraint(:msisdn, name: "unique_msisdn")
     |> validate_password(opts)
     # |> validate_password_confirmation()
