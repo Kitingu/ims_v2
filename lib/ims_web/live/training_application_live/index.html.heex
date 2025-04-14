@@ -50,14 +50,18 @@
   <.table id="training-applications" 
     class="w-full bg-white shadow-md rounded-lg overflow-hidden"
     resource="training_applications" current_user={@current_user}
-    actions={["edit", "delete"]}
+    actions={["view", "edit"]}
   rows={@training_applications}>
     <:col :let={t} label="ID"><%= t.id %></:col>
-    <:col :let={t} label="Staff Name"><%= t.user.first_name %></:col>
     <:col :let={t} label="Staff Number"><%= t.user.personal_number %></:col>
-    <:col :let={t} label="Course Approved"><%= t.course_approved %></:col>
-    <:col :let={t} label="Institution"><%= t.institution %></:col>
-    <:col :let={t} label="Program Title"><%= t.program_title %></:col>
+    <:col :let={t} label="Staff Name"><%= t.user.first_name %></:col>
+    <:col :let={t} label="Approval Memo"><%= t.course_approved %></:col>
+    <:col :let={t} label="Institution">
+      <div class="max-w-[250px] break-words whitespace-normal"><%= t.institution %></div>
+    </:col>
+    <:col :let={t} label="Program">
+  <div class="max-w-[250px] break-words whitespace-normal"><%= t.program_title %></div>
+</:col>
     <:col :let={t} label="Financial Year"><%= t.financial_year %></:col>
     <:col :let={t} label="Period"><%= t.period_of_study |> days_to_period() |> elem(0) %></:col>
     <:col :let={t} label="Costs"><%= t.costs %></:col>

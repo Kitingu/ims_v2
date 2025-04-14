@@ -152,9 +152,10 @@ defmodule Ims.Leave.LeaveApplication do
   # Validate Annual Leave Rules
   defp validate_annual_leave(changeset) do
     user_id = get_field(changeset, :user_id)
-    leave_taken = get_annual_leave_taken(user_id)
+    days_requested = get_field(changeset, :days_requested) || 0
+    leave_taken = get_annual_leave_taken(user_id) || 0
 
-    if leave_taken + get_field(changeset, :days_requested) > 30 do
+    if leave_taken + days_requested > 30 do
       add_error(changeset, :days_requested, "Cannot exceed 30 days of annual leave in a year")
     else
       changeset
@@ -244,7 +245,49 @@ defmodule Ims.Leave.LeaveApplication do
   def is_holiday?(date) when is_nil(date), do: false
 
   def is_holiday?(date) do
-    Enum.any?(@holidays, fn {d, m} -> date.day == d and date.month == m end)
+    # 1. Check hardcoded holidays (day/month tuples)
+    hardcoded_match? =
+      Enum.any?(@holidays, fn {day, month} ->
+        date.day == day && date.month == month
+      end)
+
+    # 2. Check dynamic holidays from DB (comma-separated "DD-MM-YYYY")
+    db_match? =
+      case Ims.Settings.Setting.get_setting("holidays") do
+        nil ->
+          false
+
+        holidays_string ->
+          holidays_string
+          |> String.split(",")
+          |> Enum.map(&String.trim/1)
+          |> Enum.any?(fn date_str ->
+            case parse_date(date_str) do
+              {:ok, holiday_date} -> Date.compare(date, holiday_date) == :eq
+              _ -> false
+            end
+          end)
+      end
+
+    hardcoded_match? or db_match?
+  end
+
+  # Helper to parse "DD-MM-YYYY" (returns {:ok, Date} or :error)
+  defp parse_date(date_str) do
+    case String.split(date_str, "-") do
+      [day, month, year] ->
+        with {day, ""} <- Integer.parse(day),
+             {month, ""} <- Integer.parse(month),
+             {year, ""} <- Integer.parse(year),
+             {:ok, date} <- Date.new(year, month, day) do
+          {:ok, date}
+        else
+          _ -> :error
+        end
+
+      _ ->
+        :error
+    end
   end
 
   def compute_days_requested(changeset) do
@@ -331,14 +374,20 @@ defmodule Ims.Leave.LeaveApplication do
              get(leave_application_id),
            %LeaveBalance{remaining_days: remaining_days} = leave_balance <-
              Repo.get_by(LeaveBalance, user_id: user_id, leave_type_id: leave_type_id) do
-        # Ensure the user has enough leave balance
-        if Decimal.to_integer(remaining_days) < days_requested do
-          {:error, "Insufficient leave balance"}
+
+        # Convert all values to Decimal for safe comparison
+        requested_days = Decimal.new(days_requested)
+        current_balance = Decimal.new(remaining_days)
+
+        # Validate sufficient balance
+        if Decimal.compare(current_balance, requested_days) == :lt do
+          Repo.rollback("Insufficient leave balance")
         end
 
-        # Deduct leave days and update balance
-        new_balance = Decimal.sub(remaining_days, days_requested)
+        # Calculate new balance (as Decimal)
+        new_balance = Decimal.sub(current_balance, requested_days)
 
+        # Update leave balance (storing as decimal)
         leave_balance
         |> Ecto.Changeset.change(%{remaining_days: new_balance})
         |> Repo.update!()
@@ -350,8 +399,8 @@ defmodule Ims.Leave.LeaveApplication do
 
         {:ok, leave_application}
       else
-        nil -> {:error, "Leave application not found"}
-        _ -> {:error, "Invalid leave application status"}
+        nil -> Repo.rollback("Leave application not found")
+        _ -> Repo.rollback("Invalid leave application status")
       end
     end)
   end

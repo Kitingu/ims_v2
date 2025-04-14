@@ -155,17 +155,51 @@ defmodule ImsWeb.UserRegistrationLive do
     """
   end
 
-  def mount(_params, %{"user_id" => user_id}, socket) when is_binary(user_id) do
-    user = Repo.get(User, user_id) || %User{}
-    changeset = Accounts.change_user_registration(user)
+  def mount(_params, session, socket) when is_map(session) do
+    user_id = Map.get(session, "user_id")
 
-    {:ok,
-     socket
-     |> assign(:user, user)
-     |> assign(:form, changeset)
-     |> assign(:trigger_submit, false)
-     |> assign(:edit_mode, true)}
+    user =
+      case user_id do
+        nil -> %User{}
+        id -> Repo.get(User, id) || %User{}
+      end
+
+    changeset = Accounts.change_user_registration(user)
+    departments = Repo.all(Departments) |> Enum.map(&{&1.name, &1.id})
+    job_groups = Accounts.list_job_groups() |> Enum.map(&{&1.name, &1.id})
+
+    socket =
+      socket
+      |> assign(:user, user)
+      |> assign(:form, changeset)
+      |> assign(:trigger_submit, false)
+      |> assign(:edit_mode, not is_nil(user_id))
+      |> assign(:button_text, if(is_nil(user_id), do: "Create an Account", else: "Save Changes"))
+      |> assign(:disable_text, if(is_nil(user_id), do: "Creating account...", else: "Saving..."))
+      |> assign(:check_errors, false)
+      |> assign(:departments, departments)
+      |> assign(:job_groups, job_groups)
+      |> assign_form(changeset)
+
+    {:ok, socket}
   end
+
+  def mount(_params, :not_mounted_at_router, socket) do
+    # fallback when no session is provided (usually from test or render without router)
+    {:ok,
+     assign(socket,
+       user: %User{},
+       form: Accounts.change_user_registration(%User{}) |> to_form(as: "user"),
+       edit_mode: false,
+       button_text: "Create an Account",
+       disable_text: "Creating account...",
+       trigger_submit: false,
+       check_errors: false,
+       departments: [],
+       job_groups: []
+     )}
+  end
+
 
   def mount(params, _session, socket) do
     # Ensure `user` and `form` initialization

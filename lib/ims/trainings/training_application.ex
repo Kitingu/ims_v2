@@ -15,6 +15,7 @@ defmodule Ims.Trainings.TrainingApplication do
     field :memo_reference, :string
     # Stored in days
     field :period_of_study, :integer
+    field :period_input, :string, virtual: true
     field :program_title, :string
     field :quarter, :string
     field :status, :string, default: "Pending"
@@ -39,13 +40,15 @@ defmodule Ims.Trainings.TrainingApplication do
       :quarter,
       :disability,
       :period_of_study,
+      :period_input,
       :costs,
       :authority_reference,
       :memo_reference,
       :status,
       :disability_details
     ])
-    |> transform_period_of_study()
+    |> IO.inspect(label: "Training Application Changeset")
+    |> maybe_convert_period_to_days()
     |> validate_number(:period_of_study,
       greater_than: 0,
       less_than_or_equal_to: 1825,
@@ -69,6 +72,14 @@ defmodule Ims.Trainings.TrainingApplication do
     |> assoc_constraint(:ethnicity)
   end
 
+
+  defp maybe_convert_period_to_days(changeset) do
+    case get_change(changeset, :period_input) do
+      nil -> changeset
+      value -> put_change(changeset, :period_of_study, convert_period_to_days(value))
+    end
+  end
+  
   # ✅ Convert "5_days" into integer 5
   defp transform_period_of_study(changeset) do
     case get_field(changeset, :period_of_study) do

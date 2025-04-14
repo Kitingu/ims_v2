@@ -18,7 +18,7 @@ defmodule ImsWeb.LeaveApplicationLive.FormComponent do
           phx-submit="save"
           class="space-y-4"
         >
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <%!-- <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <.input
               field={@form[:leave_type_id]}
               type="select"
@@ -37,19 +37,36 @@ defmodule ImsWeb.LeaveApplicationLive.FormComponent do
                 class="w-full"
               />
             <% end %>
-          </div>
+          </div> --%>
 
+          <form
+            phx-change="update_user_leave_type"
+            phx-target={@myself}
+            class="grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
+            <.input
+              field={@form[:leave_type_id]}
+              type="select"
+              label="Leave Type"
+              options={filtered_leave_types(@leave_types, @current_user.gender)}
+              class="w-full"
+            />
+
+            <%= if @is_admin do %>
+              <.input
+                field={@form[:user_id]}
+                type="select"
+                label="Select User"
+                options={@users}
+                class="w-full"
+              />
+              <% else %>
+              <.input field={@form[:user_id]} type="hidden" value={@current_user.id} class="w-full" />
+            <% end %>
+          </form>
           <div class="text-sm text-gray-600 mt-2">
-            Leave Balance: <span class="font-bold"><%= @leave_balance || "N/A" %> days</span>
+            Leave Balance: <span class="font-bold">{@leave_balance || "N/A"} days</span>
           </div>
-
-          <input
-            name="leave_application[user_id]"
-            hidden
-            type="text"
-            value={@current_user.id}
-            class="w-full"
-          />
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <.input
@@ -125,7 +142,7 @@ defmodule ImsWeb.LeaveApplicationLive.FormComponent do
           </div>
         </.simple_form>
         <%= if @uploaded_files do %>
-          <p class="mt-2 text-sm text-green-600">Uploaded file: <%= @uploaded_files %></p>
+          <p class="mt-2 text-sm text-green-600">Uploaded file: {@uploaded_files}</p>
         <% end %>
       </div>
     </div>
@@ -137,8 +154,6 @@ defmodule ImsWeb.LeaveApplicationLive.FormComponent do
         %{leave_application: leave_application, current_user: current_user} = assigns,
         socket
       ) do
-    IO.inspect(assigns, label: "🔥 Running update with assigns")
-
     # Fetch Leave Types and Users
     leave_types = Leave.list_leave_types()
     users = Ims.Accounts.list_users()
@@ -179,6 +194,7 @@ defmodule ImsWeb.LeaveApplicationLive.FormComponent do
        max_entries: 1,
        max_file_size: 5_000_000
      )
+     |> IO.inspect()
      |> assign_new(:form, fn ->
        changeset = Leave.change_leave_application(leave_application)
        to_form(changeset)
@@ -230,11 +246,67 @@ defmodule ImsWeb.LeaveApplicationLive.FormComponent do
   # end
 
   @impl true
-  def handle_event("user_change", %{"leave_application" => %{"user_id" => user_id}}, socket) do
-    # Assign the selected user and trigger update/2
+  def handle_event("update_user_leave_type", %{"leave_application" => params}, socket) do
+    user_id =
+      Map.get(params, "user_id") ||
+        socket.assigns.current_user.id |> to_string()
+
+    leave_type_id =
+      Map.get(params, "leave_type_id") ||
+        socket.assigns.selected_leave_type |> to_string()
+
+    is_maternity_leave =
+      if leave_type_id != "",
+        do: is_maternity_leave?(String.to_integer(leave_type_id)),
+        else: false
+
+    leave_balance =
+      if user_id != "" and leave_type_id != "" do
+        Leave.get_leave_balance(String.to_integer(user_id), String.to_integer(leave_type_id))
+      else
+        nil
+      end
+
+    updated =
+      socket.assigns.leave_application
+      |> Leave.change_leave_application(%{
+        "user_id" => user_id,
+        "leave_type_id" => leave_type_id
+      })
+
     {:noreply,
-     update(%{leave_application: %{socket.assigns.leave_application | user_id: user_id}}, socket)}
+     socket
+     |> assign(:form, to_form(updated, action: :validate))
+     |> assign(:leave_application, updated.data)
+     |> assign(:leave_balance, leave_balance)
+     |> assign(:selected_user, String.to_integer(user_id))
+     |> assign(:selected_leave_type, String.to_integer(leave_type_id))
+     |> assign(:is_maternity_leave, is_maternity_leave)}
   end
+
+  @impl true
+  def handle_event("user_change", %{"leave_application" => %{"user_id" => user_id}}, socket) do
+    user_id = String.to_integer(user_id)
+    leave_type_id = socket.assigns.selected_leave_type
+
+    leave_balance = Leave.get_leave_balance(user_id, leave_type_id)
+
+    leave_application =
+      %LeaveApplication{socket.assigns.leave_application | user_id: user_id}
+
+    {:noreply,
+     socket
+     |> assign(:leave_balance, leave_balance)
+     |> assign(:selected_user, user_id)
+     |> assign(:leave_application, leave_application)}
+  end
+
+  # @impl true
+  # def handle_event("user_change", %{"leave_application" => %{"user_id" => user_id}}, socket) do
+  #   # Assign the selected user and trigger update/2
+  #   {:noreply,
+  #    update(%{leave_application: %{socket.assigns.leave_application | user_id: user_id}}, socket)}
+  # end
 
   @impl true
   def handle_event("validate", %{"leave_application" => leave_application_params}, socket) do
@@ -363,6 +435,14 @@ defmodule ImsWeb.LeaveApplicationLive.FormComponent do
 
   defp check_admin(user) do
     Canada.Can.can?(user, ["manage"], "hr_dashboard")
+  end
+
+  defp filtered_leave_types(leave_types, gender) do
+    Enum.reject(leave_types, fn
+      {"Maternity Leave", _} -> gender == "Male"
+      {"Paternity Leave", _} -> gender == "Female"
+      _ -> false
+    end)
   end
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})

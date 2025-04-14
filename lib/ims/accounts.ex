@@ -24,7 +24,7 @@ defmodule Ims.Accounts do
 
   """
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
+    Repo.get_by(User, email: email) |> Repo.preload(:roles, :leave_balances)
   end
 
   @doc """
@@ -41,7 +41,7 @@ defmodule Ims.Accounts do
   """
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email)
+    user = Repo.get_by(User, email: email) |> Repo.preload(:roles, :leave_balances)
     if User.valid_password?(user, password), do: user
   end
 
@@ -59,7 +59,7 @@ defmodule Ims.Accounts do
       ** (Ecto.NoResultsError)
 
   """
-  def get_user!(id), do: Repo.get!(User, id) |> Repo.preload(:roles)
+  def get_user!(id), do: Repo.get!(User, id) |> Repo.preload(:roles, :leave_balances)
 
   ## User registration
 

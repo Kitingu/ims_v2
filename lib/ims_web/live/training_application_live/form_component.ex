@@ -68,11 +68,18 @@ defmodule ImsWeb.TrainingApplicationLive.FormComponent do
           />
 
           <.input
+            field={@form[:period_input]}
+            type="select"
+            label="Period of Study"
+            options={study_period_options()}
+          />
+
+          <%!-- <.input
             field={@form[:period_of_study]}
             type="select"
             options={study_period_options()}
             label="Period of Study"
-          />
+          /> --%>
           <.input field={@form[:costs]} type="number" label="Costs (KSH)" step="any" />
           <.input field={@form[:authority_reference]} type="text" label="Authority Reference" />
           <.input field={@form[:memo_reference]} type="text" label="Memo Reference" />
@@ -116,6 +123,14 @@ defmodule ImsWeb.TrainingApplicationLive.FormComponent do
 
     csrf_token = Plug.CSRFProtection.get_csrf_token()
 
+    # ⬇️ Backfill period_input here
+    training_application =
+      Map.put(
+        training_application,
+        :period_input,
+        period_input_from_days(training_application.period_of_study)
+      )
+
     {:ok,
      socket
      |> assign(assigns)
@@ -134,9 +149,6 @@ defmodule ImsWeb.TrainingApplicationLive.FormComponent do
     # Ensure period_of_study is converted before validation
 
     IO.inspect(training_application_params, label: "Training application params")
-
-    training_application_params =
-      Map.update(training_application_params, "period_of_study", nil, &convert_period_to_days/1)
 
     changeset =
       Trainings.change_training_application(
@@ -224,8 +236,8 @@ defmodule ImsWeb.TrainingApplicationLive.FormComponent do
 
   @impl true
   def handle_event("save", %{"training_application" => training_application_params}, socket) do
-    training_application_params =
-      Map.update(training_application_params, "period_of_study", nil, &convert_period_to_days/1)
+    # training_application_params =
+    #   Map.update(training_application_params, "period_of_study", nil, &convert_period_to_days/1)
 
     save_training_application(socket, socket.assigns.action, training_application_params)
   end
@@ -275,12 +287,24 @@ defmodule ImsWeb.TrainingApplicationLive.FormComponent do
   end
 
   defp study_period_options do
-    days = Enum.map(1..6, &{"#{&1} Days", "#{&1}_days"})
+    days = Enum.map(1..6, &{"#{&1} Day#{if &1 > 1, do: "s", else: ""}", "#{&1}_days"})
+    # days = Enum.map(1..6, &{"#{&1} Days", "#{&1}_days"})
     weeks = Enum.map(1..4, &{"#{&1} Week#{if &1 > 1, do: "s", else: ""}", "#{&1}_weeks"})
     months = Enum.map(1..12, &{"#{&1} Month#{if &1 > 1, do: "s", else: ""}", "#{&1}_months"})
     years = Enum.map(1..5, &{"#{&1} Year#{if &1 > 1, do: "s", else: ""}", "#{&1}_years"})
 
     days ++ weeks ++ months ++ years
+  end
+
+  defp period_input_from_days(nil), do: nil
+
+  defp period_input_from_days(days) when is_integer(days) do
+    cond do
+      rem(days, 365) == 0 -> "#{div(days, 365)}_years"
+      rem(days, 30) == 0 -> "#{div(days, 30)}_months"
+      rem(days, 7) == 0 -> "#{div(days, 7)}_weeks"
+      true -> "#{days}_days"
+    end
   end
 
   defp financial_year_options do

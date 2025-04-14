@@ -21,9 +21,7 @@ defmodule Ims.Leave.LeaveBalance do
       greater_than_or_equal_to: 0,
       message: "Remaining leave days cannot be negative"
     )
-    |> unique_constraint([:user_id, :leave_type_id],
-      name: :leave_balances_user_id_leave_type_id_index
-    )
+    |> unique_constraint([:user_id, :leave_type_id], name: :unique_user_leave_type_balance)
   end
 
   def create(attrs) do

@@ -111,40 +111,27 @@ defmodule ImsWeb.UserLive do
           <%= user.id %>
         </:col>
 
-        <:col :let={user} label="Personal Number">
+        <:col :let={user} label="Staff Number">
           <%= user.personal_number %>
         </:col>
-        <:col :let={user} label="First Name">
-          <%= user.first_name %>
+        <:col :let={user} label=" Name">
+          <%= user.first_name %>  <%= user.last_name %>
         </:col>
 
-        <:col :let={user} label="Job Group">
-          <%= if user.job_group do %>
-            <%= user.job_group.name %>
-          <% else %>
-            No Job Group
-          <% end %>
-        </:col>
-
-        <:col :let={user} label="Last Name">
-          <%= user.last_name %>
-        </:col>
-
-        <:col :let={user} label="Phone Number">
+        <:col :let={user} label="Phone">
           <%= user.msisdn %>
         </:col>
 
-        <:col :let={user} label="Department">
-          <%= user.department.name %>
-        </:col>
 
         <:col :let={user} label="Designation">
           <%= user.designation %>
         </:col>
 
-        <:col :let={user} label="Email">
-          <%= user.email %>
+
+        <:col :let={user} label="Department">
+          <%= user.department.name %>
         </:col>
+
 
         <:col :let={user} label="Role">
           <%= if Enum.empty?(user.roles) do %>

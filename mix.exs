@@ -66,7 +66,8 @@ defmodule Ims.MixProject do
       {:canada, "~> 2.0"},
       {:elixlsx, "~> 0.6.0"},
       {:oban, "~> 2.16"},
-      {:dotenv_parser, "~> 2.0"}
+      {:dotenv_parser, "~> 2.0"},
+      {:icalendar, "~> 1.0"}
     ]
   end
 
