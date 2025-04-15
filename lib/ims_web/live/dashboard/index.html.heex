@@ -15,9 +15,125 @@
   <main class="p-6 space-y-10">
     <!-- Status Overview Cards -->
 
+    <!-- Status Overview Cards -->
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <%= for {status, count, color, path} <- [ {"Lost", @inventory_counts.lost || 0, "red" , "/lost_devices" },
+        {"Assigned", @inventory_counts.assigned || 0, "green" , "/assigned_devices" }, {"Available",
+        @inventory_counts.available || 0, "blue" , "/available_devices" }, {"Decomissioned",
+        @inventory_counts.decommissioned || 0, "red" , "/decomissioned_devices" }, ] do %>
+        <a href={path} class={"bg-#{color}-100 p-6 rounded-lg shadow-md flex flex-col items-center transition-transform
+          transform hover:scale-105 no-underline"}>
+          <h2 class="text-lg font-semibold text-gray-700">
+            <%= status %>
+          </h2>
+          <p class="text-5xl font-bold text-#{color}-700 mt-2">
+            <%= count %>
+          </p>
+        </a>
+        <% end %>
+    </section>
 
 
-    <!-- Device Statistics Per Category -->
- 
+    <section class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-bold text-gray-700 mb-6">Device Statistics Per Category</h2>
+      <div class="space-y-4">
+        <%= for %{category: category, total: total, assigned: assigned, lost: lost, available: available} <-
+          @category_stats do %>
+          <div class="bg-gray-100 p-6 rounded-lg shadow-md flex justify-between items-center">
+            <div class="flex flex-col">
+              <h3 class="text-lg font-semibold text-gray-800">
+                <%= category %>
+              </h3>
+              <p class="text-sm text-gray-600">Total Devices: <%= total %>
+              </p>
+            </div>
+            <div class="flex space-x-8">
+              <div class="flex flex-col items-center">
+                <span class="text-sm text-gray-500">Assigned</span>
+                <span class="text-lg font-bold text-green-600">
+                  <%= assigned %>
+                </span>
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="text-sm text-gray-500">Lost</span>
+                <span class="text-lg font-bold text-red-600">
+                  <%= lost %>
+                </span>
+              </div>
+              <div class="flex flex-col items-center">
+                <span class="text-sm text-gray-500">Available</span>
+                <span class="text-lg font-bold text-blue-600">
+                  <%= available %>
+                </span>
+              </div>
+            </div>
+          </div>
+          <% end %>
+      </div>
+    </section>
+
+
+    <section class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-bold text-gray-700 mb-6">Top 5 Departments with Most Devices</h2>
+      <table class="w-full border-collapse rounded-lg overflow-hidden shadow">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="border-b p-4 text-left text-gray-600 font-semibold">Department</th>
+            <th class="border-b p-4 text-left text-gray-600 font-semibold">Total Devices</th>
+            <th class="border-b p-4 text-left text-gray-600 font-semibold">Percentage</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white">
+          <%= for department <- @top_departments do %>
+            <tr class="hover:bg-gray-100 transition">
+              <td class="p-4 text-gray-700">
+                <%= department.name %>
+              </td>
+              <td class="p-4 text-gray-700 font-bold">
+                <%= department.total_assets %>
+              </td>
+              <td class="p-4 text-gray-700 font-bold">
+                <%= department.percentage %>%
+              </td>
+            </tr>
+            <% end %>
+        </tbody>
+      </table>
+    </section>
+
+
+    <section class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-bold text-gray-700 mb-6">Top 5 Users with Most Devices</h2>
+      <table class="w-full border-collapse rounded-lg overflow-hidden shadow">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="border-b p-4 text-left text-gray-600 font-semibold">User</th>
+            <th class="border-b p-4 text-left text-gray-600 font-semibold">Total Devices</th>
+            <th class="border-b p-4 text-left text-gray-600 font-semibold">Percentage</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white">
+          <%= for user <- @top_users do %>
+            <tr class="hover:bg-gray-100 transition">
+              <td class="p-4 text-gray-700">
+                <%= user.first_name %>
+                  <%= user.last_name %>
+              </td>
+              <td class="p-4 text-gray-700 font-bold">
+                <%= user.total_assets %>
+              </td>
+              <td class="p-4 text-gray-700">
+                <%= user.percentage %>%
+              </td>
+            </tr>
+            <% end %>
+        </tbody>
+      </table>
+    </section>
+
+
+
+
+
   </main>
 </div>

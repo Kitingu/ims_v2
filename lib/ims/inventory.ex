@@ -929,17 +929,22 @@ defmodule Ims.Inventory do
     |> Repo.all()
   end
 
-  # stats
   def get_status_counts() do
-    %{
-      lost: Repo.aggregate(from(a in Asset, where: a.status == :lost), :count, :id),
-      available: Repo.aggregate(from(a in Asset, where: a.status == :available), :count, :id),
-      assigned: Repo.aggregate(from(a in Asset, where: a.status == :assigned), :count, :id),
-      pending_requisition:
-        Repo.aggregate(from(a in Asset, where: a.status == :pending_requisition), :count, :id),
-      temporarily_assigned:
-        Repo.aggregate(from(a in Asset, where: a.status == :temporarily_assigned), :count, :id)
-    }
+    try do
+      %{
+        lost: Repo.aggregate(from(a in Asset, where: a.status == :lost), :count, :id),
+        available: Repo.aggregate(from(a in Asset, where: a.status == :available), :count, :id),
+        assigned: Repo.aggregate(from(a in Asset, where: a.status == :assigned), :count, :id),
+        pending_requisition:
+          Repo.aggregate(from(a in Asset, where: a.status == :pending_requisition), :count, :id),
+        temporarily_assigned:
+          Repo.aggregate(from(a in Asset, where: a.status == :temporarily_assigned), :count, :id),
+        decommissioned:
+          Repo.aggregate(from(a in Asset, where: a.status == :decommissioned), :count, :id)
+      }
+    rescue
+      _ -> %{}
+    end
   end
 
   def get_department_stats() do
@@ -960,51 +965,67 @@ defmodule Ims.Inventory do
   end
 
   def get_category_stats() do
-    # Repo.all(
-    #   from(a in Asset,
-    #     join: c in "categories",
-    #     on: a.category_id == c.id,
-    #     group_by: c.name,
-    #     select: %{
-    #       category: c.name,
-    #       total: count(a.id),
-    #       assigned: fragment("COUNT(*) FILTER (WHERE ? = 'assigned')", a.status),
-    #       lost: fragment("COUNT(*) FILTER (WHERE ? = 'lost')", a.status),
-    #       available: fragment("COUNT(*) FILTER (WHERE ? = 'available')", a.status)
-    #     }
-    #   )
-    # )
+    Repo.all(
+      from(a in Asset,
+        join: c in "categories",
+        on: a.category_id == c.id,
+        group_by: c.name,
+        select: %{
+          category: c.name,
+          total: count(a.id),
+          assigned: fragment("COUNT(*) FILTER (WHERE ? = 'assigned')", a.status),
+          lost: fragment("COUNT(*) FILTER (WHERE ? = 'lost')", a.status),
+          available: fragment("COUNT(*) FILTER (WHERE ? = 'available')", a.status)
+        }
+      )
+    )
   end
 
   def get_top_departments() do
-    # Repo.all(
-    #   from(al in AssetLog,
-    #     join: u in assoc(al, :user),
-    #     join: d in assoc(u, :department),
-    #     where: al.action == "assigned",
-    #     group_by: [d.name],
-    #     order_by: [desc: count(al.id)],
-    #     limit: 5,
-    #     select: %{
-    #       department: d.name,
-    #       total_devices: count(al.id)
-    #     }
-    #     where: al.action == "assigned"
-    #   )
-    # )
+    Repo.all(
+      from a in Asset,
+        join: u in assoc(a, :user),
+        join: d in assoc(u, :department),
+        where: a.status == :assigned,
+        group_by: [d.id, d.name],
+        order_by: [desc: count(a.id)],
+        limit: 5,
+        select: %{
+          id: d.id,
+          name: d.name,
+          total_assets: count(a.id),
+          # Percentage of all assigned assets
+          percentage:
+            fragment(
+              "ROUND(? * 100.0 / (SELECT COUNT(*) FROM assets WHERE status = 'assigned'), 1)",
+              count(a.id)
+            )
+        }
+    )
   end
 
   def get_top_users() do
-    # from(al in AssetLog,
-    #   join: u in assoc(al, :user),
-    #   where: al.action == "assigned",
-    #   group_by: [u.first_name, u.last_name],
-    #   order_by: [desc: count(al.id)],
-    #   limit: 5,
-    #   select: %{
-    #     user: fragment("? || ' ' || ?", u.first_name, u.last_name),
-    #     total_devices: count(al.id)
-    #   }
-    # )
+    Repo.all(
+      from(
+        a in Asset,
+        join: u in assoc(a, :user),
+        where: a.status == :assigned,
+        # Group by both name fields
+        group_by: [u.id, u.first_name, u.last_name],
+        order_by: [desc: count(a.id)],
+        limit: 5,
+        select: %{
+          id: u.id,
+          first_name: u.first_name,
+          last_name: u.last_name,
+          total_assets: count(a.id),
+          percentage:
+            fragment(
+              "ROUND(? * 100.0 / (SELECT COUNT(*) FROM assets WHERE status = 'assigned'), 1)",
+              count(a.id)
+            )
+        }
+      )
+    )
   end
 end

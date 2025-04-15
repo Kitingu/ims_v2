@@ -4,13 +4,17 @@ defmodule Ims.Workers.LeaveAccrualWorker do
   alias Ims.Repo
   alias Ims.Leave.{LeaveBalance, LeaveType}
   import Ecto.Query
+  require Logger
+
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"type" => "monthly"}}) do
+    Logger.info("Leave Accrual Worker: Monthly accrual job started")
     accrue_annual_leave()
   end
 
   def perform(%Oban.Job{args: %{"type" => "year_end"}}) do
+    Logger.info("Leave Accrual Worker: Year-end reset job started")
     year_end_reset()
   end
 

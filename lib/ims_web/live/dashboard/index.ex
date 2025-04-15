@@ -11,7 +11,7 @@ defmodule ImsWeb.DashboardLive.Index do
     # Initialize assigns with default values
     {:ok,
      assign(socket,
-       inventory_counts: %{lost: 0, available: 0, assigned: 0, pending_requisition: 0, temporarily_assigned: 0},
+       inventory_counts: %{lost: 0, available: 0, assigned: 0, pending_requisition: 0, decommissioned: 0},
        inventory_items: [],
        category_stats: [],
        top_departments: [],
@@ -25,10 +25,10 @@ defmodule ImsWeb.DashboardLive.Index do
     # Fetch inventory counts from the database
     inventory_counts =
       Inventory.get_status_counts()
-      |> Map.merge(%{lost: 0, available: 0, assigned: 0}, fn _key, v1, _v2 -> v1 end)
+      |> Map.merge(%{lost: 0, available: 0, assigned: 0,}, fn _key, v1, _v2 -> v1 end)
 
     category_stats = Inventory.get_category_stats()
-    top_departments = Inventory.get_top_departments()
+    top_departments = Inventory.get_top_departments() |> IO.inspect(label: "Top Departments")
     top_users = Inventory.get_top_users()
 
     {:noreply,
