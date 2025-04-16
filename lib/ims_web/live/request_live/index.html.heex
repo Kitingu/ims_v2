@@ -1,0 +1,43 @@
+<.header>
+  Listing Requests
+  <:actions>
+    <.link patch={~p"/requests/new"}>
+      <.button>New Request</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="requests"
+  rows={@streams.requests}
+  row_click={fn {_id, request} -> JS.navigate(~p"/requests/#{request}") end}
+>
+  <:col :let={{_id, request}} label="Status">{request.status}</:col>
+  <:col :let={{_id, request}} label="Request type">{request.request_type}</:col>
+  <:col :let={{_id, request}} label="Assigned at">{request.assigned_at}</:col>
+  <:action :let={{_id, request}}>
+    <div class="sr-only">
+      <.link navigate={~p"/requests/#{request}"}>Show</.link>
+    </div>
+    <.link patch={~p"/requests/#{request}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, request}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: request.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="request-modal" show on_cancel={JS.patch(~p"/requests")}>
+  <.live_component
+    module={ImsWeb.RequestLive.FormComponent}
+    id={@request.id || :new}
+    title={@page_title}
+    action={@live_action}
+    request={@request}
+    patch={~p"/requests"}
+  />
+</.modal>

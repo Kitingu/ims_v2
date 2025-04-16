@@ -426,4 +426,62 @@ defmodule Ims.InventoryTest do
       assert %Ecto.Changeset{} = Inventory.change_asset_log(asset_log)
     end
   end
+
+  describe "requests" do
+    alias Ims.Inventory.Request
+
+    import Ims.InventoryFixtures
+
+    @invalid_attrs %{status: nil, request_type: nil, assigned_at: nil}
+
+    test "list_requests/0 returns all requests" do
+      request = request_fixture()
+      assert Inventory.list_requests() == [request]
+    end
+
+    test "get_request!/1 returns the request with given id" do
+      request = request_fixture()
+      assert Inventory.get_request!(request.id) == request
+    end
+
+    test "create_request/1 with valid data creates a request" do
+      valid_attrs = %{status: "some status", request_type: "some request_type", assigned_at: ~U[2025-04-15 08:38:00Z]}
+
+      assert {:ok, %Request{} = request} = Inventory.create_request(valid_attrs)
+      assert request.status == "some status"
+      assert request.request_type == "some request_type"
+      assert request.assigned_at == ~U[2025-04-15 08:38:00Z]
+    end
+
+    test "create_request/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Inventory.create_request(@invalid_attrs)
+    end
+
+    test "update_request/2 with valid data updates the request" do
+      request = request_fixture()
+      update_attrs = %{status: "some updated status", request_type: "some updated request_type", assigned_at: ~U[2025-04-16 08:38:00Z]}
+
+      assert {:ok, %Request{} = request} = Inventory.update_request(request, update_attrs)
+      assert request.status == "some updated status"
+      assert request.request_type == "some updated request_type"
+      assert request.assigned_at == ~U[2025-04-16 08:38:00Z]
+    end
+
+    test "update_request/2 with invalid data returns error changeset" do
+      request = request_fixture()
+      assert {:error, %Ecto.Changeset{}} = Inventory.update_request(request, @invalid_attrs)
+      assert request == Inventory.get_request!(request.id)
+    end
+
+    test "delete_request/1 deletes the request" do
+      request = request_fixture()
+      assert {:ok, %Request{}} = Inventory.delete_request(request)
+      assert_raise Ecto.NoResultsError, fn -> Inventory.get_request!(request.id) end
+    end
+
+    test "change_request/1 returns a request changeset" do
+      request = request_fixture()
+      assert %Ecto.Changeset{} = Inventory.change_request(request)
+    end
+  end
 end

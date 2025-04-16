@@ -1,0 +1,31 @@
+<.header>
+  Away request {@away_request.id}
+  <:subtitle>This is a away_request record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/away_requests/#{@away_request}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit away_request</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Reason">{@away_request.reason}</:item>
+  <:item title="Location">{@away_request.location}</:item>
+  <:item title="Memo">{@away_request.memo}</:item>
+  <:item title="Memo upload">{@away_request.memo_upload}</:item>
+  <:item title="Days">{@away_request.days}</:item>
+  <:item title="Return date">{@away_request.return_date}</:item>
+</.list>
+
+<.back navigate={~p"/away_requests"}>Back to away_requests</.back>
+
+<.modal :if={@live_action == :edit} id="away_request-modal" show on_cancel={JS.patch(~p"/away_requests/#{@away_request}")}>
+  <.live_component
+    module={ImsWeb.AwayRequestLive.FormComponent}
+    id={@away_request.id}
+    title={@page_title}
+    action={@live_action}
+    away_request={@away_request}
+    patch={~p"/away_requests/#{@away_request}"}
+  />
+</.modal>

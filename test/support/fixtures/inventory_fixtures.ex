@@ -124,4 +124,20 @@ defmodule Ims.InventoryFixtures do
 
     asset_log
   end
+
+  @doc """
+  Generate a request.
+  """
+  def request_fixture(attrs \\ %{}) do
+    {:ok, request} =
+      attrs
+      |> Enum.into(%{
+        assigned_at: ~U[2025-04-15 08:38:00Z],
+        request_type: "some request_type",
+        status: "some status"
+      })
+      |> Ims.Inventory.create_request()
+
+    request
+  end
 end

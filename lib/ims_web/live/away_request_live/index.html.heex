@@ -1,0 +1,46 @@
+<.header>
+  Listing Away requests
+  <:actions>
+    <.link patch={~p"/away_requests/new"}>
+      <.button>New Away request</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="away_requests"
+  rows={@streams.away_requests}
+  row_click={fn {_id, away_request} -> JS.navigate(~p"/away_requests/#{away_request}") end}
+>
+  <:col :let={{_id, away_request}} label="Reason">{away_request.reason}</:col>
+  <:col :let={{_id, away_request}} label="Location">{away_request.location}</:col>
+  <:col :let={{_id, away_request}} label="Memo">{away_request.memo}</:col>
+  <:col :let={{_id, away_request}} label="Memo upload">{away_request.memo_upload}</:col>
+  <:col :let={{_id, away_request}} label="Days">{away_request.days}</:col>
+  <:col :let={{_id, away_request}} label="Return date">{away_request.return_date}</:col>
+  <:action :let={{_id, away_request}}>
+    <div class="sr-only">
+      <.link navigate={~p"/away_requests/#{away_request}"}>Show</.link>
+    </div>
+    <.link patch={~p"/away_requests/#{away_request}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, away_request}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: away_request.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="away_request-modal" show on_cancel={JS.patch(~p"/away_requests")}>
+  <.live_component
+    module={ImsWeb.AwayRequestLive.FormComponent}
+    id={@away_request.id || :new}
+    title={@page_title}
+    action={@live_action}
+    away_request={@away_request}
+    patch={~p"/away_requests"}
+  />
+</.modal>
