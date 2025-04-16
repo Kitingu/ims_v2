@@ -52,7 +52,8 @@ defmodule Ims.MixProject do
        compile: false,
        depth: 1},
       {:swoosh, "~> 1.5"},
-      {:gen_smtp, "~> 1.1"}, # Needed for SMTP
+      # Needed for SMTP
+      {:gen_smtp, "~> 1.1"},
       {:finch, "~> 0.13"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
@@ -66,6 +67,7 @@ defmodule Ims.MixProject do
       {:canada, "~> 2.0"},
       {:elixlsx, "~> 0.6.0"},
       {:oban, "~> 2.16"},
+      {:igniter, "~> 0.5", only: [:dev]},
       {:dotenv_parser, "~> 2.0"},
       {:icalendar, "~> 1.0"}
     ]

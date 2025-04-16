@@ -73,36 +73,35 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
-config :ims, Oban,
-  repo: Ims.Repo,
-  plugins: [
-    Oban.Plugins.Pruner,
-    {Oban.Plugins.Cron,
-     crontab: [
-       # Every 2 minutes
-       {"*/2 * * * *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "monthly"}},
-
-       # Still run year_end annually
-       {"0 1 1 1 *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "year_end"}}
-     ]}
-  ],
-  queues: [default: 10]
-
-
 # config :ims, Oban,
 #   repo: Ims.Repo,
 #   plugins: [
 #     Oban.Plugins.Pruner,
 #     {Oban.Plugins.Cron,
 #      crontab: [
-#        # Run on the 1st of every month at 1 AM
-#        {"0 1 1 * *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "monthly"}},
+#        # Every 2 minutes
+#        {"*/2 * * * *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "monthly"}},
 
-#        # Run on Jan 1st every year at 1 AM
+#        # Still run year_end annually
 #        {"0 1 1 1 *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "year_end"}}
 #      ]}
 #   ],
 #   queues: [default: 10]
+
+config :ims, Oban,
+  repo: Ims.Repo,
+  plugins: [
+    Oban.Plugins.Pruner,
+    {Oban.Plugins.Cron,
+     crontab: [
+       # Run on the 1st of every month at 1 AM
+       {"0 1 1 * *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "monthly"}},
+
+       # Run on Jan 1st every year at 1 AM
+       {"0 1 1 1 *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "year_end"}}
+     ]}
+  ],
+  queues: [default: 10]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

@@ -1,30 +1,69 @@
-<!-- lib/ims_web/live/leave_balances_live/index.html.heex -->
 <div class="p-4">
-    <h1 class="text-xl font-bold mb-4">Leave Balances</h1>
-  
-    <table class="table-auto w-full border text-sm">
-      <thead>
-        <tr>
-          <th class="p-2 border">Personal No.</th>
-          <th class="p-2 border">First Name</th>
-          <th class="p-2 border">Last Name</th>
-          <%= for col <- @columns do %>
-            <th class="p-2 border"><%= col %></th>
-          <% end %>
-        </tr>
-      </thead>
-      <tbody>
-        <%= for row <- @rows do %>
-          <tr>
-            <td class="p-2 border"><%= row.personal_number %></td>
-            <td class="p-2 border"><%= row.first_name %></td>
-            <td class="p-2 border"><%= row.last_name %></td>
-            <%= for col <- @columns do %>
-              <td class="p-2 border"><%= Map.get(row, col, 0) %></td>
-            <% end %>
-          </tr>
+  <h1 class="text-xl font-bold mb-4">Leave Balances Dashboard</h1>
+
+  <div class="flex flex-wrap gap-4 mb-4">
+    <div class="w-1/3">
+      <label class="block text-sm font-medium mb-1">Filter by Leave Type</label>
+      <select phx-change="filter_leave_type" name="leave_type" class="w-full border p-2 rounded">
+        <option value="">All</option>
+        <%= for leave_type <- @all_leave_types do %>
+          <option value={leave_type} selected={@selected_type == leave_type}><%= leave_type %></option>
         <% end %>
-      </tbody>
-    </table>
+      </select>
+    </div>
+
+    <div class="w-1/3">
+      <label class="block text-sm font-medium mb-1">Search by Name</label>
+      <input type="text" name="search" value={@search} phx-debounce="300" phx-change="search_user"
+        class="w-full border p-2 rounded" placeholder="Enter name..." />
+    </div>
+
+    <div class="flex items-end">
+      <button phx-click="export_excel" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+        Export to Excel
+      </button>
+    </div>
   </div>
+
+  <.table id="leave-balances" 
+  rows={@rows}
+  resource="leave_balances"
+  current_user={@current_user}
+  actions={[]}
+  >
+
+    <:col :let={row}  label="Personal Number"> <%= row.personal_number %></:col>
   
+
+    <:col :let={row} label="First Name"> <%= row.first_name %></:col>
+  
+  
+    <:col :let={row} label="Last Name"> <%= row.last_name %></:col>
+
+    
+  <:col :let={row} label="Annual Leave">
+    <%= Map.get(row, "Annual Leave", 0) %>
+  </:col>
+
+  <:col :let={row} label="Sick Leave">
+    <%= Map.get(row, "Sick Leave", 0) %>
+  </:col>
+
+  <:col :let={row} label="Maternity Leave">
+    <%= Map.get(row, "Maternity Leave", 0) %>
+  </:col>
+
+  <:col :let={row} label="Paternity Leave">
+    <%= Map.get(row, "Paternity Leave", 0) %>
+  </:col>
+
+  <:col :let={row} label="Terminal Leave">
+    <%= Map.get(row, "Terminal Leave", 0) %>
+  </:col>
+  
+
+  </.table>
+  
+ 
+  
+</div>

@@ -19,6 +19,7 @@ defmodule Ims.Workers.LeaveAccrualWorker do
   end
 
   defp accrue_annual_leave do
+    Logger.info("Leave Accrual Worker: Monthly accrual job started")
     with %LeaveType{id: type_id} <- Repo.get_by(LeaveType, name: "Annual Leave") do
       from(lb in LeaveBalance, where: lb.leave_type_id == ^type_id)
       |> Repo.update_all(inc: [remaining_days: 1.75])
@@ -28,6 +29,7 @@ defmodule Ims.Workers.LeaveAccrualWorker do
   end
 
   defp year_end_reset do
+    Logger.info("Leave Accrual Worker: Year-end reset job started")
     with %LeaveType{id: type_id} <- Repo.get_by(LeaveType, name: "Annual Leave") do
       balances =
         Repo.all(from lb in LeaveBalance, where: lb.leave_type_id == ^type_id)

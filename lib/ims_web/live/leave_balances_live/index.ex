@@ -1,55 +1,40 @@
-# lib/ims_web/live/leave_balance_live/index.ex
-
 defmodule ImsWeb.LeaveBalanceLive.Index do
   use ImsWeb, :live_view
   import Ecto.Query
 
   alias Ims.Leave
-  alias Ims.Accounts
+  alias Ims.Repo
 
   def mount(_params, _session, socket) do
-    balances = Leave.get_leave_balances_matrix()
-    matrix = build_matrix(balances)
-    leave_types = get_all_leave_types()
-
-    {:ok, assign(socket, rows: matrix, columns: leave_types)}
+    {:ok, assign_defaults(socket)}
   end
 
-  defp build_matrix(balances), do: Ims.Leave.build_matrix(balances)
+  def handle_params(params, _url, socket) do
+    page = Leave.paginated_leave_balances(params)
+    rows = Leave.group_balances(page.entries)
+    leave_types = Repo.all(from lt in Ims.Leave.LeaveType, select: lt.name)
 
-  defp get_all_leave_types do
-    Ims.Repo.all(from lt in Ims.Leave.LeaveType, select: lt.name)
+    {:noreply,
+     socket
+     |> assign(:rows, %{page | entries: rows})
+     |> assign(:columns, leave_types)
+     |> assign(:all_leave_types, leave_types)  # 🔥 THIS IS THE FIX
+     |> assign(:search, Map.get(params, "search", ""))
+     |> assign(:selected_type, Map.get(params, "leave_type", ""))}
   end
 
 
-
-  defp get_all_leave_balances do
-    from(l in Ims.Leave.LeaveBalance,
-      group_by: [l.user_id, l.leave_type_id],
-      select: %{
-        user_id: l.user_id,
-        leave_type_id: l.leave_type_id,
-        remaining_days: sum(l.remaining_days)
-      }
-    )
-    |> Ims.Repo.all()
-    |> Enum.map(fn lb ->
-      %{
-        user_id: lb.user_id,
-        leave_type_id: lb.leave_type_id,
-        remaining_days: Decimal.to_integer(lb.remaining_days)
-      }
-    end)
+  defp assign_defaults(socket) do
+    assign(socket, search: "", selected_type: nil)
   end
 
-  defp preload_users(balances) do
-    user_ids = Enum.map(balances, & &1.user_id) |> Enum.uniq()
-
-    Ims.Repo.all(
-      from u in Ims.Accounts.User,
-        where: u.id in ^user_ids,
-        select: {u.id, fragment("? || ' ' || ?", u.first_name, u.last_name)}
-    )
-    |> Enum.into(%{})
+  defp static_leave_type_cols() do
+    [
+      "Annual Leave",
+      "Sick Leave",
+      "Maternity Leave",
+      "Paternity Leave",
+      "Terminal Leave"
+    ]
   end
 end

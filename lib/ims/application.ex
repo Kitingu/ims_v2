@@ -11,6 +11,11 @@ defmodule Ims.Application do
       ImsWeb.Telemetry,
       Ims.Repo,
       {DNSCluster, query: Application.get_env(:ims, :dns_cluster_query) || :ignore},
+      {Oban,
+       Application.fetch_env!(
+         :ims,
+         Oban
+       )},
       {Phoenix.PubSub, name: Ims.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: Ims.Finch},

@@ -353,6 +353,42 @@ defmodule Ims.Leave do
     end)
   end
 
+  def paginated_leave_balances(params) do
+    page = Map.get(params, "page", "1") |> String.to_integer()
+    page_size = Map.get(params, "page_size", "10") |> String.to_integer()
+
+    query =
+      from lb in Ims.Leave.LeaveBalance,
+        join: u in assoc(lb, :user),
+        join: lt in assoc(lb, :leave_type),
+        select: %{
+          id: u.id,
+          personal_number: u.personal_number,
+          first_name: u.first_name,
+          last_name: u.last_name,
+          leave_type: lt.name,
+          remaining_days: lb.remaining_days
+        }
+
+    Ims.Repo.paginate(query, page: page, page_size: page_size)
+  end
+
+  def group_balances(entries) do
+    entries
+    |> Enum.group_by(&{&1.personal_number, &1.first_name, &1.last_name})
+    |> Enum.map(fn {{pn, fnm, lnm}, list} ->
+      Map.merge(
+        %{
+          personal_number: pn,
+          first_name: fnm,
+          last_name: lnm
+        },
+        Enum.into(list, %{}, fn row -> {row.leave_type, row.remaining_days} end)
+      )
+    end)
+  end
+
+
   def get_leave_balances_matrix do
     Ims.Repo.all(
       from lb in Ims.Leave.LeaveBalance,
@@ -370,7 +406,12 @@ defmodule Ims.Leave do
 
       leave_days =
         user_balances
-        |> Enum.map(fn b -> {b.leave_type.name, Decimal.to_integer(b.remaining_days)} end)
+        |> Enum.map(fn b ->
+          {
+            b.leave_type.name,
+            Decimal.to_float(b.remaining_days)
+          }
+        end)
         |> Enum.into(%{})
 
       Map.merge(
