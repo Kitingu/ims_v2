@@ -265,6 +265,13 @@ defmodule ImsWeb.Router do
       live "/training_applications/:id", TrainingApplicationLive.Show, :show
       live "/training_applications/:id/show/edit", TrainingApplicationLive.Show, :edit
 
+      live "/away_requests", AwayRequestLive.Index, :index
+      live "/away_requests/new", AwayRequestLive.Index, :new
+      live "/away_requests/:id/edit", AwayRequestLive.Index, :edit
+
+      live "/away_requests/:id", AwayRequestLive.Show, :show
+      live "/away_requests/:id/show/edit", AwayRequestLive.Show, :edit
+
 
     end
   end
