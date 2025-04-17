@@ -84,8 +84,30 @@ config :phoenix_live_view,
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
 
-config :ims, :smtp_username,
-  "test@gmail.com"
+config :ims, :smtp_username, "test@gmail.com"
 
-config :ims, :smtp_password,
-  ""
+config :ims, :smtp_password, ""
+
+config :ims, :stk_query_url, "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query"
+config :ims, :business_shortcode, "600000"
+config :ims, :mpesa_initiator, "testapi"
+
+config :ims,
+       :mpesa_security_credential,
+       "Um9Wc2RrTEQ3RWFsUzN4bU1PVGQ0MTZwZUx6U3ZFQXA6UEQ0ZzJ6bjl0OEhwWjExcg=="
+
+config :ims,
+       :mpesa_token_credentials,
+       "Um9Wc2RrTEQ3RWFsUzN4bU1PVGQ0MTZwZUx6U3ZFQXA6UEQ0ZzJ6bjl0OEhwWjExcg=="
+
+config :ims,
+       :mpesa_account_request_url,
+       "https://sandbox.safaricom.co.ke/mpesa/accountbalance/v1/query"
+
+config :ims,
+       :mpesa_account_timeout_url,
+       "https://sandbox.safaricom.co.ke/mpesa/accountbalance/v1/query"
+
+config :ims,
+       :mpesa_account_result_url,
+       "https://sandbox.safaricom.co.ke/mpesa/accountbalance/v1/query"
