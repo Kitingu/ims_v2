@@ -718,7 +718,7 @@ defmodule Ims.Inventory do
       %{asset: updated_asset, log: log}
     end)
     |> case do
-      {:ok, %{asset: asset, log: log}} ->
+      {:ok, %{asset: _asset, log: log}} ->
         {:ok, log}
 
       {:error, {:device_limit_error, message}} ->
@@ -729,15 +729,12 @@ defmodule Ims.Inventory do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:error, changeset}
 
-      {:error, other} ->
+      {:error, _other} ->
         {:error,
          AssetLog.changeset(%AssetLog{}, log_attrs)
          |> Ecto.Changeset.add_error(:base, "An unexpected error occurred")}
     end
   end
-
-  defp maybe_put(map, _key, nil), do: map
-  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
   def create_asset_log(%{"action" => "returned", "asset_id" => asset_id} = log_attrs) do
     IO.inspect(log_attrs, label: "log_attrs")
@@ -847,7 +844,6 @@ defmodule Ims.Inventory do
   # Helper
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
-  defp maybe_put(map, key, value) when is_map(value), do: Map.put(map, key, value)
 
   @doc """
   Updates a asset_log.

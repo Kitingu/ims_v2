@@ -45,6 +45,7 @@ defmodule ImsWeb.AssetLogLive.Index do
     |> assign(:asset_log, nil)
   end
 
+  @impl true
   def handle_info({ImsWeb.AssetLogLive.FormComponent, {:saved, _device}}, socket) do
     asset_logs =
       fetch_records(socket.assigns.filters, @paginator_opts)
@@ -70,6 +71,7 @@ defmodule ImsWeb.AssetLogLive.Index do
      |> assign(:asset_logs, asset_logs)}
   end
 
+  @impl true
   def handle_event("resize_table", %{"size" => size}, socket) do
     asset_logs =
       fetch_records(socket.assigns.filters, page_size: String.to_integer(size)) |> IO.inspect()
@@ -77,6 +79,7 @@ defmodule ImsWeb.AssetLogLive.Index do
     {:noreply, assign(socket, asset_logs: asset_logs)}
   end
 
+  @impl true
   def handle_event("render_page", %{"page" => page}, socket) do
     IO.inspect("page: #{page}")
 

@@ -57,6 +57,24 @@ defmodule ImsWeb.DepartmentsLive.Index do
   end
 
   @impl true
+  def handle_event("edit" <> id, _params, socket) do
+    departments = Accounts.get_departments!(id)
+
+    {:noreply,
+     assign(socket,
+       page_title: "Edit Department",
+       departments: departments,
+       live_action: :edit
+     )}
+  end
+
+  @impl true
+  def handle_event("view" <> id, _, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/departments/#{id}")}
+  end
+
+
+  @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     departments = Accounts.get_departments!(id)
     {:ok, _} = Accounts.delete_departments(departments)

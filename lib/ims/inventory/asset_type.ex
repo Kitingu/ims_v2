@@ -2,6 +2,7 @@ defmodule Ims.Inventory.AssetType do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
+  alias Ims.Repo
   use Ims.RepoHelpers, repo: Repo
 
   schema "asset_types" do
@@ -19,7 +20,6 @@ defmodule Ims.Inventory.AssetType do
   end
 
   def search(queryable \\ __MODULE__, filters) do
-    query =
       Enum.reduce(filters, queryable, fn {k, v}, accum_query ->
         cond do
           v in ["", nil] ->

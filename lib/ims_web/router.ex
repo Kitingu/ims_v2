@@ -129,9 +129,11 @@ defmodule ImsWeb.Router do
       live "/asset_logs/:id", AssetLogLive.Show, :show
       live "/asset_logs/:id/show/edit", AssetLogLive.Show, :edit
 
-
-
-
+      live "/payment_gateways", PaymentGatewayLive.Index, :index
+      live "/payment_gateways/new", PaymentGatewayLive.Index, :new
+      live "/payment_gateways/:id/edit", PaymentGatewayLive.Index, :edit
+      live "/payment_gateways/:id", PaymentGatewayLive.Show, :show
+      live "/payment_gateways/:id/show/edit", PaymentGatewayLive.Show, :edit
 
       # live "/devices", DeviceLive.Index, :index
       # live "/devices/new", DeviceLive.Index, :new
@@ -142,12 +144,12 @@ defmodule ImsWeb.Router do
 
       # users
 
-      # live "/requests", RequestLive.Index, :index
-      # live "/requests/new", RequestLive.Index, :new
-      # live "/requests/:id/edit", RequestLive.Index, :edit
+      live "/requests", RequestLive.Index, :index
+      live "/requests/new", RequestLive.Index, :new
+      live "/requests/:id/edit", RequestLive.Index, :edit
 
-      # live "/requests/:id", RequestLive.Show, :show
-      # live "/requests/:id/show/edit", RequestLive.Show, :edit
+      live "/requests/:id", RequestLive.Show, :show
+      live "/requests/:id/show/edit", RequestLive.Show, :edit
 
       # live "/lost_devices", LostDeviceLive.Index, :index
       # live "/lost_devices/new", LostDeviceLive.Index, :new
@@ -223,9 +225,8 @@ defmodule ImsWeb.Router do
       live "/job_groups", JobGroupLive.Index, :index
       live "/job_groups/new", JobGroupLive.Index, :new
       live "/job_groups/:id/edit", JobGroupLive.Index, :edit
-
-      # live "/job_groups/:id", JobGroupLive.Show, :show
-      # live "/job_groups/:id/show/edit", JobGroupLive.Show, :edit
+      live "/job_groups/:id", JobGroupLive.Show, :show
+      live "/job_groups/:id/show/edit", JobGroupLive.Show, :edit
 
       # live "/device_names", DeviceNameLive.Index, :index
       # live "/device_names/new", DeviceNameLive.Index, :new
@@ -271,8 +272,6 @@ defmodule ImsWeb.Router do
 
       live "/away_requests/:id", AwayRequestLive.Show, :show
       live "/away_requests/:id/show/edit", AwayRequestLive.Show, :edit
-
-
     end
   end
 

@@ -1,7 +1,7 @@
 <.header>
   Listing Job groups
   <:actions>
-    <.link patch={~p"/job_groups/new"}>
+    <.link patch={~p"/admin/job_groups/new"}>
       <.button>New Job group</.button>
     </.link>
   </:actions>
@@ -9,34 +9,24 @@
 
 <.table
   id="job_groups"
-  rows={@streams.job_groups}
-  row_click={fn {_id, job_group} -> JS.navigate(~p"/job_groups/#{job_group}") end}
+  rows={@job_groups}
+  resource="job_groups"
+  current_user={@current_user}
+  actions={["view","edit"]}
+
 >
-  <:col :let={{_id, job_group}} label="Name">{job_group.name}</:col>
-  <:col :let={{_id, job_group}} label="Description">{job_group.description}</:col>
-  <:action :let={{_id, job_group}}>
-    <div class="sr-only">
-      <.link navigate={~p"/job_groups/#{job_group}"}>Show</.link>
-    </div>
-    <.link patch={~p"/job_groups/#{job_group}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={{id, job_group}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: job_group.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
-      Delete
-    </.link>
-  </:action>
+  <:col :let={ job_group} label="Name">{job_group.name}</:col>
+  <:col :let={ job_group} label="Description">{job_group.description}</:col>
+  
 </.table>
 
-<.modal :if={@live_action in [:new, :edit]} id="job_group-modal" show on_cancel={JS.patch(~p"/job_groups")}>
+<.modal :if={@live_action in [:new, :edit]} id="job_group-modal" show on_cancel={JS.patch(~p"/admin/job_groups")}>
   <.live_component
     module={ImsWeb.JobGroupLive.FormComponent}
     id={@job_group.id || :new}
     title={@page_title}
     action={@live_action}
     job_group={@job_group}
-    patch={~p"/job_groups"}
+    patch={~p"/admin/job_groups"}
   />
 </.modal>

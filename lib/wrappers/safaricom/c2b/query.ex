@@ -57,3 +57,93 @@ defmodule Wrappers.Payment.Gateways.Safaricom.C2B.Query do
     {:error, "Unable to Obtain Token"}
   end
 end
+
+# sample response
+
+# {
+# 2
+#   "OriginatorConversationID": "5fbd-4f1c-b3c1-b463d28d74d2319275",
+# 3
+#   "ConversationID": "AG_20250418_20106e53ef0eca41ba1b",
+# 4
+#   "ResponseCode": "0",
+# 5
+#   "ResponseDescription": "Accept the service request successfully."
+# 6
+# }
+
+# sample result
+#   {
+#     "Result": {
+#     "ConversationID":"AG_20180223_0000493344ae97d86f75",
+#     "OriginatorConversationID":"3213-416199-2",
+#     "ReferenceData":
+#   {
+#      "ReferenceItem":
+#   {
+#      "Key":"Occasion",
+#    }
+#    },
+#      "ResultCode": 0
+#       "ResultDesc":"The service request is processed successfully.",
+#      "ResultParameters":
+#    {
+#        "ResultParameter":
+#   [
+#   {
+#      "Key":"DebitPartyName",
+#      "Value":"600310 - Safaricom333",
+#   },
+#   {
+#      "Key":"DebitPartyName",
+#      "Value":"254708374149 - John Doe",
+#   },
+#   {
+#      "Key":"OriginatorConversationID",
+#      "Value":"3211-416020-3",
+#   },
+#   {
+#    "Key":"InitiatedTime",
+#      "Value":"20180223054112",
+#   },
+#   {
+#      "Key":"DebitAccountType",
+#      "Value":"Utility Account",
+#   },
+#   {
+#      "Key":"DebitPartyCharges",
+#      "Value":"Fee For B2C Payment|KES|22.40",
+#   },
+#   {
+#      "Key":"TransactionReason",
+#   },
+#   {
+#      "Key":"ReasonType",
+#      "Value":"Business Payment to Customer via API",
+#   },
+#   {
+#      "Key":"TransactionStatus",
+#     "Value":"Completed",
+#   },
+#   {
+#      "Key":"FinalisedTime",
+#      "Value":"20180223054112",
+#     },
+#   {
+#      "Key":"Amount",
+#      "Value":"300",
+#   },
+#   {
+#      "Key":"ConversationID",
+#      "Value":"AG_20180223_000041b09c22e613d6c9",
+#   },
+#   {
+#      "Key":"ReceiptNo",
+#      "Value":"MBN31H462N",
+#   }
+#   ]
+#   },
+#      "ResultType":0,
+#      "TransactionID":"MBN0000000",
+#   }
+#  }

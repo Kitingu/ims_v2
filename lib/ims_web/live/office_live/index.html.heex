@@ -19,12 +19,7 @@
   <:col :let={ office} label="Building">{office.building}</:col>
   <:col :let={ office} label="Floor">{office.floor}</:col>
   <:col :let={ office} label="Door name">{office.door_name}</:col>
-  <:action :let={ office}>
-    <div class="sr-only">
-      <.link navigate={~p"/offices/#{office}"}>Show</.link>
-    </div>
-    <.link patch={~p"/offices/#{office}/edit"}>Edit</.link>
-  </:action>
+
   
 </.table>
 

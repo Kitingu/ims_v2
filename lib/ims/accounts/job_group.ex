@@ -1,6 +1,9 @@
 defmodule Ims.Accounts.JobGroup do
   use Ecto.Schema
   import Ecto.Changeset
+  import Ecto.Query
+  alias Ims.Repo
+  use Ims.RepoHelpers, repo: Repo
 
   schema "job_groups" do
     field :name, :string
@@ -15,5 +18,20 @@ defmodule Ims.Accounts.JobGroup do
     job_group
     |> cast(attrs, [:name, :description, :created_by_id])
     |> validate_required([:name, :description])
+  end
+
+  def search(queryable \\ __MODULE__, filters) do
+    Enum.reduce(filters, queryable, fn {k, v}, accum_query ->
+      cond do
+        v in ["", nil] ->
+          accum_query
+
+        k == :name ->
+          from(o in accum_query, where: ilike(o.name, ^"%#{v}%"))
+
+        true ->
+          accum_query
+      end
+    end)
   end
 end

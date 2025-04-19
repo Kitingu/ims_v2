@@ -3,10 +3,21 @@ defmodule ImsWeb.JobGroupLive.Index do
 
   alias Ims.Accounts
   alias Ims.Accounts.JobGroup
+  @paginator_opts [order_by: [desc: :inserted_at], page_size: 10]
+
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :job_groups, Accounts.list_job_groups())}
+    filters = %{}
+
+    socket =
+      socket
+      |> assign(:filters, filters)
+      |> assign(:page, 1)
+      |> assign(:job_groups, fetch_records(filters, @paginator_opts))
+      |> assign(:current_user, socket.assigns.current_user)
+
+    {:ok, socket}
   end
 
   @impl true
@@ -34,7 +45,31 @@ defmodule ImsWeb.JobGroupLive.Index do
 
   @impl true
   def handle_info({ImsWeb.JobGroupLive.FormComponent, {:saved, job_group}}, socket) do
-    {:noreply, stream_insert(socket, :job_groups, job_group)}
+    job_groups =
+    fetch_records(socket.assigns.filters, @paginator_opts)
+
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "Job Group saved successfully")
+     |> assign(:job_groups, job_groups)}
+  end
+
+  @impl true
+  def handle_event("edit" <> id, _params, socket) do
+    job_group = Accounts.get_job_group!(id)
+
+    {:noreply,
+     assign(socket,
+       page_title: "Edit Asset type",
+       job_group: job_group,
+       live_action: :edit
+     )}
+  end
+
+  @impl true
+  def handle_event("view" <> id, _, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/admin/job_groups/#{id}")}
   end
 
   @impl true
@@ -43,5 +78,14 @@ defmodule ImsWeb.JobGroupLive.Index do
     {:ok, _} = Accounts.delete_job_group(job_group)
 
     {:noreply, stream_delete(socket, :job_groups, job_group)}
+  end
+
+  defp fetch_records(filters, opts) do
+    IO.inspect(opts, label: "opts")
+    query = JobGroup.search(filters)
+    opts = Keyword.merge(@paginator_opts, opts)
+
+    query
+    |> Ims.Repo.paginate(opts)
   end
 end

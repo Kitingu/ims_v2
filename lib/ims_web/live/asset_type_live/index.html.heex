@@ -16,20 +16,7 @@
 >
   <:col :let={ asset_type} label="Name">{asset_type.name}</:col>
   <:col :let={ asset_type} label="Description">{asset_type.description}</:col>
-  <:action :let={ asset_type}>
-    <div class="sr-only">
-      <.link navigate={~p"/asset_types/#{asset_type}"}>Show</.link>
-    </div>
-    <.link patch={~p"/asset_types/#{asset_type}/edit"}>Edit</.link>
-  </:action>
-  <:action :let={{id, asset_type}}>
-    <.link
-      phx-click={JS.push("delete", value: %{id: asset_type.id}) |> hide("##{id}")}
-      data-confirm="Are you sure?"
-    >
-      Delete
-    </.link>
-  </:action>
+  
 </.table>
 
 <.modal :if={@live_action in [:new, :edit]} id="asset_type-modal" show on_cancel={JS.patch(~p"/asset_types")}>

@@ -1,0 +1,41 @@
+<.header>
+  Listing Payment gateways
+  <:actions>
+    <.link patch={~p"/payment_gateways/new"}>
+      <.button>New Payment gateway</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="payment_gateways"
+  rows={@payment_gateways}
+  current_user={@current_user}
+  resource="payment_gateways"
+  actions={
+    ["view", "edit"]
+  }
+
+>
+  <:col :let={ payment_gateway} label="Name">{payment_gateway.name}</:col>
+  <:col :let={ payment_gateway} label="Label">{payment_gateway.label}</:col>
+  <:col :let={ payment_gateway} label="Type">{payment_gateway.type}</:col>
+  <:col :let={ payment_gateway} label="Status">{payment_gateway.status}</:col>
+  <:col :let={ payment_gateway} label="Identifier">{payment_gateway.identifier}</:col>
+  <:col :let={ payment_gateway} label="Identifier type">{payment_gateway.identifier_type}</:col>
+  <:col :let={ payment_gateway} label="Currency">{payment_gateway.currency}</:col>
+
+  <:col :let={ payment_gateway} label="Common name">{payment_gateway.common_name}</:col>
+
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="payment_gateway-modal" show on_cancel={JS.patch(~p"/payment_gateways")}>
+  <.live_component
+    module={ImsWeb.PaymentGatewayLive.FormComponent}
+    id={@payment_gateway.id || :new}
+    title={@page_title}
+    action={@live_action}
+    payment_gateway={@payment_gateway}
+    patch={~p"/payment_gateways"}
+  />
+</.modal>

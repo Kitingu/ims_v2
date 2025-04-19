@@ -3,10 +3,20 @@ defmodule ImsWeb.RequestLive.Index do
 
   alias Ims.Inventory
   alias Ims.Inventory.Request
+  @paginator_opts [order_by: [desc: :inserted_at], page_size: 10]
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, stream(socket, :requests, Inventory.list_requests())}
+    filters = %{}
+
+    socket =
+      socket
+      |> assign(:filters, filters)
+      |> assign(:page, 1)
+      |> assign(:request, fetch_records(filters, @paginator_opts))
+      |> assign(:current_user, socket.assigns.current_user)
+
+    {:ok, socket}
   end
 
   @impl true
@@ -33,8 +43,31 @@ defmodule ImsWeb.RequestLive.Index do
   end
 
   @impl true
-  def handle_info({ImsWeb.RequestLive.FormComponent, {:saved, request}}, socket) do
-    {:noreply, stream_insert(socket, :requests, request)}
+  def handle_info({ImsWeb.RequestLive.FormComponent, {:saved, _request}}, socket) do
+    requests =
+      fetch_records(socket.assigns.filters, @paginator_opts)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "Request saved successfully")
+     |> assign(:requests, requests)}
+  end
+
+  @impl true
+  def handle_event("edit" <> id, _params, socket) do
+    request = Inventory.get_request!(id)
+
+    {:noreply,
+     assign(socket,
+       page_title: "Edit Asset type",
+       request: request,
+       live_action: :edit
+     )}
+  end
+
+  @impl true
+  def handle_event("view" <> id, _, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/requests/#{id}")}
   end
 
   @impl true
@@ -43,5 +76,14 @@ defmodule ImsWeb.RequestLive.Index do
     {:ok, _} = Inventory.delete_request(request)
 
     {:noreply, stream_delete(socket, :requests, request)}
+  end
+
+  defp fetch_records(filters, opts) do
+    IO.inspect(opts, label: "opts")
+    query = Request.search(filters)
+    opts = Keyword.merge(@paginator_opts, opts)
+
+    query
+    |> Ims.Repo.paginate(opts)
   end
 end

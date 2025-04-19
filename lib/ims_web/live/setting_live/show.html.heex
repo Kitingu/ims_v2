@@ -13,7 +13,7 @@
   <:item title="Value"><%= @setting.value %></:item>
 </.list>
 
-<.back navigate={~p"/settings"}>Back to settings</.back>
+<.back navigate={~p"/admin/settings"}>Back to settings</.back>
 
 <.modal :if={@live_action == :edit} id="setting-modal" show on_cancel={JS.patch(~p"/settings/#{@setting}")}>
   <.live_component
@@ -22,6 +22,6 @@
     title={@page_title}
     action={@live_action}
     setting={@setting}
-    patch={~p"/settings/#{@setting}"}
+    patch={~p"/admin/settings/#{@setting}"}
   />
 </.modal>

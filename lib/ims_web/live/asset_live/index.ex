@@ -201,7 +201,6 @@ defmodule ImsWeb.AssetLive.Index do
 
   @impl true
   def handle_event("view" <> id, _, socket) do
-    asset_logs = get_asset_logs_by_asset_id(id)
     {:noreply, push_navigate(socket, to: ~p"/assets/#{id}")}
   end
 

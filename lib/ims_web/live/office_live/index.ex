@@ -5,7 +5,6 @@ defmodule ImsWeb.OfficeLive.Index do
   alias Ims.Inventory.Office
   @paginator_opts [order_by: [desc: :inserted_at], page_size: 10]
 
-
   @impl true
   def mount(_params, _session, socket) do
     filters = %{}
@@ -54,6 +53,22 @@ defmodule ImsWeb.OfficeLive.Index do
      |> assign(:offices, offices)}
   end
 
+  @impl true
+  def handle_event("edit" <> id, _params, socket) do
+    office = Inventory.get_office!(id)
+
+    {:noreply,
+     assign(socket,
+       page_title: "Edit Asset type",
+       office: office,
+       live_action: :edit
+     )}
+  end
+
+  @impl true
+  def handle_event("view" <> id, _, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/offices/#{id}")}
+  end
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do

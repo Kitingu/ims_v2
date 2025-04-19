@@ -1,0 +1,39 @@
+<.header>
+  Payment gateway {@payment_gateway.id}
+  <:subtitle>This is a payment_gateway record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/payment_gateways/#{@payment_gateway}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit payment_gateway</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Name">{@payment_gateway.name}</:item>
+  <:item title="Slug">{@payment_gateway.slug}</:item>
+  <:item title="Payload">{@payment_gateway.payload}</:item>
+  <:item title="Label">{@payment_gateway.label}</:item>
+  <:item title="Type">{@payment_gateway.type}</:item>
+  <:item title="Status">{@payment_gateway.status}</:item>
+  <:item title="Identifier">{@payment_gateway.identifier}</:item>
+  <:item title="Identifier type">{@payment_gateway.identifier_type}</:item>
+  <:item title="Key">{@payment_gateway.key}</:item>
+  <:item title="Secret">{@payment_gateway.secret}</:item>
+  <:item title="Currency">{@payment_gateway.currency}</:item>
+  <:item title="Payment instructions">{@payment_gateway.payment_instructions}</:item>
+  <:item title="Common name">{@payment_gateway.common_name}</:item>
+  <:item title="Validation rules">{@payment_gateway.validation_rules}</:item>
+</.list>
+
+<.back navigate={~p"/payment_gateways"}>Back to payment_gateways</.back>
+
+<.modal :if={@live_action == :edit} id="payment_gateway-modal" show on_cancel={JS.patch(~p"/payment_gateways/#{@payment_gateway}")}>
+  <.live_component
+    module={ImsWeb.PaymentGatewayLive.FormComponent}
+    id={@payment_gateway.id}
+    title={@page_title}
+    action={@live_action}
+    payment_gateway={@payment_gateway}
+    patch={~p"/payment_gateways/#{@payment_gateway}"}
+  />
+</.modal>

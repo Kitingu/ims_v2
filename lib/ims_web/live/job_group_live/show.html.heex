@@ -2,7 +2,7 @@
   Job group {@job_group.id}
   <:subtitle>This is a job_group record from your database.</:subtitle>
   <:actions>
-    <.link patch={~p"/job_groups/#{@job_group}/show/edit"} phx-click={JS.push_focus()}>
+    <.link patch={~p"/admin/job_groups/#{@job_group}/show/edit"} phx-click={JS.push_focus()}>
       <.button>Edit job_group</.button>
     </.link>
   </:actions>
@@ -13,15 +13,15 @@
   <:item title="Description">{@job_group.description}</:item>
 </.list>
 
-<.back navigate={~p"/job_groups"}>Back to job_groups</.back>
+<.back navigate={~p"/admin/job_groups"}>Back to job_groups</.back>
 
-<.modal :if={@live_action == :edit} id="job_group-modal" show on_cancel={JS.patch(~p"/job_groups/#{@job_group}")}>
+<.modal :if={@live_action == :edit} id="job_group-modal" show on_cancel={JS.patch(~p"/admin/job_groups/#{@job_group}")}>
   <.live_component
     module={ImsWeb.JobGroupLive.FormComponent}
     id={@job_group.id}
     title={@page_title}
     action={@live_action}
     job_group={@job_group}
-    patch={~p"/job_groups/#{@job_group}"}
+    patch={~p"/admin/job_groups/#{@job_group}"}
   />
 </.modal>

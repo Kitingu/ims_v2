@@ -2,6 +2,7 @@ defmodule Ims.Inventory.Office do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
+  alias Ims.Repo
   use Ims.RepoHelpers, repo: Repo
 
   schema "offices" do
@@ -23,7 +24,6 @@ defmodule Ims.Inventory.Office do
   end
 
   def search(queryable \\ __MODULE__, filters) do
-    query =
       Enum.reduce(filters, queryable, fn {k, v}, accum_query ->
         cond do
           v in ["", nil] ->

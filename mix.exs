@@ -69,7 +69,8 @@ defmodule Ims.MixProject do
       {:oban, "~> 2.16"},
       {:igniter, "~> 0.5", only: [:dev]},
       {:dotenv_parser, "~> 2.0"},
-      {:icalendar, "~> 1.0"}
+      {:icalendar, "~> 1.0"},
+      {:slugger, "~> 0.2"},
     ]
   end
 

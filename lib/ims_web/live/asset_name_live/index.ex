@@ -5,6 +5,7 @@ defmodule ImsWeb.AssetNameLive.Index do
   alias Ims.Inventory.AssetName
   @paginator_opts [order_by: [desc: :inserted_at], page_size: 10]
 
+  @impl true
   def mount(_params, _session, socket) do
     filters = %{}
 
@@ -50,6 +51,23 @@ defmodule ImsWeb.AssetNameLive.Index do
      socket
      |> put_flash(:info, "Asset name saved successfully")
      |> assign(:asset_names, asset_names)}
+  end
+
+  @impl true
+  def handle_event("edit" <> id, _params, socket) do
+    asset_name = Inventory.get_asset_name!(id)
+
+    {:noreply,
+     assign(socket,
+       page_title: "Edit Asset type",
+       asset_name: asset_name,
+       live_action: :edit
+     )}
+  end
+
+  @impl true
+  def handle_event("view" <> id, _, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/asset_names/#{id}")}
   end
 
   @impl true

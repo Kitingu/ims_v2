@@ -54,6 +54,54 @@ defmodule ImsWeb.LocationLive.Index do
      |> assign(:locations, locations)}
   end
 
+  def handle_event("resize_table", %{"size" => size}, socket) do
+    locations =
+      fetch_records(socket.assigns.filters, page_size: String.to_integer(size)) |> IO.inspect()
+
+    {:noreply, assign(socket, locations: locations)}
+  end
+
+  def handle_event("render_page", %{"page" => page}, socket) do
+    IO.inspect("page: #{page}")
+
+    new_page =
+      case page do
+        "next" -> socket.assigns.page + 1
+        "previous" -> socket.assigns.page - 1
+        # Convert string to integer for other cases
+        _ -> String.to_integer(page)
+      end
+
+    IO.inspect("new_page: #{new_page}")
+
+    opts = Keyword.merge(@paginator_opts, page: new_page)
+    locations = fetch_records(socket.assigns.filters, opts)
+
+    socket =
+      socket
+      |> assign(:locations, locations)
+
+    # No need for String.to_integer here
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("edit" <> id, _params, socket) do
+    location = Inventory.get_location!(id)
+
+    {:noreply,
+     assign(socket,
+       page_title: "Edit Asset type",
+       location: location,
+       live_action: :edit
+     )}
+  end
+
+  @impl true
+  def handle_event("view" <> id, _, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/locations/#{id}")}
+  end
+
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     location = Inventory.get_location!(id)

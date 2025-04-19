@@ -54,6 +54,24 @@ defmodule ImsWeb.AssetTypeLive.Index do
      |> put_flash(:info, "Asset type saved successfully")
      |> assign(:asset_types, asset_types)}
   end
+  
+  @impl true
+  def handle_event("edit" <> id, _params, socket) do
+    asset_type = Inventory.get_asset_type!(id)
+
+    {:noreply,
+     assign(socket,
+       page_title: "Edit Asset type",
+       asset_type: asset_type,
+       live_action: :edit
+     )}
+  end
+
+  @impl true
+  def handle_event("view" <> id, _, socket) do
+
+    {:noreply, push_navigate(socket, to: ~p"/asset_types/#{id}")}
+  end
 
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do

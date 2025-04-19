@@ -6,7 +6,7 @@ defmodule Ims.Accounts do
   import Ecto.Query, warn: false
   alias Ims.Repo
 
-  alias Ims.Accounts.{User, Role, UserToken, UserNotifier}
+  alias Ims.Accounts.{User, Role, Departments, UserToken, UserNotifier}
   alias Ims.Leave.LeaveBalance
 
   ## Database getters
@@ -95,8 +95,6 @@ defmodule Ims.Accounts do
     end
   end
 
-
-
   def set_default_leave_balances(user_id) do
     user = Repo.get!(Ims.Accounts.User, user_id)
     leave_types = Repo.all(Ims.Leave.LeaveType)
@@ -132,7 +130,6 @@ defmodule Ims.Accounts do
       false -> {:error, :some_failed}
     end
   end
-
 
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking user changes.
@@ -551,12 +548,63 @@ defmodule Ims.Accounts do
     Repo.all(Ims.Accounts.Departments)
   end
 
-
   def change_departments(%Ims.Accounts.Departments{} = departments, attrs \\ %{}) do
     Ims.Accounts.Departments.changeset(departments, attrs)
   end
 
-  def get_department!(id) do
+  def get_departments!(id) do
     Repo.get!(Ims.Accounts.Departments, id)
+  end
+
+  @doc """
+  Creates a department.
+
+  ## Examples
+
+      iex> create_department(%{field: value})
+      {:ok, %Departments{}}
+
+      iex> create_department(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_departments(attrs \\ %{}) do
+    %Departments{}
+    |> Departments.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a department.
+
+  ## Examples
+
+      iex> update_department(department, %{field: new_value})
+      {:ok, %Departments{}}
+
+      iex> update_department(department, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_departments(%Departments{} = department, attrs) do
+    department
+    |> Departments.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a department.
+
+  ## Examples
+
+      iex> delete_department(department)
+      {:ok, %Departments{}}
+
+      iex> delete_department(department)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_departments(%Departments{} = department) do
+    Repo.delete(department)
   end
 end

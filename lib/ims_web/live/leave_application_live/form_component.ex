@@ -422,16 +422,16 @@ defmodule ImsWeb.LeaveApplicationLive.FormComponent do
     end
   end
 
-  defp update_form_user(form, user_id) do
-    # Get the underlying changeset from the form
-    changeset = form.source
+  # defp update_form_user(form, user_id) do
+  #   # Get the underlying changeset from the form
+  #   changeset = form.source
 
-    # Update the changeset with the new user_id
-    updated_changeset = Ecto.Changeset.change(changeset, %{user_id: user_id})
+  #   # Update the changeset with the new user_id
+  #   updated_changeset = Ecto.Changeset.change(changeset, %{user_id: user_id})
 
-    # Convert the updated changeset back to a form
-    to_form(updated_changeset)
-  end
+  #   # Convert the updated changeset back to a form
+  #   to_form(updated_changeset)
+  # end
 
   defp check_admin(user) do
     Canada.Can.can?(user, ["manage"], "hr_dashboard")

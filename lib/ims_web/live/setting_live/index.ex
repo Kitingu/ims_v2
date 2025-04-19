@@ -41,6 +41,23 @@ defmodule ImsWeb.SettingLive.Index do
   end
 
   @impl true
+  def handle_event("edit" <> id, _params, socket) do
+    setting = Settings.get_setting!(id)
+
+    {:noreply,
+     assign(socket,
+       page_title: "Edit Asset type",
+       setting: setting,
+       live_action: :edit
+     )}
+  end
+
+  @impl true
+  def handle_event("view" <> id, _, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/admin/settings/#{id}")}
+  end
+
+  @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     setting = Settings.get_setting!(id)
     {:ok, _} = Settings.delete_setting(setting)

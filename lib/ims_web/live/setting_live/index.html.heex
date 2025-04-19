@@ -16,21 +16,12 @@
   <:col :let={ setting} label="Name">
     <span class="font-medium text-gray-900"><%= setting.name %></span>
   </:col>
-  <:col :let={ setting} label="Value">
-    <span class="text-gray-600"><%= setting.value %></span>
+  <:col :let={setting} label="Value">
+    <span class="inline-block max-w-[150px] truncate" title={setting.value}>
+      <%= setting.value %>
+    </span>
   </:col>
-  <:action :let={ setting}>
-    <div class="flex space-x-2">
-      <.link patch={~p"/admin/settings/#{setting}/edit"} class="text-indigo-600 hover:underline">Edit</.link>
-      <.link
-        phx-click={JS.push("delete", value: %{id: setting.id}) |> hide("##{setting.id}")}
-        data-confirm="Are you sure?"
-        class="text-red-600 hover:underline"
-      >
-        Delete
-      </.link>
-    </div>
-  </:action>
+  
   
 </.table>
 

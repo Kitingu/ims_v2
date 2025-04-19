@@ -28,13 +28,13 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
     assign(socket, search: "", selected_type: nil)
   end
 
-  defp static_leave_type_cols() do
-    [
-      "Annual Leave",
-      "Sick Leave",
-      "Maternity Leave",
-      "Paternity Leave",
-      "Terminal Leave"
-    ]
-  end
+  # defp static_leave_type_cols() do
+  #   [
+  #     "Annual Leave",
+  #     "Sick Leave",
+  #     "Maternity Leave",
+  #     "Paternity Leave",
+  #     "Terminal Leave"
+  #   ]
+  # end
 end
