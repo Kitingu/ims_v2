@@ -19,9 +19,10 @@ defmodule ImsWeb.RequestLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
-        <.input field={@form[:status]} type="text" label="Status" />
-        <.input field={@form[:request_type]} type="text" label="Request type" />
-        <.input field={@form[:assigned_at]} type="datetime-local" label="Assigned at" />
+        <.input field={@form[:category_id]} type="select" label="Category" options={@categories} />
+        <.input field={@form[:user_id]} type="hidden" value={@current_user.id} />
+        
+
         <:actions>
           <.button phx-disable-with="Saving...">Save Request</.button>
         </:actions>
@@ -32,9 +33,12 @@ defmodule ImsWeb.RequestLive.FormComponent do
 
   @impl true
   def update(%{request: request} = assigns, socket) do
+    categories = Inventory.list_categories() |> Enum.map(&{&1.name, &1.id})
+
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:categories, categories)
      |> assign_new(:form, fn ->
        to_form(Inventory.change_request(request))
      end)}

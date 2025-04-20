@@ -7,27 +7,27 @@
   </:actions>
 </.header>
 
-<.table
-  id="requests"
-  rows={@requests}
-  current_user={@current_user}
-  resource="requests"
-  actions={{"approve", "reject"}}
-  
->
-  <:col :let={ request} label="Status">{request.status}</:col>
-  <:col :let={ request} label="Request type">{request.request_type}</:col>
+<.table id="requests" rows={@requests} current_user={@current_user} resource="requests" actions={["approve", "reject"
+  ]}>
+  <:col :let={ request} label="ID">{request.id}</:col>
+  <:col :let={ request} label="User">{request.user.first_name} {request.user.last_name}</:col>
+  <:col :let={ request} label="User Department">{request.user.department.name}</:col>
+  <:col :let={ request} label="Category">{request.category.name}</:col>
+  <:col :let={ request} label="Status">
+    <ImsWeb.Components.StatusLabel.status_label status={request.status} />
+  </:col>
+
   <:col :let={ request} label="Assigned at">{request.assigned_at}</:col>
-  
+
 </.table>
 
 <.modal :if={@live_action in [:new, :edit]} id="request-modal" show on_cancel={JS.patch(~p"/requests")}>
-  <.live_component
-    module={ImsWeb.RequestLive.FormComponent}
-    id={@request.id || :new}
-    title={@page_title}
-    action={@live_action}
-    request={@request}
-    patch={~p"/requests"}
-  />
+  <.live_component module={ImsWeb.RequestLive.FormComponent} id={@request.id || :new} title={@page_title}
+    action={@live_action} request={@request} current_user={@current_user} patch={~p"/requests"} />
+</.modal>
+<.modal :if={@live_action in [:approve]} id="approval-modal" show on_cancel={JS.patch(~p"/requests")}>
+  <.live_component module={ImsWeb.AssetLogLive.FormComponent} id={@request.id || :new} 
+  request_id={@request.id}  request={@request}
+    title="Approve Request" action={:approve} current_user={@current_user} patch={~p"/requests"} />
+
 </.modal>

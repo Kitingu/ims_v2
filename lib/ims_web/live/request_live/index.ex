@@ -13,7 +13,7 @@ defmodule ImsWeb.RequestLive.Index do
       socket
       |> assign(:filters, filters)
       |> assign(:page, 1)
-      |> assign(:request, fetch_records(filters, @paginator_opts))
+      |> assign(:requests, fetch_records(filters, @paginator_opts))
       |> assign(:current_user, socket.assigns.current_user)
 
     {:ok, socket}
@@ -68,6 +68,17 @@ defmodule ImsWeb.RequestLive.Index do
   @impl true
   def handle_event("view" <> id, _, socket) do
     {:noreply, push_navigate(socket, to: ~p"/requests/#{id}")}
+  end
+
+  def handle_event("approve" <> id, _params, socket) do
+    request = Inventory.get_request!(id)
+
+    {:noreply,
+     assign(socket,
+       page_title: "Approve Request",
+       request: request,
+       live_action: :approve
+     )}
   end
 
   @impl true

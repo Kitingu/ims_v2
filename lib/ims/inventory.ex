@@ -527,11 +527,13 @@ defmodule Ims.Inventory do
   end
 
   def get_available_assets(category_id) do
-    from a in Asset,
-      join: an in assoc(a, :asset_name),
+    from(a in Asset,
       where: a.category_id == ^category_id and a.status == :available,
-      order_by: [asc: an.name],
-      preload: [:user, :office, :category, :asset_name]
+      order_by: [asc: a.inserted_at],
+      preload: [:user, :asset_name, :office, :category]
+    )
+    |> Repo.all()
+    |> IO.inspect(label: "jrjer")
   end
 
   def get_available_assets() do
@@ -665,6 +667,91 @@ defmodule Ims.Inventory do
       {:error, %Ecto.Changeset{}}
 
   """
+
+  def create_asset_log(
+        %{"action" => "assigned", "asset_id" => asset_id, "request_id" => request_id} = log_attrs
+      ) do
+    asset = get_asset!(asset_id) |> Repo.preload([:category, :asset_name])
+
+    Repo.transaction(fn ->
+      # Validate user/device limit
+      if log_attrs["user_id"] &&
+           asset.category.name not in [
+             "tonner",
+             "cartridge",
+             "catridges",
+             "tonners",
+             "Tonner",
+             "Tonners"
+           ] do
+        case check_device_limit(log_attrs["user_id"], asset.asset_name.category_id) do
+          :ok -> :ok
+          {:error, message} -> Repo.rollback({:device_limit_error, message})
+        end
+      end
+
+      # Check if asset is assigned to office
+      if asset.office_id do
+        Repo.rollback({:device_limit_error, "Asset is already assigned to an office"})
+      end
+
+      # Create the asset log
+      log =
+        %AssetLog{}
+        |> AssetLog.changeset(log_attrs)
+        |> Repo.insert!()
+
+      # Update the asset
+      asset_changes =
+        %{}
+        |> maybe_put(:user_id, Map.get(log_attrs, "user_id"))
+        |> maybe_put(:office_id, Map.get(log_attrs, "office_id"))
+        |> Map.put(:status, :assigned)
+        |> Map.put(:current_log_id, log.id)
+
+      updated_asset =
+        asset
+        |> Asset.changeset(asset_changes)
+        |> Repo.update!()
+
+      # ✅ Update the related request
+      request =
+        Ims.Inventory.get_request!(request_id)
+
+      request_changes =
+        %{
+          status: "approved",
+          actioned_by_id: log_attrs["performed_by_id"],
+          actioned_at: DateTime.utc_now(),
+          asset_id: asset_id
+        }
+
+      _updated_request =
+        request
+        |> Ims.Inventory.Request.changeset(request_changes)
+        |> Repo.update!()
+
+      # Return both records
+      %{asset: updated_asset, log: log}
+    end)
+    |> case do
+      {:ok, %{asset: _asset, log: log}} ->
+        {:ok, log}
+
+      {:error, {:device_limit_error, message}} ->
+        {:error,
+         AssetLog.changeset(%AssetLog{}, log_attrs)
+         |> Ecto.Changeset.add_error(:user_id, message)}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, changeset}
+
+      {:error, _other} ->
+        {:error,
+         AssetLog.changeset(%AssetLog{}, log_attrs)
+         |> Ecto.Changeset.add_error(:base, "An unexpected error occurred")}
+    end
+  end
 
   def create_asset_log(%{"action" => "assigned", "asset_id" => asset_id} = log_attrs) do
     asset = get_asset!(asset_id) |> Repo.preload([:category, :asset_name])
@@ -1055,7 +1142,7 @@ defmodule Ims.Inventory do
       ** (Ecto.NoResultsError)
 
   """
-  def get_request!(id), do: Repo.get!(Request, id)
+  def get_request!(id), do: Repo.get!(Request, id) |> Repo.preload([:user])
 
   @doc """
   Creates a request.

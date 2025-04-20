@@ -29,6 +29,7 @@ defmodule Ims.Inventory.AssetLog do
     field :photo_evidence, :string
     field :revoke_type, :string
     field :revoked_until, :date
+    field :request_id, :string, virtual: true
     belongs_to :asset, Ims.Inventory.Asset
     belongs_to :user, Ims.Accounts.User
     belongs_to :approved_by, Ims.Accounts.User
@@ -56,6 +57,7 @@ defmodule Ims.Inventory.AssetLog do
       :revoked_until,
       :asset_id,
       :user_id,
+      :request_id,
       :approved_by_id,
       :performed_by_id
     ])

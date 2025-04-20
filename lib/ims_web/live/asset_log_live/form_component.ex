@@ -34,6 +34,33 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     {:ok, socket}
   end
 
+  def update(
+        %{action: _action, patch: _patch, request: request} = assigns,
+        socket
+      ) do
+    IO.inspect(assigns, label: "Fallback Update Assigns")
+
+    users = Ims.Accounts.list_users() |> Enum.map(&{&1.first_name, &1.id})
+    offices = Ims.Inventory.list_offices() |> Enum.map(&{&1.name, &1.id})
+    asset_log = %Ims.Inventory.AssetLog{}
+    category_id = request.category_id
+    assets = Inventory.get_available_assets(category_id) |> Enum.map(&{&1.asset_name.name, &1.id})
+
+    {:ok,
+     socket
+     |> assign_new(:asset, fn -> nil end)
+     |> assign(assigns)
+     |> assign(:asset_log, asset_log)
+     |> assign(:users, users)
+     |> assign(:offices, offices)
+     |> assign(:assets, assets)
+     |> assign(:assign_to, "user")
+     |> assign(:revoke_type, nil)
+     |> assign_new(:form, fn ->
+       to_form(Ims.Inventory.change_asset_log(asset_log))
+     end)}
+  end
+
   @impl true
   def update(%{asset: asset, action: action, return_to: return_to} = assigns, socket) do
     users = Ims.Accounts.list_users() |> Enum.map(&{&1.first_name, &1.id})
@@ -108,7 +135,10 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
       >
         <.input field={@form[:action]} type="hidden" value={action_value(@action)} />
 
-        <.input field={@form[:asset_id]} type="hidden" value={@asset.id} />
+        <%= if @asset do %>
+          <.input field={@form[:asset_id]} type="hidden" value={@asset.id} />
+        <% end %>
+
         <.input field={@form[:performed_by_id]} type="hidden" value={@current_user.id} />
 
         {render_action_specific_fields(assigns)}
@@ -160,10 +190,11 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
   defp render_action_specific_fields(%{action: :mark_as_lost} = assigns) do
     ~H"""
     <.input field={@form[:abstract_number]} type="text" label="Abstract number" />
-    <.input field={@form[:performed_by_id]} type="hidden" value={@asset.user_id} />
-    <.input field={@form[:user_id]} type="hidden" value={@asset.user_id} || nil />
-    <.input field={@form[:office_id]} type="hidden" value={@asset.office_id} || nil />
-
+    <%= if @asset do %>
+      <.input field={@form[:performed_by_id]} type="hidden" value={@asset.user_id} />
+      <.input field={@form[:user_id]} type="hidden" value={@asset.user_id} || nil />
+      <.input field={@form[:office_id]} type="hidden" value={@asset.office_id} || nil />
+    <% end %>
     <div>
       <label for="police_abstract_photo" class="block text-sm font-medium text-gray-700">
         Police abstract photo
@@ -217,9 +248,10 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
   defp render_action_specific_fields(%{action: :return_device} = assigns) do
     ~H"""
     <.input field={@form[:date_returned]} type="date" label="Date returned" max={Date.utc_today()} />
-    <.input field={@form[:user_id]} type="hidden" value={@asset.user_id} || nil />
-    <.input field={@form[:office_id]} type="hidden" value={@asset.office_id} || nil />
-
+    <%= if @asset do %>
+      <.input field={@form[:user_id]} type="hidden" value={@asset.user_id} || nil />
+      <.input field={@form[:office_id]} type="hidden" value={@asset.office_id} || nil />
+    <% end %>
     <div>
       <label for="evidence" class="block text-sm font-medium text-gray-700">Evidence</label>
       <div class="mt-1">
@@ -289,11 +321,30 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
     """
   end
 
+  defp render_action_specific_fields(%{action: :approve} = assigns) do
+    ~H"""
+    <div>
+    <h3> Approving  {@request.user.first_name} {@request.user.last_name} request. </h3>
+    </div>
+    <.input
+      field={@form[:asset_id]}
+      type="select"
+      label="Asset"
+      options={@assets}
+      phx-target={@myself}
+    />
+    <.input field={@form[:user_id]} type="hidden" value={@request.user_id} />
+    <.input field={@form[:request_id]} type="hidden" value={@request.id} />
+    """
+  end
+
   defp render_action_specific_fields(_assigns), do: nil
 
   @impl true
   def handle_event("validate", %{"asset_log" => asset_log_params}, socket) do
-    changeset = Inventory.change_asset_log(socket.assigns.asset_log, asset_log_params)
+    changeset =
+      Inventory.change_asset_log(socket.assigns.asset_log, asset_log_params) |> IO.inspect()
+
     {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
   end
 

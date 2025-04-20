@@ -1,7 +1,7 @@
 defmodule ImsWeb.Components.StatusLabel do
   use Phoenix.Component
 
-  attr :status, :atom, required: true
+  attr :status, :any, required: true
 
   def status_label(assigns) do
     ~H"""
@@ -15,6 +15,10 @@ defmodule ImsWeb.Components.StatusLabel do
     do:
       "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800"
 
+  defp status_class("approved"),
+    do:
+      "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800"
+
   defp status_class(:assigned),
     do:
       "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800"
@@ -24,6 +28,10 @@ defmodule ImsWeb.Components.StatusLabel do
       "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800"
 
   defp status_class(:lost),
+    do:
+      "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800"
+
+  defp status_class("declined"),
     do:
       "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800"
 
@@ -41,4 +49,13 @@ defmodule ImsWeb.Components.StatusLabel do
     |> String.replace("_", " ")
     |> String.capitalize()
   end
+
+  defp format_status(status) do
+    status
+    |> String.replace("_", " ")
+    |> String.capitalize()
+  end
+
+  # defp normalize_status(status) when is_binary(status), do: String.to_atom(status)
+  # defp normalize_status(status) when is_atom(status), do: status
 end

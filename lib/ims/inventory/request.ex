@@ -8,14 +8,13 @@ defmodule Ims.Inventory.Request do
 
   schema "requests" do
     field :status, :string, default: "pending"
-    field :request_type, :string
+    # field :request_type, :string
     field :assigned_at, :utc_datetime
     belongs_to :user, Ims.Accounts.User
     belongs_to :actioned_by, Ims.Accounts.User
     field :actioned_at, :utc_datetime
     belongs_to :category, Ims.Inventory.Category
-
-    field :asset_id, :id
+    belongs_to :asset, Inventory.Asset
 
     timestamps(type: :utc_datetime)
   end
@@ -25,7 +24,6 @@ defmodule Ims.Inventory.Request do
     request
     |> cast(attrs, [
       :status,
-      :request_type,
       :assigned_at,
       :user_id,
       :actioned_by_id,
@@ -33,7 +31,7 @@ defmodule Ims.Inventory.Request do
       :asset_id,
       :actioned_at
     ])
-    |> validate_required([:status, :request_type, :user_id, :category_id])
+    |> validate_required([:status, :user_id, :category_id])
     |> validate_inclusion(:status, ["pending", "approved", "rejected", "pending_requisition"])
   end
 
@@ -50,6 +48,6 @@ defmodule Ims.Inventory.Request do
         end
       end)
 
-    from(r in query, preload: [:category, :user])
+    from(r in query, preload: [:category, user: [:department]])
   end
 end
