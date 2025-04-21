@@ -2,12 +2,15 @@ defmodule ImsWeb.UserLive do
   use ImsWeb, :live_view
 
   alias Ims.Accounts
+  alias Ims.Accounts.User
   @paginator_opts [order_by: [desc: :inserted_at], page_size: 10]
 
   def mount(_params, _session, socket) do
+    filters = %{}
     socket =
       socket
-      |> assign(:users, Accounts.list_users() |> Ims.Repo.paginate(@paginator_opts))
+      |> assign(:filters, filters)
+      |> assign(:users, fetch_records(filters, @paginator_opts))
       |> assign(:roles, Accounts.Role.all())
       |> assign(:message, nil)
       |> assign(:show_modal, false)
@@ -27,7 +30,7 @@ defmodule ImsWeb.UserLive do
   end
 
   def handle_info(:load_users, socket) do
-    users = Accounts.list_users() |> Ims.Repo.paginate(@paginator_opts)
+    users =  fetch_records(socket.assigns.filters, @paginator_opts)
     {:noreply, assign(socket, users: users)}
   end
 
@@ -78,6 +81,48 @@ defmodule ImsWeb.UserLive do
 
     {:noreply, socket}
   end
+
+  def handle_event("resize_table", %{"size" => size}, socket) do
+    away_requests =
+      fetch_records(socket.assigns.filters, page_size: String.to_integer(size)) |> IO.inspect()
+
+    {:noreply, assign(socket, away_requests: away_requests)}
+  end
+
+  def handle_event("render_page", %{"page" => page}, socket) do
+    IO.inspect("page: #{page}")
+
+    new_page =
+      case page do
+        "next" -> socket.assigns.page + 1
+        "previous" -> socket.assigns.page - 1
+        # Convert string to integer for other cases
+        _ -> String.to_integer(page)
+      end
+
+    IO.inspect("new_page: #{new_page}")
+
+    opts = Keyword.merge(@paginator_opts, page: new_page)
+    away_requests = fetch_records(socket.assigns.filters, opts)
+
+    socket =
+      socket
+      |> assign(:away_requests, away_requests)
+
+    # No need for String.to_integer here
+    {:noreply, socket}
+  end
+
+
+  defp fetch_records(filters, opts) do
+    IO.inspect(opts, label: "opts")
+    query = User.search(filters)
+    opts = Keyword.merge(@paginator_opts, opts)
+
+    query
+    |> Ims.Repo.paginate(opts)
+  end
+
 
   def render(assigns) do
     ~H"""

@@ -27,11 +27,11 @@ defmodule ImsWeb.Components.StatusLabel do
     do:
       "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800"
 
-  defp status_class(:lost),
+  defp status_class("rejected"),
     do:
-      "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800"
+    "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800"
 
-  defp status_class("declined"),
+  defp status_class(:lost),
     do:
       "inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800"
 

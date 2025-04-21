@@ -2,6 +2,7 @@ defmodule Ims.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
   alias Ims.Repo
+  import Ecto.Query
   alias Ims.Accounts.{Role, Departments, JobGroup}
   alias Ims.Leave.{LeaveBalance, LeaveType}
   use Ims.RepoHelpers, repo: Repo
@@ -19,9 +20,10 @@ defmodule Ims.Accounts.User do
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
-    field :password_reset_required, :boolean, default: true # New field
-    field :gender, :string # New gender field
-
+    # New field
+    field :password_reset_required, :boolean, default: true
+    # New gender field
+    field :gender, :string
 
     many_to_many :roles, Role,
       join_through: "user_roles",
@@ -85,13 +87,13 @@ defmodule Ims.Accounts.User do
       :designation,
       :job_group_id,
       :gender
-
     ])
     |> validate_email(opts)
     |> validate_msisdn()
     |> validate_inclusion(:gender, ["Male", "Female"])
     |> unique_constraint(:msisdn, name: "unique_msisdn")
     |> validate_password(opts)
+
     # |> validate_password_confirmation()
   end
 
@@ -277,5 +279,29 @@ defmodule Ims.Accounts.User do
     Enum.map(leave_types, fn leave_type ->
       %LeaveBalance{leave_type_id: leave_type.id, remaining_days: 0}
     end)
+  end
+
+  def search(queryable \\ __MODULE__, filters) do
+    query =
+      Enum.reduce(filters, queryable, fn {k, v}, accum_query ->
+        cond do
+          v in ["", nil] ->
+            accum_query
+
+          k == :first_name ->
+            from(u in accum_query, where: ilike(u.first_name, ^"%#{v}%"))
+
+          k == :last_name ->
+            from(u in accum_query, where: ilike(u.last_name, ^"%#{v}%"))
+
+          k == :personl_number ->
+            from(u in accum_query, where: ilike(u.personl_number, ^"%#{v}%"))
+
+          true ->
+            accum_query
+        end
+      end)
+
+    from(q in query, preload: [:department, :job_group, :roles])
   end
 end

@@ -81,6 +81,34 @@ defmodule ImsWeb.RequestLive.Index do
      )}
   end
 
+  def handle_event("reject" <> id, _params, socket) do
+    user_id = socket.assigns.current_user.id
+
+    case Inventory.decline_request(id, user_id) |> IO.inspect() do
+      {:ok, _request} ->
+        requests =
+          fetch_records(socket.assigns.filters, @paginator_opts)
+
+        socket =
+          socket
+          |> assign(:requests, requests)
+          |> put_flash(:info, "Request declined successfully.")
+
+        {:noreply, socket}
+
+      _ ->
+        requests =
+          fetch_records(socket.assigns.filters, @paginator_opts)
+
+        socket =
+          socket
+          |> assign(:requests, requests)
+          |> put_flash(:error, "Request decline failed try again.")
+
+        {:noreply, socket}
+    end
+  end
+
   @impl true
   def handle_event("delete", %{"id" => id}, socket) do
     request = Inventory.get_request!(id)

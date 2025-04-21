@@ -69,7 +69,7 @@
 
         <!-- Approve Action -->
         <li>
-          <%= if "approve" in @actions && @item.status not in ["confirmed","approved", "lost" ] &&
+          <%= if "approve" in @actions && @item.status not in ["confirmed","approved", "lost", "rejected" ] &&
             Canada.Can.can?(@current_user,["approve"], @resource) do %>
             <button phx-click={"approve" <> to_string(@item.id)}
               class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"

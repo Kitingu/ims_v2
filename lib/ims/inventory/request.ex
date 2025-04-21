@@ -48,6 +48,6 @@ defmodule Ims.Inventory.Request do
         end
       end)
 
-    from(r in query, preload: [:category, user: [:department]])
+    from(r in query, preload: [:category, :actioned_by, user: [:department]])
   end
 end

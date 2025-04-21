@@ -5,6 +5,7 @@ defmodule Ims.Inventory do
 
   import Ecto.Query, warn: false
   alias Ims.Repo
+  alias Ims.Inventory.Request
 
   alias Ims.Inventory.Location
 
@@ -926,6 +927,18 @@ defmodule Ims.Inventory do
     %AssetLog{}
     |> AssetLog.changeset(attrs)
     |> Repo.insert()
+  end
+
+  def decline_request(id, user_id) do
+    request = get_request!(id)
+
+    request
+    |> Request.changeset(%{
+      status: "rejected",
+      actioned_by_id: user_id,
+      actioned_at: DateTime.utc_now()
+    })
+    |> Repo.update()
   end
 
   # Helper
