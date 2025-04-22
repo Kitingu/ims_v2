@@ -3,10 +3,12 @@ defmodule ImsWeb.UserLive do
 
   alias Ims.Accounts
   alias Ims.Accounts.User
-  @paginator_opts [order_by: [desc: :inserted_at], page_size: 10]
+  @paginator_opts [order_by: [desc: :inserted_at], page_size: 20]
 
+  @impl true
   def mount(_params, _session, socket) do
     filters = %{}
+
     socket =
       socket
       |> assign(:filters, filters)
@@ -15,6 +17,7 @@ defmodule ImsWeb.UserLive do
       |> assign(:message, nil)
       |> assign(:show_modal, false)
       |> assign(:modal_user_id, nil)
+      |> assign(:show_upload_modal, false)
       |> assign(:selected_role_id, nil)
       |> assign(:job_groups, Accounts.list_job_groups())
       |> assign(:current_user, socket.assigns.current_user)
@@ -22,6 +25,7 @@ defmodule ImsWeb.UserLive do
       |> assign(:live_action, nil)
       |> assign(:live_params, nil)
 
+      if connected?(socket), do: Phoenix.PubSub.subscribe(Ims.PubSub, "users:upload")
     {:ok, socket}
 
     # if connected?(socket), do: send(self(), :load_users)
@@ -29,17 +33,50 @@ defmodule ImsWeb.UserLive do
     # {:ok, assign(socket, users: [], roles: roles, message: nil)}
   end
 
+  @impl true
+  def handle_params(_params, _uri, socket) do
+    socket =
+      socket
+      |> assign(:show_upload_modal, false)
+
+    {:noreply, assign(socket, live_action: :index)}
+  end
+
+  @impl true
   def handle_info(:load_users, socket) do
-    users =  fetch_records(socket.assigns.filters, @paginator_opts)
+    users = fetch_records(socket.assigns.filters, @paginator_opts)
     {:noreply, assign(socket, users: users)}
   end
 
+  def handle_info({:close_upload_modal}, socket) do
+    {:noreply, assign(socket, show_upload_modal: false)}
+  end
+
+  def handle_info({:users_uploaded, _admin_id, message}, socket) do
+    users = fetch_records(socket.assigns.filters, @paginator_opts)
+
+    {:noreply,
+     socket
+     |> assign(:users, users)
+     |> put_flash(:info, message)}
+  end
+
+
+  @impl true
   def handle_event("show_modal", %{"user-id" => user_id}, socket) do
     {:noreply, assign(socket, show_modal: true, modal_user_id: String.to_integer(user_id))}
   end
 
   def handle_event("close_modal", _params, socket) do
     {:noreply, assign(socket, live_action: nil, live_params: nil)}
+  end
+
+  def handle_event("show-upload-modal", _params, socket) do
+    {:noreply, assign(socket, show_upload_modal: true)}
+  end
+
+  def handle_event("close-upload-modal", _params, socket) do
+    {:noreply, assign(socket, show_upload_modal: false)}
   end
 
   # def handle_event("close_modal", _, socket) do
@@ -113,7 +150,6 @@ defmodule ImsWeb.UserLive do
     {:noreply, socket}
   end
 
-
   defp fetch_records(filters, opts) do
     IO.inspect(opts, label: "opts")
     query = User.search(filters)
@@ -123,18 +159,24 @@ defmodule ImsWeb.UserLive do
     |> Ims.Repo.paginate(opts)
   end
 
-
+  @impl true
   def render(assigns) do
     ~H"""
     <div class="container mx-auto p-6">
       <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">User Management</h1>
+        <h1 class="text-2xl font-bold text-gray-800">User Management</h1>
 
-        <.link href={~p"/admin/users/register"}>
-          <.button class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow-md hover:bg-blue-700">
-            Add User
+        <div class="flex gap-4">
+          <.link href={~p"/admin/users/register"}>
+            <.button class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow-md hover:bg-blue-700">
+              Add User
+            </.button>
+          </.link>
+
+          <.button phx-click="show-upload-modal" class="ml-4 bg-blue-600 text-white px-4 py-2 rounded">
+            Upload Users
           </.button>
-        </.link>
+        </div>
       </div>
 
       <%= if @message do %>
@@ -244,6 +286,15 @@ defmodule ImsWeb.UserLive do
         </div>
       <% end %>
     </div>
+
+    <%= if @show_upload_modal do %>
+      <.live_component
+        module={ImsWeb.UserLive.UploadUsersModal}
+        id="upload-users"
+        patch={~p"/admin/users"}
+        current_user={@current_user}
+      />
+    <% end %>
     """
   end
 

@@ -11,8 +11,10 @@ defmodule Ims.HR.AwayRequest do
     field :memo, :string
     field :memo_upload, :string
     field :days, :integer
+    field :start_date, :date
     field :return_date, :date
-    field :user_id, :id
+    belongs_to :user, Ims.Accounts.User
+    field :status, :string, default: "active"
 
     timestamps(type: :utc_datetime)
   end
@@ -20,8 +22,8 @@ defmodule Ims.HR.AwayRequest do
   @doc false
   def changeset(away_request, attrs) do
     away_request
-    |> cast(attrs, [:reason, :location, :memo, :memo_upload, :days, :return_date])
-    |> validate_required([:reason, :location, :memo, :memo_upload, :days, :return_date])
+    |> cast(attrs, [:reason, :user_id,:start_date, :location, :memo, :days, :return_date])
+    |> validate_required([:reason, :user_id, :location, :memo, :days, :return_date])
   end
 
   def search(queryable \\ __MODULE__, filters) do
@@ -44,5 +46,13 @@ defmodule Ims.HR.AwayRequest do
             accum_query
         end
       end)
+
+    from(a in query, preload: [:user])
+  end
+end
+
+defimpl Inspect, for: Ims.HR.AwayRequest do
+  def inspect(away_request, _opts) do
+    "#Ims.HR.AwayRequest<#{away_request.id}>"
   end
 end

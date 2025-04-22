@@ -19,6 +19,19 @@ defmodule ImsWeb.AwayRequestLive.FormComponent do
         phx-change="validate"
         phx-submit="save"
       >
+      <div class="relative" phx-update="ignore" id="select_user_container">
+          <.input
+            field={@form[:user_id]}
+            type="select"
+            id="select_user_id"
+            phx-hook="select2JS"
+            options={@user_options}
+            data-phx-event="select_changed"
+            data-placeholder="Select User"
+            class="w-full hidden"
+          />
+        </div>
+
         <.input field={@form[:reason]} type="text" label="Reason" />
         <.input field={@form[:location]} type="text" label="Location" />
         <.input field={@form[:memo]} type="text" label="Memo" />
@@ -35,9 +48,16 @@ defmodule ImsWeb.AwayRequestLive.FormComponent do
 
   @impl true
   def update(%{away_request: away_request} = assigns, socket) do
+    users =
+    Ims.Accounts.list_users()
+    |> Enum.map(fn user ->
+      {"#{user.first_name} #{user.last_name}", user.id}
+    end)
+
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:user_options, users)
      |> assign_new(:form, fn ->
        to_form(HR.change_away_request(away_request))
      end)}
@@ -51,6 +71,32 @@ defmodule ImsWeb.AwayRequestLive.FormComponent do
 
   def handle_event("save", %{"away_request" => away_request_params}, socket) do
     save_away_request(socket, socket.assigns.action, away_request_params)
+  end
+
+  @impl true
+  def handle_event(
+        "select_changed",
+        %{
+          "select_id" => "select_user_id",
+          "away_request[user_id]" => user_id
+        },
+        socket
+      ) do
+
+    # Merge into form params
+    updated_params =
+      socket.assigns.form.params
+      |> Map.put("user_id", user_id)
+
+    # Re-validate the changeset using updated params
+    changeset =
+      socket.assigns.away_request
+      |> HR.change_away_request(updated_params)
+
+    {:noreply,
+     socket
+     |> assign(:form, to_form(changeset))
+     |> assign(:selected_user, user_id)}
   end
 
   defp save_away_request(socket, :edit, away_request_params) do

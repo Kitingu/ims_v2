@@ -607,4 +607,53 @@ defmodule Ims.Accounts do
   def delete_departments(%Departments{} = department) do
     Repo.delete(department)
   end
+
+
+  def generate_upload_template do
+    departments = list_departments() |> Enum.map(&{&1.name, &1.id})
+    job_groups = list_job_groups() |> Enum.map(&{&1.name, &1.id})
+
+    headers = [
+      "Email*",
+      "First Name*",
+      "Last Name*",
+      "Phone Number*",
+      "Personal Number",
+      "Designation",
+      "Gender* (Male/Female)",
+      "Department ID*",
+      "Job Group ID*"
+    ]
+
+    user_sheet = %Elixlsx.Sheet{
+      name: "Users",
+      rows: [headers]
+    }
+
+    ref_sheet = %Elixlsx.Sheet{
+      name: "Reference",
+      rows: [
+        ["Department Name", "Department ID"] |
+        Enum.map(departments, fn {name, id} -> [name, id] end)
+      ] ++
+      [[]] ++
+      [["Job Group Name", "Job Group ID"] |
+        Enum.map(job_groups, fn {name, id} -> [name, id] end)
+      ]
+    }
+
+    workbook = %Elixlsx.Workbook{sheets: [user_sheet, ref_sheet]}
+
+    path = Path.join(System.tmp_dir(), "user_upload_template.xlsx")
+    Elixlsx.write_to(workbook, path)
+
+    File.read!(path)
+  end
+
+
+  defp format_options(options) do
+    options
+    |> Enum.map(fn {name, id} -> "#{name} (#{id})" end)
+    |> Enum.join(", ")
+  end
 end

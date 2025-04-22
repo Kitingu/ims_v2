@@ -188,6 +188,8 @@ defmodule ImsWeb.Router do
     live_session :admin,
       # ✅ Mounts `current_user`
       on_mount: [{ImsWeb.UserAuth, :mount_current_user}] do
+      get "/users/download_template", UserController, :download_template
+
       live "/users", UserLive, :index
       live "/users/register", UserRegistrationLive, :new
       live "/users/:id/edit", UserLive, :edit

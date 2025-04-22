@@ -9,7 +9,8 @@ defmodule Ims.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      releases: releases(),
     ]
   end
 
@@ -19,7 +20,7 @@ defmodule Ims.MixProject do
   def application do
     [
       mod: {Ims.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :xlsxir]
     ]
   end
 
@@ -66,11 +67,21 @@ defmodule Ims.MixProject do
       {:timex, "~> 3.7"},
       {:canada, "~> 2.0"},
       {:elixlsx, "~> 0.6.0"},
+      {:xlsxir, "~> 1.6"},
       {:oban, "~> 2.16"},
       {:igniter, "~> 0.5", only: [:dev]},
       {:dotenv_parser, "~> 2.0"},
       {:icalendar, "~> 1.0"},
       {:slugger, "~> 0.2"},
+    ]
+  end
+
+  defp releases do
+    [
+      your_app: [
+        include_executables_for: [:unix],
+        steps: [:assemble, :tar]
+      ]
     ]
   end
 
