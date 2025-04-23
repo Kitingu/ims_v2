@@ -342,6 +342,7 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
 
   @impl true
   def handle_event("validate", %{"asset_log" => asset_log_params}, socket) do
+    IO.inspect(label: "Validate Event")
     changeset =
       Inventory.change_asset_log(socket.assigns.asset_log, asset_log_params) |> IO.inspect()
 

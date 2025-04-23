@@ -121,7 +121,7 @@ defmodule ImsWeb.AssetLive.Index do
      |> assign(:assets, assets)}
   end
 
-  def handle_event("department_id", %{"department_id" => department_id}, socket) do
+  def handle_event("select_changed", %{"department_id" => department_id}, socket) do
     # apply filters to the asset list
 
     filters = socket.assigns.filters

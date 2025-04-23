@@ -139,7 +139,7 @@ defmodule Ims.Leave do
         0
 
       %Ims.Leave.LeaveBalance{remaining_days: remaining_days} ->
-        Decimal.to_integer(remaining_days)
+        Decimal.to_float(remaining_days)
     end
   end
 
