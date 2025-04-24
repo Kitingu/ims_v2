@@ -47,7 +47,7 @@ defmodule Ims.HR.AwayRequest do
         end
       end)
 
-    from(a in query, preload: [:user])
+    from(a in query, preload: [user: :department])
   end
 end
 

@@ -8,10 +8,12 @@
 </.header>
 
 <.table id="away_requests" rows={@away_requests} recource="away_requests" current_user={@current_user} actions={[]}>
+  <:col :let={ away_request} label="ID">{away_request.id}</:col>
+  <:col :let={ away_request} label="User">{away_request.user.first_name} {away_request.user.last_name}</:col>
+  <:col :let={ away_request} label="Department">{away_request.user.department.name} </:col>
   <:col :let={ away_request} label="Reason">{away_request.reason}</:col>
   <:col :let={ away_request} label="Location">{away_request.location}</:col>
   <:col :let={ away_request} label="Memo">{away_request.memo}</:col>
-  <:col :let={ away_request} label="Memo upload">{away_request.memo_upload}</:col>
   <:col :let={ away_request} label="Days">{away_request.days}</:col>
   <:col :let={ away_request} label="Return date">{away_request.return_date}</:col>
 

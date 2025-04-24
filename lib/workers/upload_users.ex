@@ -11,7 +11,7 @@ defmodule Ims.Workers.UploadUsersWorker do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"admin_id" => admin_id, "path" => path}}) do
     if not File.exists?(path) do
-      Logger.warn("❌ Skipping retry — file no longer exists: #{path}")
+      Logger.warning("❌ Skipping retry — file no longer exists: #{path}")
       :discard
     else
       Logger.info("📥 Processing Excel file: #{path} (admin_id: #{admin_id})")
@@ -63,7 +63,7 @@ defmodule Ims.Workers.UploadUsersWorker do
         Logger.info("✅ Inserted user: #{attrs.email}")
       else
         true ->
-          Logger.warn("⚠️ Skipping duplicate email: #{Enum.at(row, 0)}")
+          Logger.warning("⚠️ Skipping duplicate email: #{Enum.at(row, 0)}")
 
         {:error, changeset} ->
           Logger.error("❌ Insert failed: #{inspect(changeset.errors)}")
