@@ -1,0 +1,35 @@
+<.header>
+  Intern attachee {@intern_attachee.id}
+  <:subtitle>This is a intern_attachee record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/intern_attachees/#{@intern_attachee}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit intern_attachee</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Full name">{@intern_attachee.full_name}</:item>
+  <:item title="Email">{@intern_attachee.email}</:item>
+  <:item title="Phone">{@intern_attachee.phone}</:item>
+  <:item title="School">{@intern_attachee.school}</:item>
+  <:item title="Program">{@intern_attachee.program}</:item>
+  <:item title="Start date">{@intern_attachee.start_date}</:item>
+  <:item title="End date">{@intern_attachee.end_date}</:item>
+  <:item title="Duration">{@intern_attachee.duration}</:item>
+  <:item title="Next of kin name">{@intern_attachee.next_of_kin_name}</:item>
+  <:item title="Next of kin phone">{@intern_attachee.next_of_kin_phone}</:item>
+</.list>
+
+<.back navigate={~p"/intern_attachees"}>Back to intern_attachees</.back>
+
+<.modal :if={@live_action == :edit} id="intern_attachee-modal" show on_cancel={JS.patch(~p"/intern_attachees/#{@intern_attachee}")}>
+  <.live_component
+    module={ImsWeb.InternAttacheeLive.FormComponent}
+    id={@intern_attachee.id}
+    title={@page_title}
+    action={@live_action}
+    intern_attachee={@intern_attachee}
+    patch={~p"/intern_attachees/#{@intern_attachee}"}
+  />
+</.modal>

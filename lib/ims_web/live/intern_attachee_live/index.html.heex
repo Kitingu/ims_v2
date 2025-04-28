@@ -1,0 +1,41 @@
+<.header>
+  Listing Intern/Attachees
+  <:actions>
+    <.link patch={~p"/hr/intern_attachees/new"}>
+      <.button>New Intern attachee</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="intern_attachees"
+  rows={@intern_attachees}
+  current_user={@current_user}
+  resource="intern_attachees"
+  actions={["edit"]}
+
+
+>
+  <:col :let={ intern_attachee} label="ID">{intern_attachee.id}</:col>
+  <:col :let={ intern_attachee} label="Full name">{intern_attachee.full_name}</:col>
+  <:col :let={ intern_attachee} label="Phone">{intern_attachee.phone}</:col>
+  <:col :let={ intern_attachee} label="Department">{intern_attachee.department.name} </:col>
+  <:col :let={ intern_attachee} label="School">{intern_attachee.school}</:col>
+  <:col :let={ intern_attachee} label="Program">{intern_attachee.program}</:col>
+  <:col :let={ intern_attachee} label="Start date">{intern_attachee.start_date}</:col>
+  <:col :let={ intern_attachee} label="End date">{intern_attachee.end_date}</:col>
+  <:col :let={ intern_attachee} label="Duration">{intern_attachee.duration}</:col>
+  <:col :let={ intern_attachee} label="Next of kin phone">{intern_attachee.next_of_kin_phone}</:col>
+ 
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="intern_attachee-modal" show on_cancel={JS.patch(~p"/intern_attachees")}>
+  <.live_component
+    module={ImsWeb.InternAttacheeLive.FormComponent}
+    id={@intern_attachee.id || :new}
+    title={@page_title}
+    action={@live_action}
+    intern_attachee={@intern_attachee}
+    patch={~p"/hr/intern_attachees"}
+  />
+</.modal>
