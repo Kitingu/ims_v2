@@ -37,6 +37,7 @@ defmodule ImsWeb.AwayRequestLive.FormComponent do
         <.input field={@form[:memo]} type="text" label="Memo" />
         <.input field={@form[:memo_upload]} type="text" label="Memo upload" />
         <.input field={@form[:days]} type="number" label="Days" />
+        <.input field={@form[:start_date]} type="date" label="Start date" />
         <.input field={@form[:return_date]} type="date" label="Return date" />
         <:actions>
           <.button phx-disable-with="Saving...">Save Away request</.button>

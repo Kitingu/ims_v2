@@ -23,7 +23,7 @@ defmodule Ims.HR.AwayRequest do
   def changeset(away_request, attrs) do
     away_request
     |> cast(attrs, [:reason, :user_id,:start_date, :location, :memo, :days, :return_date])
-    |> validate_required([:reason, :user_id, :location, :memo, :days, :return_date])
+    |> validate_required([:reason, :user_id, :location, :memo, :days, :start_date, :return_date])
   end
 
   def search(queryable \\ __MODULE__, filters) do
