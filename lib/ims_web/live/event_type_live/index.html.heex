@@ -1,0 +1,20 @@
+<.header>
+  Listing Event types
+  <:actions>
+    <.link patch={~p"/welfare/event_types/new"}>
+      <.button>New Event type</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table id="event_types" rows={@event_types} resource="event_types" current_user={@current_user} actions={["edit"]}>
+  <:col :let={ event_type} label="ID">{event_type.id}</:col>
+  <:col :let={ event_type} label="Name">{event_type.name}</:col>
+  <:col :let={ event_type} label="Amount">{event_type.amount}</:col>
+
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="event_type-modal" show on_cancel={JS.patch(~p"/event_types")}>
+  <.live_component module={ImsWeb.EventTypeLive.FormComponent} id={@event_type.id || :new} title={@page_title}
+    action={@live_action} event_type={@event_type} patch={~p"/welfare/event_types"} />
+</.modal>

@@ -1,0 +1,33 @@
+<.header>
+  Listing Events
+  <:actions>
+    <.link patch={~p"/welfare/events/new"}>
+      <.button>New Event</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="events"
+  rows={@events}
+  resource="events"
+  current_user={@current_user}
+  actions={["edit"]}
+>
+  <:col :let={ event} label="Title">{event.title}</:col>
+  <:col :let={ event} label="Description">{event.description}</:col>
+  <:col :let={ event} label="Amount paid">{event.amount_paid}</:col>
+  <:col :let={ event} label="Status">{event.status}</:col>
+  
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="event-modal" show on_cancel={JS.patch(~p"/welfare/events")}>
+  <.live_component
+    module={ImsWeb.EventLive.FormComponent}
+    id={@event.id || :new}
+    title={@page_title}
+    action={@live_action}
+    event={@event}
+    patch={~p"/welfare/events"}
+  />
+</.modal>

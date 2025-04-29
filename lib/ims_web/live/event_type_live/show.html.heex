@@ -1,0 +1,27 @@
+<.header>
+  Event type {@event_type.id}
+  <:subtitle>This is a event_type record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/event_types/#{@event_type}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit event_type</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Name">{@event_type.name}</:item>
+  <:item title="Amount">{@event_type.amount}</:item>
+</.list>
+
+<.back navigate={~p"/event_types"}>Back to event_types</.back>
+
+<.modal :if={@live_action == :edit} id="event_type-modal" show on_cancel={JS.patch(~p"/event_types/#{@event_type}")}>
+  <.live_component
+    module={ImsWeb.EventTypeLive.FormComponent}
+    id={@event_type.id}
+    title={@page_title}
+    action={@live_action}
+    event_type={@event_type}
+    patch={~p"/event_types/#{@event_type}"}
+  />
+</.modal>

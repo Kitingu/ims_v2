@@ -275,12 +275,30 @@ defmodule ImsWeb.Router do
       live "/away_requests/:id", AwayRequestLive.Show, :show
       live "/away_requests/:id/show/edit", AwayRequestLive.Show, :edit
 
-
       live "/intern_attachees", InternAttacheeLive.Index, :index
       live "/intern_attachees/new", InternAttacheeLive.Index, :new
       live "/intern_attachees/:id/edit", InternAttacheeLive.Index, :edit
       live "/intern_attachees/:id", InternAttacheeLive.Show, :show
       live "/intern_attachees/:id/show/edit", InternAttacheeLive.Show, :edit
+    end
+  end
+
+  scope "/welfare", ImsWeb do
+    pipe_through [:admin_auth]
+
+    live_session :welfare,
+      on_mount: [{ImsWeb.UserAuth, :mount_current_user}] do
+      live "/event_types", EventTypeLive.Index, :index
+      live "/event_types/new", EventTypeLive.Index, :new
+      live "/event_types/:id/edit", EventTypeLive.Index, :edit
+      live "/event_types/:id", EventTypeLive.Show, :show
+      live "/event_types/:id/show/edit", EventTypeLive.Show, :edit
+
+      live "/events", EventLive.Index, :index
+      live "/events/new", EventLive.Index, :new
+      live "/events/:id/edit", EventLive.Index, :edit
+      live "/events/:id", EventLive.Show, :show
+      live "/events/:id/show/edit", EventLive.Show, :edit
     end
   end
 

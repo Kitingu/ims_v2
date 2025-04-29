@@ -1,7 +1,6 @@
 defmodule Ims.Workers.UploadUsersWorker do
   use Oban.Worker, queue: :default, max_attempts: 3
 
-  alias Ims.Accounts
   alias Ims.Accounts.User
   alias Ims.Repo
   import Ecto.Changeset
