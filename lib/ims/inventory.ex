@@ -549,6 +549,21 @@ defmodule Ims.Inventory do
     |> Repo.all()
   end
 
+  def get_assigned_assets(user) do
+    Asset
+    |> where([a], a.status == :assigned and a.user_id == ^user.id)
+    |> Repo.all()
+    |> Repo.preload([:asset_name])
+  end
+
+
+
+  def get_lost_assets(user) do
+    Asset
+    |> where([a], a.status == :lost and a.user_id == ^user.id)
+    |> Repo.all()
+  end
+
   def get_lost_assets() do
     Asset
     |> where([a], a.status == :lost)

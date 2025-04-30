@@ -5,14 +5,24 @@ defmodule ImsWeb.TrainingApplicationLive.Index do
   alias Ims.Trainings
   alias Ims.Trainings.TrainingApplication
   alias Ims.Accounts
+  @paginator_opts [order_by: [desc: :inserted_at], page_size: 10]
 
   @impl true
   def mount(_params, _session, socket) do
+    filters = %{}
+    current_user = socket.assigns.current_user
+
+    filters =
+      case Canada.Can.can?(current_user, ["list_all"], "training_applications") do
+        true -> filters
+        false -> Map.put(filters, "user_id", current_user.id)
+      end
+
     socket =
       socket
       |> assign(
         :training_applications,
-        Trainings.list_training_applications() |> Ims.Repo.paginate()
+        fetch_records(filters, @paginator_opts)
       )
       |> assign(:selected_user, "")
       |> assign(:user_options, Enum.map(Accounts.list_users(), &{&1.first_name, &1.id}))
@@ -51,14 +61,19 @@ defmodule ImsWeb.TrainingApplicationLive.Index do
       ) do
     {:noreply,
      assign(socket,
-       training_applications: Trainings.list_training_applications() |> Ims.Repo.paginate()
+       training_applications: fetch_records(socket.assigns.filters, @paginator_opts)
      )}
   end
 
   def handle_event("filter_user", %{"user_id" => user_id}, socket) do
     IO.inspect(user_id, label: "user_id")
-    filters = if user_id == "", do: %{}, else: %{"user_id" => user_id}
-    |> IO.inspect(label: "filters")
+
+    filters =
+      if user_id == "",
+        do: %{},
+        else:
+          %{"user_id" => user_id}
+          |> IO.inspect(label: "filters")
 
     applications = Ims.Trainings.TrainingApplication.search(filters) |> Ims.Repo.paginate()
     {:noreply, assign(socket, training_applications: applications, selected_user: user_id)}
@@ -128,5 +143,12 @@ defmodule ImsWeb.TrainingApplicationLive.Index do
       true ->
         {"#{days} Day#{if days > 1, do: "s", else: ""}", "#{days}_days"}
     end
+  end
+
+  def fetch_records(filters, opts) do
+    opts = Keyword.merge(@paginator_opts, opts)
+
+    TrainingApplication.search(filters)
+    |> Ims.Repo.paginate(opts)
   end
 end

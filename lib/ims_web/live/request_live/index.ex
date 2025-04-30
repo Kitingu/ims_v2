@@ -8,13 +8,20 @@ defmodule ImsWeb.RequestLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     filters = %{}
+    current_user = socket.assigns.current_user
+
+    filters =
+      case Canada.Can.can?(current_user, ["list_all"], "requests") do
+        true -> filters
+        false -> Map.put(filters, "user_id", current_user.id)
+      end
 
     socket =
       socket
       |> assign(:filters, filters)
       |> assign(:page, 1)
       |> assign(:requests, fetch_records(filters, @paginator_opts))
-      |> assign(:current_user, socket.assigns.current_user)
+      |> assign(:current_user, current_user)
 
     {:ok, socket}
   end

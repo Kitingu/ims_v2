@@ -206,7 +206,7 @@
 
       <!-- Human Resource Dropdown -->
       <!-- Human Resource Dropdown -->
-      <li :if={Canada.Can.can?(@current_user, ["index"], "leave_types" )}>
+      <li :if={Canada.Can.can?(@current_user, ["index"], "leave_applications" )}>
         <button @click="openDropdown = openDropdown === 'hr' ? '' : 'hr'"
           class="flex items-center w-full px-4 py-3 text-lg font-medium text-gray-200 rounded-lg hover:bg-gray-800 hover:text-white transition">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -258,8 +258,10 @@
             </.link>
           </li>
           <li>
-            <!-- :if={Canada.Can.can?(@current_user, ["index"], "training_applications" )} -->
-            <.link navigate={~p"/hr/training_applications"}
+           
+            <.link 
+            :if={Canada.Can.can?(@current_user, ["index"], "training_applications" )}
+            navigate={~p"/hr/training_applications"}
               class="flex items-center py-2 rounded-lg hover:text-white hover:bg-gray-800 transition">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor" class="w-4 h-4 mr-3">

@@ -20,21 +20,18 @@ defmodule ImsWeb.UserProfileLive do
       name: "#{current_user.first_name}",
       department: "#{current_user.department.name}",
       email: "#{current_user.email}",
-      phone: "#{current_user.msisdn}" || "N/A",
-      assignments: [],
-      returned_devices: [],
+      phone: "#{current_user.msisdn}",
       leave_days: annual_remaining_days,
-      lost_devices: []
-    }
-    #   assignments:
-    #     Ims.Inventory.get_assigned_user_devices(socket.assigns.current_user),
-    #   returned_devices:
-    #     Ims.Inventory.get_user_returned_devices(socket.assigns.current_user),
-    #   leave_days: annual_remaining_days,
-    #   lost_devices:
-    #     Inventory.get_lost_devices(socket.assigns.current_user)
 
-    # }
+
+      assignments:
+        Ims.Inventory.get_assigned_assets(socket.assigns.current_user),
+
+
+      leave_days: annual_remaining_days,
+
+
+    }
 
     {:ok, assign(socket, user_info: user_info)}
   end
@@ -88,7 +85,7 @@ defmodule ImsWeb.UserProfileLive do
       <!-- Assignments -->
       <div class="bg-gray-50 p-6 rounded-lg mb-6 shadow">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-2xl font-semibold text-gray-700">Assignments</h2>
+          <h2 class="text-2xl font-semibold text-gray-700">Assigned Assets</h2>
           <button
             class="bg-blue-500 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-600"
             phx-click="request_for_device"
@@ -109,7 +106,7 @@ defmodule ImsWeb.UserProfileLive do
             <%= for assignment <- @user_info.assignments do %>
               <tr class="hover:bg-gray-100">
                 <td class="border px-4 py-2 text-center"><%= assignment.id %></td>
-                <td class="border px-4 py-2"><%= assignment.name %></td>
+                <td class="border px-4 py-2"><%= assignment.asset_name.name %></td>
                 <td class="border px-4 py-2"><%= assignment.serial_number %></td>
               </tr>
             <% end %>
@@ -117,53 +114,9 @@ defmodule ImsWeb.UserProfileLive do
         </table>
       </div>
       <!-- Returned Devices -->
-      <div class="bg-gray-50 p-6 rounded-lg mb-6 shadow">
-        <h2 class="text-2xl font-semibold text-gray-700">Returned Devices</h2>
 
-        <table class="w-full table-auto border-collapse rounded-lg overflow-hidden">
-          <thead>
-            <tr class="bg-gray-200">
-              <th class="border px-4 py-2 text-left">Device ID</th>
-              <th class="border px-4 py-2 text-left">Device Name</th>
-              <th class="border px- 4 py-2 text-left">Serial Number</th>
-            </tr>
-          </thead>
-          <tbody>
-            <%= for returned_device <- @user_info.returned_devices do %>
-              <tr class="hover:bg-gray-100">
-                <td class="border px-4 py-2 text-center"><%= returned_device.id %></td>
-
-                <td class="border px-4 py-2"><%= returned_device.device.device_name.name %></td>
-                <td class="border px-4 py-2"><%= returned_device.device.serial_number %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
       <!-- Lost Devices -->
-      <div class="bg-gray-50 p-6 rounded-lg shadow">
-        <h2 class="text-2xl font-semibold text-gray-700 mb-4">Lost Devices</h2>
-        <table class="w-full table-auto border-collapse rounded-lg overflow-hidden">
-          <thead>
-            <tr class="bg-gray-200">
-              <th class="border px-4 py-2 text-left">Device ID</th>
-              <th class="border px-4 py-2 text-left">Serial Number</th>
-              <th class="border px-4 py-2 text-left">Device Name</th>
-            </tr>
-          </thead>
-          <tbody>
-            <%= for device <- @user_info.lost_devices do %>
-              <tr class="hover:bg-gray-100">
-                <td class="border px-4 py-2 text-center"><%= device.id %></td>
-                <td class="border px-4 py-2"><%= device.serial_number %></td>
-                <td class="border px-4 py-2"><%= device.name %></td>
 
-                <%!-- <td class="border px-4 py-2 text-center"><%= device.date_lost %></td> --%>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
     </div>
     """
   end

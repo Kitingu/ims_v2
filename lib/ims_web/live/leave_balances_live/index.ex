@@ -74,4 +74,26 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
      |> assign(:params, params)
      |> assign(:rows, page)}
   end
+
+  # def handle_event("export_excel", _params, socket) do
+  #   case LeaveBalance.export_leave_balances() do
+  #     {:ok, file_path} ->
+  #       # Assuming you have a function to send the file
+  #       send_file(socket, file_path)
+
+  #     {:error, reason} ->
+  #       # Handle error case
+  #       IO.inspect(reason, label: "Export Error")
+  #   end
+
+  #   {:noreply, socket}
+  # end
+
+  # defp send_file(socket, filepath) do
+  #   socket
+  #   |> push_event("download", %{
+  #     url: Routes.leave_balance_path(socket, :download_export, filepath),
+  #     filename: Path.basename(filepath)
+  #   })
+  # end
 end

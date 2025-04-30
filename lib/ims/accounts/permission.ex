@@ -102,30 +102,35 @@ defmodule Ims.Accounts.Permission do
       %{name: "asset_types.edit"},
       %{name: "asset_types.view"},
 
-      # Devices
-      %{name: "devices.new"},
-      %{name: "devices.update"},
-      %{name: "devices.view"},
-      %{name: "devices.list_all"},
-      %{name: "devices.assign"},
-      %{name: "devices.unassign"},
-      %{name: "devices.list_lost_devices"},
-      %{name: "devices.list_assigned_devices"},
-      %{name: "devices.list_available_devices"},
-      %{name: "devices.list_all_devices"},
+      # Assets
+      %{name: "assets.new"},
+      %{name: "assets.update"},
+      %{name: "assets.view"},
+      %{name: "assets.index"},
+      %{name: "assets.list_all"},
+      %{name: "assets.assign"},
+      %{name: "assets.unassign"},
+      %{name: "assets.list_lost_assets"},
+      %{name: "assets.list_assigned_assets"},
+      %{name: "assets.list_available_assets"},
+      %{name: "assets.list_all_assets"},
 
 
-      # device_names
-      %{name: "device_names.new"},
-      %{name: "device_names.index"},
-      %{name: "device_names.edit"},
-      %{name: "device_names.view"},
+
+      # asset actions
+      %{name: "assets.mark_as_lost"},
+      %{name: "assets.return"},
+      %{name: "assets.decommission"},
+      %{name: "assets.revoke"},
+      %{name: "assets.assign"},
+
+      # asset_names
+      %{name: "asset_names.new"},
+      %{name: "asset_names.index"},
+      %{name: "asset_names.edit"},
+      %{name: "asset_names.view"},
 
 
-      # assignments
-      %{name: "user_assignments.edit"},
-      %{name: "user_assignments.view"},
-      %{name: "user_assignments.list_all"},
 
       # requests
       %{name: "requests.edit"},
@@ -133,19 +138,6 @@ defmodule Ims.Accounts.Permission do
       %{name: "requests.list_all"},
       %{name: "requests.approve"},
       %{name: "requests.reject"},
-
-      # lost devices
-      %{name: "lost_devices.edit"},
-      %{name: "lost_devices.view"},
-      %{name: "lost_devices.list_all"},
-      %{name: "lost_devices.approve"},
-
-      # returned devices
-      %{name: "returned_devices.edit"},
-      %{name: "returned_devices.view"},
-      %{name: "returned_devices.list_all"},
-      %{name: "returned_devices.approve"},
-      %{name: "returned_devices.reject"},
 
       # leave_applications
       %{name: "leave_applications.edit"},
@@ -157,6 +149,8 @@ defmodule Ims.Accounts.Permission do
       # leave_types
       %{name: "leave_types.edit"},
       %{name: "leave_types.view"},
+      %{name: "leave_types.new"},
+      %{name: "leave_types.index"},
       %{name: "leave_types.list_all"},
 
       # admin
@@ -170,7 +164,54 @@ defmodule Ims.Accounts.Permission do
       %{name: "settings.new"},
       %{name: "settings.index"},
       %{name: "settings.edit"},
-      %{name: "settings.view"}
+      %{name: "settings.view"},
+
+      # # training_applications
+      %{name: "training_applications.new"},
+      %{name: "training_applications.index"},
+      %{name: "training_applications.edit"},
+      %{name: "training_applications.view"},
+      # # events
+      %{name: "events.new"},
+      %{name: "events.index"},
+      %{name: "events.edit"},
+      %{name: "events.view"},
+      # # event_types
+      %{name: "event_types.new"},
+      %{name: "event_types.index"},
+      %{name: "event_types.edit"},
+      %{name: "event_types.view"},
+
+      # ethnicities
+      %{name: "ethnicities.new"},
+      %{name: "ethnicities.index"},
+      %{name: "ethnicities.edit"},
+      %{name: "ethnicities.view"},
+
+      # departments
+      %{name: "departments.new"},
+      %{name: "departments.index"},
+      %{name: "departments.edit"},
+      %{name: "departments.view"},
+
+      # locations
+      %{name: "locations.new"},
+      %{name: "locations.index"},
+      %{name: "locations.edit"},
+      %{name: "locations.view"},
+
+      # offices
+      %{name: "offices.new"},
+      %{name: "offices.index"},
+      %{name: "offices.edit"},
+      %{name: "offices.view"},
+      # designations
+
+      # job groups
+      %{name: "job_groups.new"},
+      %{name: "job_groups.index"},
+      %{name: "job_groups.edit"},
+      %{name: "job_groups.view"}
     ]
   end
 
@@ -203,13 +244,13 @@ defmodule Ims.Accounts.Permission do
       %{name: "requests.new"},
       %{name: "requests.index"},
 
-      # lost_devices
-      %{name: "lost_devices.new"},
-      %{name: "lost_devices.index"},
+      # lost_assets
+      %{name: "lost_assets.new"},
+      %{name: "lost_assets.index"},
 
-      # returned_devices
-      %{name: "returned_devices.new"},
-      %{name: "returned_devices.index"},
+      # returned_assets
+      %{name: "returned_assets.new"},
+      %{name: "returned_assets.index"},
 
       # leave_applications
       %{name: "leave_applications.new"},

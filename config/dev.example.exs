@@ -86,7 +86,7 @@ config :swoosh, :api_client, false
 
 config :ims, :smtp_username, "test@gmail.com"
 
-config :ims, :smtp_password, ""
+config :ims, :smtp_password, "jjjjjj"
 
 config :ims, :stk_query_url, "https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query"
 config :ims, :business_shortcode, "600000"

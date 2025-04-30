@@ -3,7 +3,7 @@ defmodule ImsWeb.UserLive do
 
   alias Ims.Accounts
   alias Ims.Accounts.User
-  @paginator_opts [order_by: [desc: :inserted_at], page_size: 20]
+  @paginator_opts [order_by: [desc: :inserted_at], page_size: 10]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -15,6 +15,7 @@ defmodule ImsWeb.UserLive do
       |> assign(:users, fetch_records(filters, @paginator_opts))
       |> assign(:roles, Accounts.Role.all())
       |> assign(:message, nil)
+      |> assign(:page, 1)
       |> assign(:show_modal, false)
       |> assign(:modal_user_id, nil)
       |> assign(:show_upload_modal, false)
@@ -25,7 +26,7 @@ defmodule ImsWeb.UserLive do
       |> assign(:live_action, nil)
       |> assign(:live_params, nil)
 
-      if connected?(socket), do: Phoenix.PubSub.subscribe(Ims.PubSub, "users:upload")
+    if connected?(socket), do: Phoenix.PubSub.subscribe(Ims.PubSub, "users:upload")
     {:ok, socket}
 
     # if connected?(socket), do: send(self(), :load_users)
@@ -60,7 +61,6 @@ defmodule ImsWeb.UserLive do
      |> assign(:users, users)
      |> put_flash(:info, message)}
   end
-
 
   @impl true
   def handle_event("show_modal", %{"user-id" => user_id}, socket) do
@@ -120,10 +120,10 @@ defmodule ImsWeb.UserLive do
   end
 
   def handle_event("resize_table", %{"size" => size}, socket) do
-    away_requests =
+    users =
       fetch_records(socket.assigns.filters, page_size: String.to_integer(size)) |> IO.inspect()
 
-    {:noreply, assign(socket, away_requests: away_requests)}
+    {:noreply, assign(socket, users: users)}
   end
 
   def handle_event("render_page", %{"page" => page}, socket) do
@@ -140,11 +140,11 @@ defmodule ImsWeb.UserLive do
     IO.inspect("new_page: #{new_page}")
 
     opts = Keyword.merge(@paginator_opts, page: new_page)
-    away_requests = fetch_records(socket.assigns.filters, opts)
+    users = fetch_records(socket.assigns.filters, opts)
 
     socket =
       socket
-      |> assign(:away_requests, away_requests)
+      |> assign(:users, users)
 
     # No need for String.to_integer here
     {:noreply, socket}
@@ -167,13 +167,20 @@ defmodule ImsWeb.UserLive do
         <h1 class="text-2xl font-bold text-gray-800">User Management</h1>
 
         <div class="flex gap-4">
-          <.link href={~p"/admin/users/register"}>
+          <.link
+            :if={Canada.Can.can?(@current_user, ["create_users"], "users")}
+            href={~p"/admin/users/register"}
+          >
             <.button class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow-md hover:bg-blue-700">
               Add User
             </.button>
           </.link>
 
-          <.button phx-click="show-upload-modal" class="ml-4 bg-blue-600 text-white px-4 py-2 rounded">
+          <.button
+            :if={Canada.Can.can?(@current_user, ["upload_users"], "users")}
+            phx-click="show-upload-modal"
+            class="ml-4 bg-blue-600 text-white px-4 py-2 rounded"
+          >
             Upload Users
           </.button>
         </div>
