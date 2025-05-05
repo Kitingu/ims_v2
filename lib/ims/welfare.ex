@@ -7,6 +7,8 @@ defmodule Ims.Welfare do
   alias Ims.Repo
 
   alias Ims.Welfare.EventType
+  alias Ims.Accounts
+  alias Ims.Welfare.Contribution
 
   @doc """
   Returns the list of event_types.
@@ -133,6 +135,13 @@ defmodule Ims.Welfare do
   """
   def get_event!(id), do: Repo.get!(Event, id)
 
+  defp get_event(id) do
+    case Ims.Welfare.get_event!(id) do
+      nil -> {:error, :event_not_found}
+      event -> {:ok, event}
+    end
+  end
+
   @doc """
   Creates a event.
 
@@ -196,5 +205,70 @@ defmodule Ims.Welfare do
   """
   def change_event(%Event{} = event, attrs \\ %{}) do
     Event.changeset(event, attrs)
+  end
+
+  def parse_bill_reference(billref) do
+    IO.inspect(billref, label: "Parsing Bill Reference")
+
+    case String.split(billref, "-") do
+      [event_part, personal_number] ->
+        event_id =
+          event_part
+          |> String.replace_prefix("e", "")
+          |> String.to_integer()
+
+        {:ok, event_id, personal_number}
+
+      _ ->
+        {:error, :invalid_billref_format}
+    end
+  end
+
+  def create_contribution(attrs \\ %{}) do
+    IO.inspect(attrs, label: "Creating Contribution")
+
+    with {:ok, event_id, personal_number} <- parse_bill_reference(attrs.ref_no),
+         {:ok, event} <- get_event(event_id),
+         {:ok, user} <- Accounts.get_user_by_personal_number(personal_number),
+         amount <- Decimal.new(attrs["amount"] || "0") do
+      Repo.transaction(fn ->
+        # Create the contribution
+        contribution_attrs = %{
+          event_id: event.id,
+          user_id: user.id,
+          amount: amount,
+          payment_reference: attrs.details["TransID"],
+          payment_gateway_id: attrs.payment_gateway_id,
+          source: attrs.source,
+          verified: true
+        }
+
+        case Contribution.create(contribution_attrs) do
+          {:ok, contribution} ->
+            # Update the event amount paid
+            new_amount = Decimal.add(event.amount_paid, amount)
+            {:ok, _} = update_event(event, %{amount_paid: new_amount})
+            contribution
+
+          {:error, changeset} ->
+            IO.inspect(changeset, label: "Contribution Creation Error")
+            Repo.rollback(:contribution_creation_failed)
+            {:error, changeset}
+        end
+      end)
+      |> case do
+        {:ok, _} -> {:ok, "Contribution created successfully"}
+        {:error, reason} -> {:error, reason}
+      end
+    else
+      {:error, :invalid_billref_format} ->
+        {:error, "Invalid bill reference format"}
+
+      {:error, :event_not_found} ->
+        {:error, "Event not found"}
+
+      {:error, :user_not_found} ->
+        {:error, "User not found"}
+    end
   end
 end

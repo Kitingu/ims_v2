@@ -92,6 +92,8 @@ defmodule Ims.Accounts.User do
     |> validate_msisdn()
     |> validate_inclusion(:gender, ["Male", "Female"])
     |> unique_constraint(:msisdn, name: "unique_msisdn")
+    |> unique_constraint(:email, name: "unique_email")
+    |> unique_constraint(:personal_number, name: "unique_personal_number")
     |> validate_password(opts)
 
     # |> validate_password_confirmation()

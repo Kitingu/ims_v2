@@ -45,6 +45,17 @@ defmodule Ims.Accounts do
     if User.valid_password?(user, password), do: user
   end
 
+  def get_user_by_personal_number(personal_number) do
+    case Repo.get_by(User, personal_number: personal_number) do
+      nil -> {:error, :not_found}
+      user -> {:ok, user}
+    end
+  end
+
+  def get_user_by_personal_number!(personal_number) do
+    Repo.get_by!(User, personal_number: personal_number)
+  end
+
   @doc """
   Gets a single user.
 
@@ -608,7 +619,6 @@ defmodule Ims.Accounts do
     Repo.delete(department)
   end
 
-
   def generate_upload_template do
     departments = list_departments() |> Enum.map(&{&1.name, &1.id})
     job_groups = list_job_groups() |> Enum.map(&{&1.name, &1.id})
@@ -632,14 +642,16 @@ defmodule Ims.Accounts do
 
     ref_sheet = %Elixlsx.Sheet{
       name: "Reference",
-      rows: [
-        ["Department Name", "Department ID"] |
-        Enum.map(departments, fn {name, id} -> [name, id] end)
-      ] ++
-      [[]] ++
-      [["Job Group Name", "Job Group ID"] |
-        Enum.map(job_groups, fn {name, id} -> [name, id] end)
-      ]
+      rows:
+        [
+          ["Department Name", "Department ID"]
+          | Enum.map(departments, fn {name, id} -> [name, id] end)
+        ] ++
+          [[]] ++
+          [
+            ["Job Group Name", "Job Group ID"]
+            | Enum.map(job_groups, fn {name, id} -> [name, id] end)
+          ]
     }
 
     workbook = %Elixlsx.Workbook{sheets: [user_sheet, ref_sheet]}
@@ -649,7 +661,6 @@ defmodule Ims.Accounts do
 
     File.read!(path)
   end
-
 
   defp format_options(options) do
     options

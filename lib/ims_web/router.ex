@@ -31,9 +31,11 @@ defmodule ImsWeb.Router do
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", ImsWeb do
-  #   pipe_through :api
-  # end
+  scope "/api", ImsWeb do
+    pipe_through :api
+
+    post("/payment/validate", PaymentsController, :api_payment_validate)
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:ims, :dev_routes) do
