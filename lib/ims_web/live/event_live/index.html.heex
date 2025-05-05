@@ -12,7 +12,7 @@
   rows={@events}
   resource="events"
   current_user={@current_user}
-  actions={["edit"]}
+  actions={["edit", "view"]}
 >
   <:col :let={ event} label="Title">{event.title}</:col>
   <:col :let={ event} label="Description">{event.description}</:col>

@@ -17,7 +17,7 @@ defmodule Ims.Welfare.EventType do
     event_type
     |> cast(attrs, [:name, :amount])
     |> validate_required([:name, :amount])
-    |> validate_number(:amount, greater_than_or_equal_to: 1)
+    # |> validate_number(:amount, greater_than_or_equal_to: 1)
     |> unique_constraint(:name)
   end
 

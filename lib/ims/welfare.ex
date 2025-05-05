@@ -230,7 +230,7 @@ defmodule Ims.Welfare do
     with {:ok, event_id, personal_number} <- parse_bill_reference(attrs.ref_no),
          {:ok, event} <- get_event(event_id),
          {:ok, user} <- Accounts.get_user_by_personal_number(personal_number),
-         amount <- Decimal.new(attrs["amount"] || "0") do
+         amount <- Decimal.new(attrs.details["TransAmount"] || "0") do
       Repo.transaction(fn ->
         # Create the contribution
         contribution_attrs = %{
@@ -270,5 +270,13 @@ defmodule Ims.Welfare do
       {:error, :user_not_found} ->
         {:error, "User not found"}
     end
+  end
+
+  def verify_contribution()do
+    # This function is a placeholder for the actual implementation
+    # You can add your logic here to verify contributions
+    # For example, you might want to check if the contribution exists,
+    # if it has been verified before, etc.
+    {:ok, "Contribution verified successfully"}
   end
 end

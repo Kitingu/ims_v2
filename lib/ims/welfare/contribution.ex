@@ -21,7 +21,7 @@ defmodule Ims.Welfare.Contribution do
   @doc false
   def changeset(contribution, attrs) do
     contribution
-    |> cast(attrs, [:amount, :payment_reference, :source, :verified])
+    |> cast(attrs, [:amount, :payment_reference, :event_id, :user_id, :source, :verified])
     |> validate_required([:amount, :payment_reference, :source, :verified])
     |> unique_constraint(:payment_reference)
   end
@@ -57,5 +57,14 @@ defmodule Ims.Welfare.Contribution do
       end)
 
     from(i in query, preload: [:user, :event, :payment_gateway])
+  end
+
+  def total_contributions_for_event(event_id) do
+    query =
+      from c in __MODULE__,
+        where: c.event_id == ^event_id and c.verified == true,
+        select: sum(c.amount)
+
+    Repo.one(query) || Decimal.new(0)
   end
 end

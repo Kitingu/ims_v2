@@ -78,6 +78,11 @@ defmodule ImsWeb.EventLive.Index do
      |> assign(:events, events)}
   end
 
+  @impl true
+  def handle_event("view" <> id, _, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/welfare/events/#{id}")}
+  end
+
   defp fetch_records(filters, opts) do
     IO.inspect(opts, label: "opts")
     query = Event.search(filters)
