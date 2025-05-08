@@ -65,7 +65,7 @@ defmodule Ims.Trainings.TrainingApplication do
       :period_of_study,
       :costs,
       :authority_reference,
-      :memo_reference,
+  
       :status
     ])
     |> assoc_constraint(:user)
@@ -79,7 +79,7 @@ defmodule Ims.Trainings.TrainingApplication do
       value -> put_change(changeset, :period_of_study, convert_period_to_days(value))
     end
   end
-  
+
   # ✅ Convert "5_days" into integer 5
   defp transform_period_of_study(changeset) do
     case get_field(changeset, :period_of_study) do

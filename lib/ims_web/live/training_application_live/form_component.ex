@@ -50,7 +50,7 @@ defmodule ImsWeb.TrainingApplicationLive.FormComponent do
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <.input field={@form[:course_approved]} type="text" label="Course Approved" />
+          <.input field={@form[:course_approved]} type="text" label="Course Approved Ref" />
           <.input field={@form[:institution]} type="text" label="Institution" />
           <.input field={@form[:program_title]} type="text" label="Program Title" />
           <.input
@@ -82,7 +82,7 @@ defmodule ImsWeb.TrainingApplicationLive.FormComponent do
           /> --%>
           <.input field={@form[:costs]} type="number" label="Costs (KSH)" step="any" />
           <.input field={@form[:authority_reference]} type="text" label="Authority Reference" />
-          <.input field={@form[:memo_reference]} type="text" label="Memo Reference" />
+          <%!-- <.input field={@form[:memo_reference]} type="text" label="Memo Reference" /> --%>
           <div class="flex items-center gap-4 mt-4">
             <.input
               field={@form[:disability]}

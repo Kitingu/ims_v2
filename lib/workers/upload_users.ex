@@ -3,6 +3,9 @@ defmodule Ims.Workers.UploadUsersWorker do
 
   alias Ims.Accounts.User
   alias Ims.Repo
+  alias Ims.Leave.LeaveType
+  alias Ims.Leave.LeaveBalance
+
   import Ecto.Changeset
   import Ecto.Query
   require Logger
@@ -64,11 +67,14 @@ defmodule Ims.Workers.UploadUsersWorker do
         true ->
           Logger.warning("⚠️ Skipping duplicate email: #{Enum.at(row, 0)}")
 
-        {:error, changeset} ->
+        {:error, %Ecto.Changeset{} = changeset} ->
           Logger.error("❌ Insert failed: #{inspect(changeset.errors)}")
 
+        {:error, msg} when is_binary(msg) ->
+          Logger.error("❌ Row error: #{msg}")
+
         {:error, reason} ->
-          Logger.error("❌ Row error: #{reason}")
+          Logger.error("❌ Unexpected error: #{inspect(reason)}")
       end
     end)
 
@@ -81,6 +87,40 @@ defmodule Ims.Workers.UploadUsersWorker do
     {:ok, :done}
   end
 
+  defp create_user(attrs, _admin_id) do
+    Repo.transaction(fn ->
+      %User{}
+      |> User.registration_changeset(attrs)
+      |> put_change(:confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second))
+      |> Repo.insert()
+      |> case do
+        {:ok, user} ->
+          create_leave_balances(user.id, attrs.leave_balances)
+          {:ok, user}
+
+        error ->
+          Repo.rollback(error)
+      end
+    end)
+  end
+
+  defp create_leave_balances(user_id, leave_balances) when is_map(leave_balances) do
+    Enum.each(leave_balances, fn {leave_type_name, remaining_days} ->
+      case Repo.get_by(LeaveType, name: leave_type_name) do
+        %LeaveType{id: leave_type_id} ->
+          %{
+            user_id: user_id,
+            leave_type_id: leave_type_id,
+            remaining_days: remaining_days
+          }
+          |> LeaveBalance.create()
+
+        nil ->
+          Logger.error("❌ Leave type not found: #{leave_type_name}")
+      end
+    end)
+  end
+
   defp parse_row_to_attrs([
          email,
          first_name,
@@ -90,7 +130,12 @@ defmodule Ims.Workers.UploadUsersWorker do
          designation,
          gender,
          department_id,
-         job_group_id
+         job_group_id,
+         annual_leave,
+         maternity_leave,
+         paternity_leave,
+         sick_leave,
+         terminal_leave
        ]) do
     password = generate_temp_password()
 
@@ -107,16 +152,45 @@ defmodule Ims.Workers.UploadUsersWorker do
        job_group_id: parse_id(job_group_id),
        password: password,
        password_confirmation: password,
-       password_reset_required: true
+       password_reset_required: true,
+       leave_balances: %{
+         "Annual Leave" => parse_decimal(annual_leave),
+         "Maternity Leave" => parse_decimal(maternity_leave),
+         "Paternity Leave" => parse_decimal(paternity_leave),
+         "Sick Leave" => parse_decimal(sick_leave),
+         "Terminal Leave" => parse_decimal(terminal_leave)
+       }
      }}
   rescue
     _ -> {:error, "Invalid row format or missing columns"}
   end
 
+  defp parse_decimal(nil), do: Decimal.new(0)
+
+  defp parse_decimal(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> Decimal.new()
+  end
+
+  defp parse_decimal(value) when is_integer(value), do: Decimal.new(value)
+  defp parse_decimal(value) when is_float(value), do: Decimal.from_float(value)
+  defp parse_decimal(_), do: Decimal.new(0)
+
   defp parse_id(nil), do: nil
   defp parse_id(value) when is_integer(value), do: value
-  defp parse_id(value) when is_binary(value), do: String.to_integer(value)
+
+  defp parse_id(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> String.to_integer()
+  end
+
   defp parse_id(_), do: nil
+
+  defp email_exists?(email) do
+    Repo.exists?(from u in User, where: u.email == ^email)
+  end
 
   defp generate_temp_password do
     upper = Enum.random(?A..?Z) |> to_string()
@@ -125,16 +199,6 @@ defmodule Ims.Workers.UploadUsersWorker do
     punct = Enum.random(~c"!@#$%^&*") |> to_string()
     rest = :crypto.strong_rand_bytes(6) |> Base.encode64() |> binary_part(0, 6)
     upper <> lower <> digit <> punct <> rest
-  end
-
-  defp create_user(attrs, _admin_id) do
-    %User{}
-    |> User.registration_changeset(attrs)
-    |> put_change(:confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second))
-    |> Repo.insert()
-  end
-
-  defp email_exists?(email) do
-    Repo.exists?(from u in User, where: u.email == ^email)
+    |> IO.inspect(label: "Generated Password")
   end
 end

@@ -632,7 +632,12 @@ defmodule Ims.Accounts do
       "Designation",
       "Gender* (Male/Female)",
       "Department ID*",
-      "Job Group ID*"
+      "Job Group ID*",
+      "Annual Leave",
+      "Maternity Leave",
+      "Paternity Leave",
+      "Sick Leave",
+      "Terminal Leave"
     ]
 
     user_sheet = %Elixlsx.Sheet{
