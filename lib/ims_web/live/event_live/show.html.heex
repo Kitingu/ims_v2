@@ -15,15 +15,22 @@
   <:item title="Status">{@event.status}</:item>
 </.list>
 
+
+<.table id="events" rows={@contributions} resource="contibutions" current_user={@current_user} actions={["edit", "view"
+  ]}>
+  <:col :let={ contribution} label="Member">{contribution.user.first_name}</:col>
+
+  <:col :let={ contribution} label="source">{contribution.source}</:col> 
+   <:col :let={ contribution} label="Payment REference">{contribution.payment_reference}</:col>
+  <:col :let={ contribution} label="Amount paid">{contribution.amount}</:col>
+  <:col :let={ contribution} label="Date">{contribution.inserted_at}</:col>
+
+
+</.table>
+
 <.back navigate={~p"/events"}>Back to events</.back>
 
-<.modal :if={@live_action == :edit} id="event-modal" show on_cancel={JS.patch(~p"/events/#{@event}")}>
-  <.live_component
-    module={ImsWeb.EventLive.FormComponent}
-    id={@event.id}
-    title={@page_title}
-    action={@live_action}
-    event={@event}
-    patch={~p"/events/#{@event}"}
-  />
+<.modal :if={@live_action==:edit} id="event-modal" show on_cancel={JS.patch(~p"/events/#{@event}")}>
+  <.live_component module={ImsWeb.EventLive.FormComponent} id={@event.id} title={@page_title} action={@live_action}
+    event={@event} patch={~p"/events/#{@event}"} />
 </.modal>
