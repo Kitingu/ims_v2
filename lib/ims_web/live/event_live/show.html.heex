@@ -1,25 +1,38 @@
 <.header>
-  Event {@event.id}
-  <:subtitle>This is a event record from your database.</:subtitle>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>Event Details</h3>
+    </div>
+    <div class="card-body">
+      <p><strong>Title:</strong> {@event.title}</p>
+      <p><strong>Description:</strong> {@event.description}</p>
+      <p><strong>Amount paid:</strong> {@event.amount_paid}</p>
+      <p><strong>Status:</strong> {@event.status}</p>
+    </div>
+  </div>
+
   <:actions>
     <.link patch={~p"/events/#{@event}/show/edit"} phx-click={JS.push_focus()}>
       <.button>Edit event</.button>
     </.link>
   </:actions>
+  <:actions>
+    <.link patch={~p"/events/#{@event}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Export Contributions</.button>
+    </.link>
+  </:actions>
 </.header>
 
-<.list>
-  <:item title="Title">{@event.title}</:item>
-  <:item title="Description">{@event.description}</:item>
-  <:item title="Amount paid">{@event.amount_paid}</:item>
-  <:item title="Status">{@event.status}</:item>
-</.list>
+<!-- card for event details -->
+
+
+
 
 
 <.table id="events" rows={@contributions} resource="contibutions" current_user={@current_user} actions={["edit", "view"
   ]}>
   <:col :let={ contribution} label="Member">{contribution.user.first_name}</:col>
-
   <:col :let={ contribution} label="source">{contribution.source}</:col> 
    <:col :let={ contribution} label="Payment REference">{contribution.payment_reference}</:col>
   <:col :let={ contribution} label="Amount paid">{contribution.amount}</:col>

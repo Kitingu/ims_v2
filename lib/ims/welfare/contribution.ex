@@ -67,4 +67,11 @@ defmodule Ims.Welfare.Contribution do
 
     Repo.one(query) || Decimal.new(0)
   end
+
+  # check if member is clean
+  # 1 check the date of their first contribution
+  # 2 check if they have contributed to all events after the first one
+
+
+
 end
