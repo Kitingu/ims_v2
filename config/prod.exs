@@ -6,9 +6,18 @@ import Config
 # which you should run after static files are built and
 # before starting your production server.
 config :ims, ImsWeb.Endpoint,
-force_ssl: [
-  rewrite_on: [:x_forwarded_proto]],
-cache_static_manifest: "priv/static/cache_manifest.json"
+  url: [
+    host: "ims-app.gigalixirapp.com",
+    scheme: "https",
+    port: 443
+  ],
+  force_ssl: [
+    rewrite_on: [:x_forwarded_proto]
+  ],
+  check_origin: [
+    " https://ims-app.gigalixirapp.com/"
+  ],
+  cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: Ims.Finch
