@@ -7,7 +7,7 @@ import Config
 # before starting your production server.
 config :ims, ImsWeb.Endpoint,
   url: [
-    host: "ims-app.gigalixirapp.com",
+    host: "ims-app.gigalixirapp.com/",
     scheme: "https",
     port: 443
   ],
@@ -15,7 +15,7 @@ config :ims, ImsWeb.Endpoint,
     rewrite_on: [:x_forwarded_proto]
   ],
   check_origin: [
-    " https://ims-app.gigalixirapp.com/"
+    "https://ims-app.gigalixirapp.com/"
   ],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
