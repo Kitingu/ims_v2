@@ -4,6 +4,11 @@
     <.link patch={~p"/welfare/events/new"}>
       <.button>New Event</.button>
     </.link>
+
+    <.link patch={~p"/welfare/events?live_action=upload_contributions"}>
+      <.button>Upload Contributions</.button>
+    </.link>
+    
   </:actions>
 </.header>
 
@@ -31,3 +36,14 @@
     patch={~p"/welfare/events"}
   />
 </.modal>
+
+<.modal :if={@live_action == :upload_contributions} id="upload-contributions-modal" show on_cancel={JS.patch(~p"/events")}>
+  <.live_component
+    module={ImsWeb.EventLive.UploadContributionsComponent}
+    id="upload-contributions"
+    title="Upload Contributions"
+    patch={~p"/events"}
+  />
+</.modal>
+
+
