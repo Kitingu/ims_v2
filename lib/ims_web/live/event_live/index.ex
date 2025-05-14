@@ -20,10 +20,42 @@ defmodule ImsWeb.EventLive.Index do
     {:ok, socket}
   end
 
-  @impl true
-  def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  def handle_params(params, _uri, socket) do
+    live_action =
+      case params["live_action"] do
+        "upload_contributions" -> :upload_contributions
+        "new" -> :new
+        "edit" -> :edit
+        _ -> :index
+      end
+
+    socket = assign(socket, live_action: live_action)
+
+    socket =
+      case live_action do
+        :upload_contributions ->
+          assign(socket, page_title: "Upload Contributions")
+
+        :new ->
+          assign(socket, event: %Event{}, page_title: "New Event")
+
+        :edit ->
+          if id = params["id"] do
+            event = Welfare.get_event!(id)
+            assign(socket, event: event, page_title: "Edit Event")
+          else
+            socket
+          end
+
+        _ ->
+          socket
+      end
+
+    {:noreply, socket}
   end
+
+
+
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
@@ -62,8 +94,7 @@ defmodule ImsWeb.EventLive.Index do
      socket
      |> assign(:page_title, "Edit Event")
      |> assign(:event, event)
-     |> assign(:live_action, :edit)
-  }
+     |> assign(:live_action, :edit)}
   end
 
   @impl true
