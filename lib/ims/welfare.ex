@@ -8,7 +8,11 @@ defmodule Ims.Welfare do
 
   alias Ims.Welfare.EventType
   alias Ims.Accounts
-  alias Ims.Welfare.Contribution
+
+  alias Ims.Welfare.{
+    Member,
+    Contribution
+  }
 
   @doc """
   Returns the list of event_types.
@@ -154,10 +158,22 @@ defmodule Ims.Welfare do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_event(attrs \\ %{}) do
-    %Event{}
-    |> Event.changeset(attrs)
-    |> Repo.insert()
+
+  # def create_event(attrs \\ %{}) do
+  #   %Event{}
+  #   |> Event.changeset(attrs)
+  #   |> Repo.insert()
+  # end
+
+  def create_event(attrs) do
+    with {:ok, event} <- Ims.Welfare.create_event(attrs) do
+      # Trigger dispatch to refresh all members in batches
+      %{job_type: "dispatch"}
+      |> Ims.Workers.Welfare.MemberRefreshWorkers.new()
+      |> Oban.insert()
+
+      {:ok, event}
+    end
   end
 
   @doc """
@@ -272,11 +288,45 @@ defmodule Ims.Welfare do
     end
   end
 
-  def verify_contribution()do
+  def verify_contribution() do
     # This function is a placeholder for the actual implementation
     # You can add your logic here to verify contributions
     # For example, you might want to check if the contribution exists,
     # if it has been verified before, etc.
     {:ok, "Contribution verified successfully"}
+  end
+
+  def refresh_member_balance(%Member{} = member) do
+    # Sum payable from EventType amounts for this member's events
+    total_payable =
+      from(e in Event,
+        join: et in assoc(e, :event_type),
+        where: e.user_id == ^member.user_id and e.inserted_at >= ^member.entry_date,
+        select: coalesce(sum(et.amount), 0)
+      )
+      |> Repo.one()
+
+    # Sum actual payments made in events for this member
+    total_paid =
+      from(e in Event,
+        where: e.user_id == ^member.user_id and e.inserted_at >= ^member.entry_date,
+        select: coalesce(sum(e.amount_paid), 0)
+      )
+      |> Repo.one()
+
+    # Compute amount due
+    amount_due = Decimal.sub(total_payable, total_paid)
+
+    # Determine eligibility
+    eligibility = Decimal.cmp(amount_due, 0) != :gt
+
+    # Update member record
+    member
+    |> Ecto.Changeset.change(
+      amount_paid: total_paid,
+      amount_due: amount_due,
+      eligibility: eligibility
+    )
+    |> Repo.update!()
   end
 end
