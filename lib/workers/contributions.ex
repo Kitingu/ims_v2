@@ -7,13 +7,21 @@ defmodule Ims.Workers.ProcessContributionsWorker do
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"file_path" => path}}) do
     # Parse the Excel file with xlsxir
-    {:ok, table_id} = Xlsxir.multi_extract(path, 0) # Extract first sheet
-    {:ok, rows} = Xlsxir.get_list(table_id) |
+    {:ok, table_id} = Xlsxir.multi_extract(path, 0) |> IO.inspect(label: "Table ID")
+    # {:ok, _} = Xlsxir.get_table_info(table_id) |> IO.inspect(label: "Table Info")
+     rows = Xlsxir.get_list(table_id) |>IO.inspect(label: "Rows from Excel")
     Xlsxir.close(table_id)
 
+    IO.inspect(rows, label: "Rows from Excel")
+
+    Logger.info("Processing contributions from file: #{path}")
+
+
+    Logger.info("Rows: #{inspect(rows)}")
+
     # Assume first row is headers, rest are data
-    [headers | data_rows] = rows
-    header_map = Enum.with_index(headers, fn h, i -> {h, i} end) |> Map.new()
+    [headers | data_rows] = rows |> IO.inspect(label: "Data Rows")
+    header_map = Enum.with_index(headers, fn h, i -> {h, i} end) |> Map.new()  |> IO.inspect(label: "Header Map")
 
     # Process each data row
     data_rows
@@ -21,7 +29,7 @@ defmodule Ims.Workers.ProcessContributionsWorker do
       with {:ok, event_id} <- parse_event_id(get_cell(row, header_map, "event_id")),
            {:ok, event} <- find_event(event_id),
            {:ok, user} <- find_user(get_cell(row, header_map, "personal_number")),
-           {:ok, amount} <- parse_amount(get_cell(row, header_map, "amount contributed")),
+           {:ok, amount} <- parse_amount(get_cell(row, header_map, "amount paid")),
            {:ok, paid_at} <- parse_date(get_cell(row, header_map, "date paid")) do
         attrs = %{
           amount: amount,
@@ -77,6 +85,8 @@ defmodule Ims.Workers.ProcessContributionsWorker do
   end
 
   defp find_user(personal_number) do
+    IO.inspect(personal_number, label: "Personal Number")
+    personal_number =  to_string(personal_number) |> String.trim()
     case Repo.get_by(User, personal_number: personal_number) do
       nil -> {:error, "User not found"}
       user -> {:ok, user}

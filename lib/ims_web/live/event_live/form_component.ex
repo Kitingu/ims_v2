@@ -24,6 +24,7 @@ defmodule ImsWeb.EventLive.FormComponent do
         <.input field={@form[:event_type_id]} type="select" label="Event type" options={@event_types} />
         <div class="relative" phx-update="ignore" id="select_user_container">
           <.input
+            label="Welfare Member affected"
             field={@form[:user_id]}
             type="select"
             id="select_user_id"
@@ -34,7 +35,7 @@ defmodule ImsWeb.EventLive.FormComponent do
             class="w-full hidden"
           />
         </div>
-      
+
         <:actions>
           <.button phx-disable-with="Saving...">Save Event</.button>
         </:actions>
