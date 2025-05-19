@@ -111,7 +111,7 @@ defmodule ImsWeb.EventLive.FormComponent do
   end
 
   defp save_event(socket, :new, event_params) do
-    case Welfare.create_event(event_params) do
+    case Welfare.create_event_ex(event_params) do
       {:ok, event} ->
         notify_parent({:saved, event})
 

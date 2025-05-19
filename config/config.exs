@@ -100,7 +100,7 @@ config :ims, Oban,
        {"0 1 1 1 *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "year_end"}}
      ]}
   ],
-  queues: [default: 10]
+  queues: [default: 10, welfare: 2]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

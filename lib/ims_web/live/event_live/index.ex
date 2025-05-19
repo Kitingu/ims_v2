@@ -20,47 +20,44 @@ defmodule ImsWeb.EventLive.Index do
     {:ok, socket}
   end
 
+  @impl true
   def handle_params(params, _uri, socket) do
+    IO.inspect(socket.assigns.live_action)
+    IO.inspect(params["live_action"], label: "params")
+
     live_action =
-      case params["live_action"] do
-        "upload_contributions" -> :upload_contributions
-        "new" -> :new
-        "edit" -> :edit
-        _ -> :index
+      case socket.assigns.live_action do
+        "upload_contributions" ->
+          :upload_contributions
+
+        :new ->
+          :new
+
+        "edit" ->
+          :edit
+
+        _ ->
+          case params["live_action"] |> IO.inspect() do
+            "upload_contributions" -> :upload_contributions
+            _ -> :index
+          end
       end
+      |> IO.inspect()
 
     socket = assign(socket, live_action: live_action)
 
-    socket =
-      case live_action do
-        :upload_contributions ->
-          assign(socket, page_title: "Upload Contributions")
-
-        :new ->
-          assign(socket, event: %Event{}, page_title: "New Event")
-
-        :edit ->
-          if id = params["id"] do
-            event = Welfare.get_event!(id)
-            assign(socket, event: event, page_title: "Edit Event")
-          else
-            socket
-          end
-
-        _ ->
-          socket
-      end
-
-    {:noreply, socket}
+    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
-
-
-
 
   defp apply_action(socket, :edit, %{"id" => id}) do
     socket
     |> assign(:page_title, "Edit Event")
     |> assign(:event, Welfare.get_event!(id))
+  end
+
+  defp apply_action(socket, :upload_contributions, _) do
+    socket
+    |> assign(:page_title, "Upload Contributions")
   end
 
   defp apply_action(socket, :new, _params) do
@@ -77,8 +74,7 @@ defmodule ImsWeb.EventLive.Index do
 
   @impl true
   def handle_info({ImsWeb.EventLive.FormComponent, {:saved, _event}}, socket) do
-    events =
-      fetch_records(socket.assigns.filters, @paginator_opts)
+    events = fetch_records(socket.assigns.filters, @paginator_opts)
 
     {:noreply,
      socket
@@ -95,6 +91,11 @@ defmodule ImsWeb.EventLive.Index do
      |> assign(:page_title, "Edit Event")
      |> assign(:event, event)
      |> assign(:live_action, :edit)}
+  end
+
+  @impl true
+  def handle_event("new", _, socket) do
+    {:noreply, push_patch(socket, to: ~p"/welfare/events/new")}
   end
 
   @impl true

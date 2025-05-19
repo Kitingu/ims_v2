@@ -11,16 +11,10 @@ defmodule Ims.Workers.Welfare.MemberRefreshWorkers do
   # Dispatcher Worker Function
   # ----------------------------
   def perform(%Oban.Job{args: %{"job_type" => "dispatch"}}) do
-
-
     query = from(m in Welfare.Member, where: m.status == "active", select: m.id)
 
-    Repo.stream(query, max_rows: @batch_size)
-    |> Stream.chunk_every(@batch_size)
-    |> Enum.each(fn member_ids ->
-      %{job_type: "batch", member_ids: member_ids}
-      |> __MODULE__.new()
-      |> Oban.insert()
+    Repo.transaction(fn ->
+      stream_and_dispatch(query)
     end)
 
     :ok
@@ -35,5 +29,15 @@ defmodule Ims.Workers.Welfare.MemberRefreshWorkers do
     |> Enum.each(&Welfare.refresh_member_balance/1)
 
     :ok
+  end
+
+  defp stream_and_dispatch(query) do
+    Repo.stream(query, max_rows: @batch_size)
+    |> Stream.chunk_every(@batch_size)
+    |> Enum.each(fn member_ids ->
+      %{job_type: "batch", member_ids: member_ids}
+      |> __MODULE__.new()
+      |> Oban.insert()
+    end)
   end
 end

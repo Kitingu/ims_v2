@@ -4,7 +4,11 @@
   <div class="p-6 border-b border-gray-800 flex items-center space-x-3">
     <.link navigate={~p"/"} class="flex items-center space-x-3">
       <img src={Ims.Settings.Setting.get_setting("logo_url")} alt="Logo" class="h-12 w-12 rounded-full shadow-md" />
-      <span class="text-2xl font-bold tracking-wide">ODP</span>
+      <span class="text-2xl font-bold tracking-wide">
+        {
+          Ims.Settings.Setting.get_setting("app_name")
+        }
+      </span>
     </.link>
   </div>
 

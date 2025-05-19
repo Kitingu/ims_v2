@@ -38,3 +38,6 @@ npm-debug.log
 
 config/dev.exs
 priv/static/uploads/
+
+# prod secrets
+config/prod.secret.exs

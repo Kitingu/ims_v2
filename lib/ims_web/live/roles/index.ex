@@ -16,7 +16,7 @@ defmodule ImsWeb.RoleLive.Index do
         String.split(perm.name, ".") |> List.first()
       end)
 
-    roles = Role.list_roles(page: 1) 
+    roles = Role.list_roles(page: 1)
 
     {:ok,
      socket

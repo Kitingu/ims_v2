@@ -8,11 +8,11 @@ defmodule Ims.Repo.Migrations.CreateWelfareMembers do
       add :status, :string, default: "active", null: false
       add :eligibility, :boolean, default: true, null: false
 
-      add :entry_date, :date, null: false
+      add :entry_date, :date
       add :exit_date, :date
 
-      add :amount_paid, :decimal, precision: 12, scale: 2, default: 0.0, null: false
-      add :amount_due, :decimal, precision: 12, scale: 2, default: 0.0, null: false
+      add :amount_paid, :decimal, precision: 12, scale: 2, default: 0.0
+      add :amount_due, :decimal, precision: 12, scale: 2, default: 0.0
 
       timestamps(type: :utc_datetime)
     end

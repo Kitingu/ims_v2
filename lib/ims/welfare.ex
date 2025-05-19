@@ -159,14 +159,14 @@ defmodule Ims.Welfare do
 
   """
 
-  # def create_event(attrs \\ %{}) do
-  #   %Event{}
-  #   |> Event.changeset(attrs)
-  #   |> Repo.insert()
-  # end
+  def create_event(attrs \\ %{}) do
+    %Event{}
+    |> Event.changeset(attrs)
+    |> Repo.insert()
+  end
 
-  def create_event(attrs) do
-    with {:ok, event} <- Ims.Welfare.create_event(attrs) do
+  def create_event_ex(attrs) do
+    with {:ok, event} <- Ims.Welfare.create_event(attrs) |> IO.inspect() do
       # Trigger dispatch to refresh all members in batches
       %{job_type: "dispatch"}
       |> Ims.Workers.Welfare.MemberRefreshWorkers.new()
@@ -297,28 +297,49 @@ defmodule Ims.Welfare do
   end
 
   def refresh_member_balance(%Member{} = member) do
-    # Sum payable from EventType amounts for this member's events
+    # Get the datetime of the first contribution by the user
+    first_contribution_at =
+      from(c in Contribution,
+        where: c.user_id == ^member.user_id,
+        order_by: [asc: c.inserted_at],
+        limit: 1,
+        select: c.inserted_at
+      )
+      |> Repo.one()
+      |> IO.inspect(label: "First Contribution At")
+
+    # If no contribution found, do not proceed
+    if is_nil(first_contribution_at) do
+      raise "Cannot refresh balance: no contributions found for user #{member.user_id}"
+    end
+
+
+    # sum of Total payable from events after first contribution
     total_payable =
       from(e in Event,
         join: et in assoc(e, :event_type),
-        where: e.user_id == ^member.user_id and e.inserted_at >= ^member.entry_date,
+        where: e.inserted_at >= ^first_contribution_at,
         select: coalesce(sum(et.amount), 0)
       )
       |> Repo.one()
+      |> IO.inspect(label: "Total Payable")
 
-    # Sum actual payments made in events for this member
+    # Total paid via contributions after first contribution
     total_paid =
-      from(e in Event,
-        where: e.user_id == ^member.user_id and e.inserted_at >= ^member.entry_date,
-        select: coalesce(sum(e.amount_paid), 0)
+      from(c in Contribution,
+        where: c.user_id == ^member.user_id and c.inserted_at >= ^first_contribution_at,
+        select: coalesce(sum(c.amount), 0)
       )
       |> Repo.one()
+      |> IO.inspect(label: "Total Paid")
 
     # Compute amount due
-    amount_due = Decimal.sub(total_payable, total_paid)
+    amount_due =
+      Decimal.sub(total_payable, total_paid)
+      |> IO.inspect(label: "Amount Due")
 
-    # Determine eligibility
-    eligibility = Decimal.cmp(amount_due, 0) != :gt
+    # Determine eligibility --> member should have paid for all events after the first contribution
+    eligibility = Decimal.eq?(total_payable, total_paid)
 
     # Update member record
     member

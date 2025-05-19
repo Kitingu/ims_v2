@@ -38,7 +38,7 @@ defmodule Ims.Workers.ProcessContributionsWorker do
 
         attrs = %{
           amount: amount,
-          payment_reference: get_cell(row, header_map, "payment reference") || "N/A",
+          payment_reference: get_cell(row, header_map, "payment reference") || generate_payment_reference(user.id, event.id),
           source: "MPESA",
           user_id: user.id,
           event_id: event.id,
@@ -133,10 +133,9 @@ defmodule Ims.Workers.ProcessContributionsWorker do
         member_attrs = %{
           user_id: user.id,
           entry_date: entry_date,
-
           amount_paid: Decimal.new(0),
           amount_due: Decimal.new(0),
-          eligibility: true,
+          eligibility: false,
           status: "active"
         } |> IO.inspect()
 
@@ -150,5 +149,14 @@ defmodule Ims.Workers.ProcessContributionsWorker do
         # Member already exists, nothing to do
         :ok
     end
+  end
+
+  # lets make sure that the payment reference is unique if not uploaded
+  # we need to formulate it to make sure no duplicates
+
+  def generate_payment_reference(user_id, event_id) do
+    # Generate a unique payment reference based on user_id and event_id
+    # This is just an example; you can customize the format as needed
+    "#{user_id}-#{event_id}"
   end
 end
