@@ -160,7 +160,7 @@ defmodule Ims.Accounts.Permission do
       # dash
       %{name: "dashboard.view"},
 
-      # settings
+      # settingspUploadUsersWorker
       %{name: "settings.new"},
       %{name: "settings.index"},
       %{name: "settings.edit"},

@@ -2,24 +2,22 @@
   <!-- Sidebar -->
   <%= if assigns[:current_user] do %>
     <.sidebar current_user={@current_user} />
-  
-    <% end %>
+  <% end %>
 
-      <!-- Main Content -->
-      <div class="ml-64 flex-1 flex flex-col">
-        <!-- Header -->
-        <header class="px-4 sm:px-6 lg:px-8 border-b border-gray-200 py-4 text-lg font-semibold text-gray-800" style="border-bottom-width: 6px; border-image-source: linear-gradient(to right, black, red, green); border-image-slice: 1;">
-          Information Management System
-        </header>
-        
-        
+  <!-- Main Content -->
+  <div class={"flex-1 flex flex-col " <> if @current_user, do: "ml-64", else: ""}>
+    <!-- Header -->
+    <header class="px-4 sm:px-6 lg:px-8 border-b border-gray-200 py-4 text-lg font-semibold text-gray-800"
+            style="border-bottom-width: 6px; border-image-source: linear-gradient(to right, black, red, green); border-image-slice: 1;">
+      Information Management System
+    </header>
 
-        <!-- Main Content -->
-        <main class="px-4 py-6 sm:px-6 lg:px-8 flex-1 overflow-auto">
-          <div class="mx-auto max-w-7xl">
-            <.flash_group flash={@flash} />
-            <%= @inner_content %>
-          </div>
-        </main>
+    <!-- Main Content -->
+    <main class="px-4 py-6 sm:px-6 lg:px-8 flex-1 overflow-auto">
+      <div class="mx-auto max-w-7xl">
+        <.flash_group flash={@flash} />
+        <%= @inner_content %>
       </div>
+    </main>
+  </div>
 </div>

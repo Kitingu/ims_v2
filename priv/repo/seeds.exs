@@ -17,6 +17,8 @@ seed_files = [
   "priv/repo/seeds/roles_and_departments.exs",
   "priv/repo/seeds/leave_types.exs",
   "priv/repo/seeds/users.exs",
+  "priv/repo/seeds/offices.exs",
+  "priv/repo/seeds/asset_types.exs",
 ]
 
 Enum.each(seed_files, fn file ->
