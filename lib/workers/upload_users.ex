@@ -96,6 +96,15 @@ defmodule Ims.Workers.UploadUsersWorker do
       |> case do
         {:ok, user} ->
           create_leave_balances(user.id, attrs.leave_balances)
+
+          {:ok, _} =
+            Ims.Accounts.deliver_user_confirmation_instructions(
+              user,
+              fn token ->
+                ImsWeb.Endpoint.url() <> "/users/confirm/#{token}"
+              end
+            )
+
           {:ok, user}
 
         error ->
@@ -198,7 +207,8 @@ defmodule Ims.Workers.UploadUsersWorker do
     digit = Enum.random(?0..?9) |> to_string()
     punct = Enum.random(~c"!@#$%^&*") |> to_string()
     rest = :crypto.strong_rand_bytes(6) |> Base.encode64() |> binary_part(0, 6)
-    upper <> lower <> digit <> punct <> rest
+
+    (upper <> lower <> digit <> punct <> rest)
     |> IO.inspect(label: "Generated Password")
   end
 end
