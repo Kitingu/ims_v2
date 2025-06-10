@@ -27,4 +27,32 @@ defmodule Ims.TrainingsFixtures do
 
     training_application
   end
+
+  @doc """
+  Generate a training_projections.
+  """
+  def training_projections_fixture(attrs \\ %{}) do
+    {:ok, training_projections} =
+      attrs
+      |> Enum.into(%{
+        costs: "120.5",
+        department: "some department",
+        designation: "some designation",
+        disability: true,
+        financial_year: "some financial_year",
+        full_name: "some full_name",
+        gender: "some gender",
+        institution: "some institution",
+        job_group: "some job_group",
+        period_of_study: "some period_of_study",
+        personal_number: "some personal_number",
+        program_title: "some program_title",
+        qualification: "some qualification",
+        quarter: "some quarter",
+        status: "some status"
+      })
+      |> Ims.Trainings.create_training_projections()
+
+    training_projections
+  end
 end

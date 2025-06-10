@@ -1,0 +1,40 @@
+<.header>
+  Training projections {@training_projections.id}
+  <:subtitle>This is a training_projections record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/training_projections/#{@training_projections}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit training_projections</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Full name">{@training_projections.full_name}</:item>
+  <:item title="Gender">{@training_projections.gender}</:item>
+  <:item title="Personal number">{@training_projections.personal_number}</:item>
+  <:item title="Designation">{@training_projections.designation}</:item>
+  <:item title="Department">{@training_projections.department}</:item>
+  <:item title="Job group">{@training_projections.job_group}</:item>
+  <:item title="Qualification">{@training_projections.qualification}</:item>
+  <:item title="Institution">{@training_projections.institution}</:item>
+  <:item title="Program title">{@training_projections.program_title}</:item>
+  <:item title="Financial year">{@training_projections.financial_year}</:item>
+  <:item title="Quarter">{@training_projections.quarter}</:item>
+  <:item title="Disability">{@training_projections.disability}</:item>
+  <:item title="Period of study">{@training_projections.period_of_study}</:item>
+  <:item title="Costs">{@training_projections.costs}</:item>
+  <:item title="Status">{@training_projections.status}</:item>
+</.list>
+
+<.back navigate={~p"/training_projections"}>Back to training_projections</.back>
+
+<.modal :if={@live_action == :edit} id="training_projections-modal" show on_cancel={JS.patch(~p"/training_projections/#{@training_projections}")}>
+  <.live_component
+    module={ImsWeb.TrainingProjectionsLive.FormComponent}
+    id={@training_projections.id}
+    title={@page_title}
+    action={@live_action}
+    training_projections={@training_projections}
+    patch={~p"/training_projections/#{@training_projections}"}
+  />
+</.modal>

@@ -1,16 +1,16 @@
 <div class="flex h-screen">
   <!-- Sidebar -->
   <%= if assigns[:current_user] do %>
-    <.sidebar current_user={@current_user} />
+    <.sidebar current_user={assigns[:current_user]} />
   <% end %>
 
   <!-- Main Content -->
-  <div class={"flex-1 flex flex-col " <> if @current_user, do: "ml-64", else: ""}>
+  <div class={"flex-1 flex flex-col " <> if assigns[:current_user], do: "ml-64", else: ""}>
     <!-- Header -->
-    <header class="px-4 sm:px-6 lg:px-8 border-b border-gray-200 py-4 text-lg font-semibold text-gray-800"
+    <!-- <header class="px-4 sm:px-6 lg:px-8 border-b border-gray-200 py-4 text-lg font-semibold text-gray-800"
             style="border-bottom-width: 6px; border-image-source: linear-gradient(to right, black, red, green); border-image-slice: 1;">
       Information Management System
-    </header>
+    </header> -->
 
     <!-- Main Content -->
     <main class="px-4 py-6 sm:px-6 lg:px-8 flex-1 overflow-auto">

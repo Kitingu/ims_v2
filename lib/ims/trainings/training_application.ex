@@ -65,7 +65,7 @@ defmodule Ims.Trainings.TrainingApplication do
       :period_of_study,
       :costs,
       :authority_reference,
-  
+
       :status
     ])
     |> assoc_constraint(:user)

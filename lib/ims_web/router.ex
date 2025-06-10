@@ -282,6 +282,11 @@ defmodule ImsWeb.Router do
       live "/intern_attachees/:id/edit", InternAttacheeLive.Index, :edit
       live "/intern_attachees/:id", InternAttacheeLive.Show, :show
       live "/intern_attachees/:id/show/edit", InternAttacheeLive.Show, :edit
+
+      live "/training_projections", TrainingProjectionsLive.Index, :index
+      live "/training_projections/:id/edit", TrainingProjectionsLive.Index, :edit
+      live "/training_projections/:id", TrainingProjectionsLive.Show, :show
+      live "/training_projections/:id/show/edit", TrainingProjectionsLive.Show, :edit
     end
   end
 
@@ -313,6 +318,8 @@ defmodule ImsWeb.Router do
     post "/reports/download", ReportsController, :download_report
     get "/reports/training_applications", ReportsController, :export_training_applications
     get "/unauthorized", UnauthorizedController, :index
+    live "/training_projections/new", TrainingProjectionsLive.Index, :new
+    live "/training_projections/success", TrainingProjectionsSuccessLive
 
     live_session :current_user,
       on_mount: [{ImsWeb.UserAuth, :mount_current_user}] do
