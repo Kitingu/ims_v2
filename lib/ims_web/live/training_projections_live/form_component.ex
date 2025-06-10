@@ -34,7 +34,12 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
             phx-submit="save"
             class="space-y-6"
           >
-            <.input field={@form[:full_name]} type="text" label="Indicate your name in full" class="w-full" />
+            <.input
+              field={@form[:full_name]}
+              type="text"
+              label="Indicate your name in full"
+              class="w-full"
+            />
             <.input
               field={@form[:gender]}
               type="select"
@@ -97,10 +102,56 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
                 class="w-full hidden"
               />
             </div>
+
+            <div class="w-full">
+              <label class="block text-sm font-bold text-gray-700 mb-1">
+                Disability <span class="text-red-500">*</span>
+              </label>
+              <div class="flex gap-6">
+                <label class="inline-flex items-center">
+                  <input
+                    type="radio"
+                    name="training_projections[disability]"
+                    value="true"
+                    required
+                    phx-change="toggle_disability"
+                    phx-target={@myself}
+                    checked={@form[:disability].value in [true, "true"]}
+                    class="form-radio text-indigo-600"
+                  />
+                  <span class="ml-2">Yes</span>
+                </label>
+                <label class="inline-flex items-center">
+                  <input
+                    type="radio"
+                    name="training_projections[disability]"
+                    value="false"
+                    required
+                    phx-change="toggle_disability"
+                    phx-target={@myself}
+                    checked={@form[:disability].value in [false, "false", nil]}
+                    class="form-radio text-indigo-600"
+                  />
+                  <span class="ml-2">No</span>
+                </label>
+              </div>
+            </div>
+
+            <%= if @show_disability_details do %>
+              <.input field={@form[:disability_details]} type="text" label="Disability Details" />
+            <% end %>
+
             <.input
               field={@form[:qualification]}
               type="text"
               label="Indicate your highest Academic/Professional Qualification"
+              class="w-full"
+            />
+
+            <.input
+              field={@form[:program_title]}
+              type="text"
+              label="What program would you like to be trained in the financial year 2025/26? (Do not indicate a bachelor's degree)"
               class="w-full"
             />
             <.input
@@ -109,18 +160,12 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
               label="Training Venue / Institution"
               class="w-full"
             />
-            <.input
-              field={@form[:program_title]}
-              type="text"
-              label="What program would you like to be trained in the financial year 2025/26? (Do not indicate a bachelor's degree)"
-              class="w-full"
-            />
+
             <.input
               field={@form[:financial_year]}
-              type="text"
+              type="hidden"
               readonly
               value="2025/26"
-              label="Financial Year"
               class="w-full"
             />
 
@@ -130,7 +175,7 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
               options={["Q1", "Q2", "Q3", "Q4"]}
               label="Quarter"
             /> --%>
-            <div class="flex items-center gap-4 mt-4">
+            <%!-- <div class="flex items-center gap-4 mt-4">
               <.input
                 field={@form[:disability]}
                 type="checkbox"
@@ -139,11 +184,7 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
                 phx-target={@myself}
                 checked={@form[:disability].value == true || @form[:disability].value == "true"}
               />
-            </div>
-
-            <%= if @show_disability_details do %>
-              <.input field={@form[:disability_details]} type="text" label="Disability Details" />
-            <% end %>
+            </div> --%>
 
             <.input
               field={@form[:period_input]}
@@ -151,6 +192,7 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
               label="Approximate duration of the program? Select as appropriate"
               options={study_period_options()}
             />
+
             <.input
               field={@form[:costs]}
               type="number"
@@ -158,7 +200,7 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
               step="any"
               class="w-full"
             />
-            <.input field={@form[:status]} type="hidden"  class="w-full" />
+            <.input field={@form[:status]} type="hidden" class="w-full" />
 
             <:actions>
               <div class="pt-4 flex justify-end">
@@ -271,9 +313,9 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
         {:noreply,
          socket
          |> put_flash(:info, "Training projection updated successfully")
-         |> redirect(to: "/training_projections/success")
-      }
-        #  |> push_patch(to: socket.assigns.patch)}
+         |> redirect(to: "/training_projections/success")}
+
+      #  |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -288,9 +330,8 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
         {:noreply,
          socket
          |> put_flash(:info, "Training projection created successfully")
-        #  |> push_patch(to: socket.assigns.patch)
-        |> redirect(to: "/training_projections/success")
-        }
+         #  |> push_patch(to: socket.assigns.patch)
+         |> redirect(to: "/training_projections/success")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
