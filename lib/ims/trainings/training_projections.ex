@@ -64,7 +64,6 @@ defmodule Ims.Trainings.TrainingProjections do
       :institution,
       :program_title,
       :financial_year,
-      :quarter,
       :disability,
       :period_input,
       :costs,

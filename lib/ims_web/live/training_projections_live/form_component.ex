@@ -34,7 +34,7 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
             phx-submit="save"
             class="space-y-6"
           >
-            <.input field={@form[:full_name]} type="text" label="Full Name" class="w-full" />
+            <.input field={@form[:full_name]} type="text" label="Indicate your name in full" class="w-full" />
             <.input
               field={@form[:gender]}
               type="select"
@@ -93,13 +93,14 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
                 options={@ethnicities}
                 data-phx-event="select_changed"
                 data-placeholder="Select ethinity"
+                label="Select your Ethnicity"
                 class="w-full hidden"
               />
             </div>
             <.input
               field={@form[:qualification]}
               type="text"
-              label="Highest Academic/Professional Qualification"
+              label="Indicate your highest Academic/Professional Qualification"
               class="w-full"
             />
             <.input
@@ -111,7 +112,7 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
             <.input
               field={@form[:program_title]}
               type="text"
-              label="Program to be Trained In (No Bachelor's)"
+              label="What program would you like to be trained in the financial year 2025/26? (Do not indicate a bachelor's degree)"
               class="w-full"
             />
             <.input
@@ -123,12 +124,12 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
               class="w-full"
             />
 
-            <.input
+            <%!-- <.input
               field={@form[:quarter]}
               type="select"
               options={["Q1", "Q2", "Q3", "Q4"]}
               label="Quarter"
-            />
+            /> --%>
             <div class="flex items-center gap-4 mt-4">
               <.input
                 field={@form[:disability]}
@@ -147,17 +148,17 @@ defmodule ImsWeb.TrainingProjectionsLive.FormComponent do
             <.input
               field={@form[:period_input]}
               type="select"
-              label="Period of Study"
+              label="Approximate duration of the program? Select as appropriate"
               options={study_period_options()}
             />
             <.input
               field={@form[:costs]}
               type="number"
-              label="Approximate Cost (KShs)"
+              label="Approximate Cost (KES)"
               step="any"
               class="w-full"
             />
-            <.input field={@form[:status]} type="hidden" label="Status" class="w-full" />
+            <.input field={@form[:status]} type="hidden"  class="w-full" />
 
             <:actions>
               <div class="pt-4 flex justify-end">
