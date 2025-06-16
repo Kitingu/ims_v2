@@ -78,7 +78,7 @@ defmodule Ims.MixProject do
 
   defp releases do
     [
-      your_app: [
+      ims: [
         include_executables_for: [:unix],
         steps: [:assemble, :tar]
       ]
