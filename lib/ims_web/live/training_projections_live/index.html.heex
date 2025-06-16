@@ -5,7 +5,7 @@
   <% else %>
     <.header>
       Listing Training projections
-      <:actions class = "mb-1">
+      <:actions class="mb-1">
 
         <a href="/reports/training_projections"
           class="bg-yellow-600 lg:mr-2 text-white px-4 py-2 rounded-md shadow-md hover:bg-yellow-700 transition">
@@ -17,7 +17,7 @@
           New Training Projection
         </a>
 
-       
+
       </:actions>
     </.header>
 
@@ -26,9 +26,24 @@
       current_user={@current_user} actions={["edit"]}>
       <:col :let={ training_projection} label="Full name">{training_projection.full_name}</:col>
       <:col :let={ training_projection} label="Personal number">{training_projection.personal_number}</:col>
-      <:col :let={ training_projection} label="Designation">{training_projection.designation}</:col>
-      <:col :let={ training_projection} label="Institution">{training_projection.institution}</:col>
-      <:col :let={ training_projection} label="Program title">{training_projection.program_title}</:col>
+      <:col :let={ training_projection} label="Designation">
+        <span class="inline-block max-w-[150px] truncate text-gray-700" title={training_projection.designation}>
+
+          {training_projection.designation}
+        </span>
+      </:col>
+      <:col :let={ training_projection} label="Institution">
+        <span class="inline-block max-w-[150px] truncate text-gray-700" title={training_projection.institution}>
+
+          {training_projection.institution}
+        </span>
+      </:col>
+      <:col :let={ training_projection} label="Program">
+        <span class="inline-block max-w-[150px] truncate text-gray-700" title={training_projection.program_title}>
+          {training_projection.program_title}
+        </span>
+       
+      </:col>
       <:col :let={ training_projection} label="Duration">
         {Ims.Helpers.format_duration(training_projection.period_of_study)}
       </:col>

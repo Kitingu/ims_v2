@@ -3,10 +3,10 @@ defmodule Ims.Trainings.TrainingProjections do
   import Ecto.Changeset
 
   import Ecto.Query
-  alias Ims.Demographics.Ethnicity
   alias Ims.Repo
   use Ims.RepoHelpers, repo: Repo
   alias Elixlsx.{Workbook, Sheet}
+  # alias Ims.Trainings.TrainingProjections
 
   schema "training_projections" do
     field :costs, :decimal
@@ -124,40 +124,92 @@ defmodule Ims.Trainings.TrainingProjections do
 
     case format do
       :csv -> generate_csv(projections)
-      :excel -> generate_excel_with_logo(projections)
+      :excel -> generate_excel_binary(projections)
       _ -> {:error, "Unsupported format"}
     end
   end
 
-  defp generate_excel_with_logo(projections) do
-    logo_url =
-      Ims.Settings.Setting.get_setting("logo_url")
-      |> IO.inspect(label: "Logo URL")
+  # defp generate_excel_with_logo(projections) do
+  #   logo_url =
+  #     Ims.Settings.Setting.get_setting("logo_url")
+  #     |> IO.inspect(label: "Logo URL")
 
-    logo_temp_path = "/tmp/excel_logo.png" |> IO.inspect(label: "Logo Temp Path")
-    json_path = "/tmp/training_projection_data.json" |> IO.inspect(label: "JSON Path")
-    output_path = "/tmp/training_projections.xlsx" |> IO.inspect(label: "Output Path")
-    script_path = "assets/js/excel_generator.js"
+  #   logo_temp_path = "/tmp/excel_logo.png" |> IO.inspect(label: "Logo Temp Path")
+  #   json_path = "/tmp/training_projection_data.json" |> IO.inspect(label: "JSON Path")
+  #   output_path = "/tmp/training_projections.xlsx" |> IO.inspect(label: "Output Path")
+  #   script_path = "assets/js/excel_generator.js"
 
-    # Download the logo
+  #   # Download the logo
 
-    headers = [{~c"User-Agent", ~c"ProtoEnergy IMS/1.0 (benedict@protoenergy.com)"}]
+  #   headers = [{~c"User-Agent", ~c"ProtoEnergy IMS/1.0 (benedict@protoenergy.com)"}]
 
-    case :httpc.request(:get, {to_charlist(logo_url), headers}, [], [{:body_format, :binary}]) do
-      {:ok, {{_, 200, _}, _headers, body}} ->
-        File.write!(logo_temp_path, body)
+  #   case :httpc.request(:get, {to_charlist(logo_url), headers}, [], [{:body_format, :binary}]) do
+  #     {:ok, {{_, 200, _}, _headers, body}} ->
+  #       File.write!(logo_temp_path, body)
 
-      {:error, reason} ->
-        IO.inspect(reason, label: "Failed to fetch logo")
-        {:error, "Failed to download logo"}
+  #     {:error, reason} ->
+  #       IO.inspect(reason, label: "Failed to fetch logo")
+  #       {:error, "Failed to download logo"}
 
-      other ->
-        IO.inspect(other, label: "Unexpected HTTP response")
-        {:error, "Unexpected response while downloading logo"}
-    end
+  #     other ->
+  #       IO.inspect(other, label: "Unexpected HTTP response")
+  #       {:error, "Unexpected response while downloading logo"}
+  #   end
 
-    # Define custom order of columns
-    ordered_keys = [
+  #   # Define custom order of columns
+  #   ordered_keys = [
+  #     "ID",
+  #     "Full Name",
+  #     "Personal Number",
+  #     "Designation",
+  #     "Department",
+  #     "Job Group",
+  #     "Ethnicity",
+  #     "Program Title",
+  #     "Institution",
+  #     "Period of Study (Days)",
+  #     "Costs (KSH)"
+  #   ]
+
+  #   # Transform and sort data
+  #   data =
+  #     projections
+  #     # 🔃 sort by last name
+  #     |> Enum.sort_by(& &1.id)
+  #     |> Enum.map(fn app ->
+  #       %{
+  #         "ID" => app.id,
+  #         "Full Name" => app.full_name |> String.capitalize(),
+  #         "Personal Number" => app.personal_number,
+  #         "Designation" => app.designation,
+  #         "Department" => app.department || "N/A",
+  #         "Job Group" => app.job_group || "N/A",
+  #         "Ethnicity" => app.ethnicity.name,
+  #         "Program Title" => app.program_title,
+  #         "Institution" => app.institution,
+  #         "Period of Study (Days)" => app.period_of_study |> Ims.Helpers.format_duration(),
+  #         "Costs (KSH)" => "KES #{Decimal.to_string(app.costs)}"
+  #       }
+  #     end)
+  #     |> Enum.map(fn row ->
+  #       # 🔄 Ensure final structure follows your custom column order
+  #       Enum.into(ordered_keys, %{}, fn key -> {key, Map.get(row, key)} end)
+  #     end)
+
+  #   # Write JSON
+  #   File.write!(json_path, Jason.encode!(data))
+
+  #   # Run Node
+  #   case System.cmd("node", [script_path, json_path, output_path, logo_temp_path]) do
+  #     {_, 0} -> File.read(output_path)
+  #     {error_msg, _} -> {:error, error_msg}
+  #   end
+  # end
+
+  alias Elixlsx.{Workbook, Sheet}
+
+  def generate_excel_binary(projections) do
+    headers = [
       "ID",
       "Full Name",
       "Personal Number",
@@ -171,38 +223,36 @@ defmodule Ims.Trainings.TrainingProjections do
       "Costs (KSH)"
     ]
 
-    # Transform and sort data
-    data =
+    data_rows =
       projections
-      # 🔃 sort by last name
       |> Enum.sort_by(& &1.id)
       |> Enum.map(fn app ->
-        %{
-          "ID" => app.id,
-          "Full Name" => app.full_name |> String.capitalize(),
-          "Personal Number" => app.personal_number,
-          "Designation" => app.designation,
-          "Department" => app.department || "N/A",
-          "Job Group" => app.job_group || "N/A",
-          "Ethnicity" => app.ethnicity.name,
-          "Program Title" => app.program_title,
-          "Institution" => app.institution,
-          "Period of Study (Days)" => app.period_of_study |> Ims.Helpers.format_duration(),
-          "Costs (KSH)" => "KES #{Decimal.to_string(app.costs)}"
-        }
-      end)
-      |> Enum.map(fn row ->
-        # 🔄 Ensure final structure follows your custom column order
-        Enum.into(ordered_keys, %{}, fn key -> {key, Map.get(row, key)} end)
+        [
+          app.id,
+          String.capitalize(app.full_name),
+          app.personal_number,
+          app.designation,
+          app.department || "N/A",
+          app.job_group || "N/A",
+          app.ethnicity.name,
+          app.program_title,
+          app.institution,
+          Ims.Helpers.format_duration(app.period_of_study),
+          "KES #{Decimal.to_string(app.costs)}"
+        ]
       end)
 
-    # Write JSON
-    File.write!(json_path, Jason.encode!(data))
+    rows = [headers | data_rows]
+    sheet = %Elixlsx.Sheet{name: "Training Projections", rows: rows}
+    workbook = %Elixlsx.Workbook{sheets: [sheet]}
 
-    # Run Node
-    case System.cmd("node", [script_path, json_path, output_path, logo_temp_path]) do
-      {_, 0} -> File.read(output_path)
-      {error_msg, _} -> {:error, error_msg}
+    # ✅ Fix: capture file name and binary
+    case Elixlsx.write_to_memory(workbook, "training_projections.xlsx") do
+      {:ok, {_filename, binary}} ->
+        {:ok, binary}
+
+      error ->
+        error
     end
   end
 
