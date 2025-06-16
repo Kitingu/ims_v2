@@ -66,14 +66,14 @@ async function generate(dataJsonPath, outputPath) { // Removed logoPath paramete
 
     // === Title Section ===
     // Merge all columns for title rows
-    sheet.mergeCells(`A1:${lastColLetter}1`);
-    const titleCell = sheet.getCell("A1");
-    titleCell.value = "HUMAN RESOURCE MANAGEMENT DEPARTMENT";
-    Object.assign(titleCell, styles.title);
+    // sheet.mergeCells(`A1:${lastColLetter}1`);
+    // const titleCell = sheet.getCell("A1");
+    // titleCell.value = "Training Projections Report";
+    // Object.assign(titleCell, styles.title);
 
     sheet.mergeCells(`A2:${lastColLetter}2`);
     const subTitleCell = sheet.getCell("A2");
-    subTitleCell.value = "TRAINING APPLICATIONS REGISTER";
+    subTitleCell.value = "TRAINING PROJECTIONS 2025/2026";
     Object.assign(subTitleCell, styles.subtitle);
 
     sheet.mergeCells(`A3:${lastColLetter}3`);

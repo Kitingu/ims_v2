@@ -76,4 +76,26 @@ defmodule ImsWeb.ReportsController do
         |> redirect(to: ~p"/hr/training_applications")
     end
   end
+
+    def export_training_projections(conn, _params) do
+    case Ims.Trainings.TrainingProjections.generate_report(:excel) do
+      {:ok, binary_content} ->
+        conn
+        |> put_resp_content_type(
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        |> put_resp_header(
+          "content-disposition",
+          "attachment; filename=\"training_projections.xlsx\""
+        )
+        |> send_resp(200, binary_content)
+
+      {:error, reason} ->
+        IO.inspect(reason, label: "Excel export failed reason")
+
+        conn
+        |> put_flash(:error, "Failed to generate Excel report")
+        |> redirect(to: ~p"/hr/training_projections")
+    end
+  end
 end

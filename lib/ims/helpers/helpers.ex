@@ -161,4 +161,21 @@ defmodule Ims.Helpers do
         "#{size_in_bytes} bytes"
     end
   end
+
+  def format_duration(nil), do: "N/A"
+
+  def format_duration(days) when is_integer(days) do
+    years = div(days, 365)
+    rem_days = rem(days, 365)
+    months = div(rem_days, 30)
+    days = rem(rem_days, 30)
+
+    [
+      if(years > 0, do: "#{years} year#{if years > 1, do: "s", else: ""}"),
+      if(months > 0, do: "#{months} month#{if months > 1, do: "s", else: ""}"),
+      if(days > 0, do: "#{days} day#{if days > 1, do: "s", else: ""}")
+    ]
+    |> Enum.filter(& &1)
+    |> Enum.join(" ")
+  end
 end

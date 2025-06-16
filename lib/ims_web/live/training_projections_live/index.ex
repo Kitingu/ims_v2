@@ -16,7 +16,6 @@ defmodule ImsWeb.TrainingProjectionsLive.Index do
       |> assign(:page, 1)
       |> assign(:training_projections, fetch_records(filters, @paginator_opts))
 
-
     {:ok, socket}
   end
 
@@ -40,7 +39,7 @@ defmodule ImsWeb.TrainingProjectionsLive.Index do
   defp apply_action(socket, :index, _params) do
     socket
     |> assign(:page_title, "Listing Training projections")
-    |> assign(:training_projections, nil)
+    |> assign(:training_projections, fetch_records(socket.assigns.filters, @paginator_opts))
   end
 
   @impl true
@@ -49,6 +48,18 @@ defmodule ImsWeb.TrainingProjectionsLive.Index do
         socket
       ) do
     {:noreply, stream_insert(socket, :training_projections_collection, training_projections)}
+  end
+
+  @impl true
+  def handle_event("edit" <> id, _params, socket) do
+    training_projection =
+      Trainings.get_training_projections!(id) |> IO.inspect(label: "Training Projection")
+
+    {:noreply,
+     socket
+     |> assign(:page_title, "Edit Training projections")
+     |> assign(:training_projection, training_projection)
+     |> assign(:live_action, :edit)}
   end
 
   @impl true
@@ -63,9 +74,8 @@ defmodule ImsWeb.TrainingProjectionsLive.Index do
     filters = atomize_keys(filters)
     opts = Keyword.merge(@paginator_opts, opts)
 
-    query =
-      TrainingProjections.search(filters)
-      |> Ims.Repo.paginate(opts)
+    TrainingProjections.search(filters)
+    |> Ims.Repo.paginate(opts)
   end
 
   defp atomize_keys(map) do

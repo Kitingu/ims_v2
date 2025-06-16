@@ -317,6 +317,7 @@ defmodule ImsWeb.Router do
     delete "/users/log_out", UserSessionController, :delete
     post "/reports/download", ReportsController, :download_report
     get "/reports/training_applications", ReportsController, :export_training_applications
+    get "/reports/training_projections", ReportsController, :export_training_projections
     get "/unauthorized", UnauthorizedController, :index
     live "/training_projections/new", TrainingProjectionsLive.Index, :new
     live "/training_projections/success", TrainingProjectionsSuccessLive

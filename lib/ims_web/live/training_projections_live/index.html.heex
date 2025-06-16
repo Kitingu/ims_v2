@@ -1,54 +1,37 @@
 <%= if @live_action in [:new, :edit] do %>
-  <.live_component
-    module={ImsWeb.TrainingProjectionsLive.FormComponent}
-    id={@training_projections.id || :new}
-    title={@page_title}
-    action={@live_action}
-    training_projections={@training_projections}
-    patch={~p"/training_projections"}
-  />
-<% else %>
-  <.header>
-    Listing Training projections
-    <:actions>
-      <.link patch={~p"/training_projections/new"}>
-        <.button>New Training projections</.button>
-      </.link>
-    </:actions>
-  </.header>
+  <.live_component module={ImsWeb.TrainingProjectionsLive.FormComponent} id={@training_projections.id || :new}
+    title={@page_title} action={@live_action} training_projections={@training_projections}
+    patch={~p"/hr/training_projections"} />
+  <% else %>
+    <.header>
+      Listing Training projections
+      <:actions class = "mb-1">
 
-  <!-- Uncomment table to show projections list -->
-  <.table
-    id="training_projections"
-    rows={@streams.training_projections_collection}
-    row_click={fn {_id, training_projections} -> JS.navigate(~p"/training_projections/#{training_projections}") end}
-  >
-    <:col :let={{_id, training_projections}} label="Full name">{training_projections.full_name}</:col>
-    <:col :let={{_id, training_projections}} label="Gender">{training_projections.gender}</:col>
-    <:col :let={{_id, training_projections}} label="Personal number">{training_projections.personal_number}</:col>
-    <:col :let={{_id, training_projections}} label="Designation">{training_projections.designation}</:col>
-    <:col :let={{_id, training_projections}} label="Department">{training_projections.department}</:col>
-    <:col :let={{_id, training_projections}} label="Job group">{training_projections.job_group}</:col>
-    <:col :let={{_id, training_projections}} label="Qualification">{training_projections.qualification}</:col>
-    <:col :let={{_id, training_projections}} label="Institution">{training_projections.institution}</:col>
-    <:col :let={{_id, training_projections}} label="Program title">{training_projections.program_title}</:col>
-    <:col :let={{_id, training_projections}} label="Financial year">{training_projections.financial_year}</:col>
-    <:col :let={{_id, training_projections}} label="Quarter">{training_projections.quarter}</:col>
-    <:col :let={{_id, training_projections}} label="Disability">{training_projections.disability}</:col>
-    <:col :let={{_id, training_projections}} label="Period of study">{training_projections.period_of_study}</:col>
-    <:col :let={{_id, training_projections}} label="Costs">{training_projections.costs}</:col>
-    <:col :let={{_id, training_projections}} label="Status">{training_projections.status}</:col>
+        <a href="/reports/training_projections"
+          class="bg-yellow-600 lg:mr-2 text-white px-4 py-2 rounded-md shadow-md hover:bg-yellow-700 transition">
+          Export Excel
+        </a>
 
-    <:action :let={{_id, training_projections}}>
-      <.link patch={~p"/training_projections/#{training_projections}/edit"}>Edit</.link>
-    </:action>
-    <:action :let={{id, training_projections}}>
-      <.link
-        phx-click={JS.push("delete", value: %{id: training_projections.id}) |> hide("##{id}")}
-        data-confirm="Are you sure?"
-      >
-        Delete
-      </.link>
-    </:action>
-  </.table>
-<% end %>
+        <a href={~p"/hr/training_projections/new"}
+          class="bg-blue-600 text-white px-4 py-2 rounded-md shadow-md hover:bg-blue-700 transition">
+          New Training Projection
+        </a>
+
+       
+      </:actions>
+    </.header>
+
+    <!-- Uncomment table to show projections list -->
+    <.table id="training_projections" rows={@training_projections} resource="training_projections"
+      current_user={@current_user} actions={["edit"]}>
+      <:col :let={ training_projection} label="Full name">{training_projection.full_name}</:col>
+      <:col :let={ training_projection} label="Personal number">{training_projection.personal_number}</:col>
+      <:col :let={ training_projection} label="Designation">{training_projection.designation}</:col>
+      <:col :let={ training_projection} label="Institution">{training_projection.institution}</:col>
+      <:col :let={ training_projection} label="Program title">{training_projection.program_title}</:col>
+      <:col :let={ training_projection} label="Duration">
+        {Ims.Helpers.format_duration(training_projection.period_of_study)}
+      </:col>
+      <:col :let={ training_projection} label="Costs">{training_projection.costs}</:col>
+    </.table>
+    <% end %>
