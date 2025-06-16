@@ -4,7 +4,7 @@ defmodule ImsWeb.TrainingProjectionsLive.Index do
   alias Ims.Trainings
   alias Ims.Trainings.TrainingProjections
 
-  @paginator_opts [order_by: [desc: :inserted_at], page_size: 10]
+  @paginator_opts [order_by: [desc: :inserted_at], page_size: 20]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -60,6 +60,34 @@ defmodule ImsWeb.TrainingProjectionsLive.Index do
      |> assign(:page_title, "Edit Training projections")
      |> assign(:training_projection, training_projection)
      |> assign(:live_action, :edit)}
+  end
+
+    def handle_event("resize_table", %{"size" => size}, socket) do
+    training_projections =
+      fetch_records(socket.assigns.filters, page_size: String.to_integer(size)) |> IO.inspect()
+
+    {:noreply, assign(socket, training_projections: training_projections)}
+  end
+
+  def handle_event("render_page", %{"page" => page}, socket) do
+
+    new_page =
+      case page do
+        "next" -> socket.assigns.page + 1
+        "previous" -> socket.assigns.page - 1
+        # Convert string to integer for other cases
+        _ -> String.to_integer(page)
+      end
+
+    opts = Keyword.merge(@paginator_opts, page: new_page)
+    training_projections = fetch_records(socket.assigns.filters, opts)
+
+    socket =
+      socket
+      |> assign(:training_projections, training_projections)
+
+    # No need for String.to_integer here
+    {:noreply, socket}
   end
 
   @impl true
