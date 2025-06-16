@@ -220,7 +220,8 @@ defmodule Ims.Trainings.TrainingProjections do
       "Program Title",
       "Institution",
       "Period of Study (Days)",
-      "Costs (KSH)"
+      "Costs (KSH)",
+      "Date of Submission"
     ]
 
     data_rows =
@@ -238,7 +239,8 @@ defmodule Ims.Trainings.TrainingProjections do
           app.program_title,
           app.institution,
           Ims.Helpers.format_duration(app.period_of_study),
-          "KES #{Decimal.to_string(app.costs)}"
+          "KES #{Decimal.to_string(app.costs)}",
+          Ims.Helpers.humanize_date(app.inserted_at)
         ]
       end)
 

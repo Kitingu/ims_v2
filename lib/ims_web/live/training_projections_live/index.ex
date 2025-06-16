@@ -4,7 +4,7 @@ defmodule ImsWeb.TrainingProjectionsLive.Index do
   alias Ims.Trainings
   alias Ims.Trainings.TrainingProjections
 
-  @paginator_opts [order_by: [desc: :inserted_at], page_size: 20]
+  @paginator_opts [order_by: [desc: :inserted_at], page_size: 15]
 
   @impl true
   def mount(_params, _session, socket) do

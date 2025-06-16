@@ -24,6 +24,7 @@
     <!-- Uncomment table to show projections list -->
     <.table id="training_projections" rows={@training_projections} resource="training_projections"
       current_user={@current_user} actions={["edit"]}>
+    <:col :let={ training_projection} label="ID">{training_projection.id}</:col>
       <:col :let={ training_projection} label="Full name">{training_projection.full_name}</:col>
       <:col :let={ training_projection} label="Personal number">{training_projection.personal_number}</:col>
       <:col :let={ training_projection} label="Designation">

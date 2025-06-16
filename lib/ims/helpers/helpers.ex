@@ -28,17 +28,22 @@ defmodule Ims.Helpers do
     "KES #{formatted_int}#{decimal_part}"
   end
 
-  def humanize_date(date),
-    do:
-      date
-      |> to_string()
-      |> Timex.parse!("%Y-%m-%d", :strftime)
-      |> Timex.format!("{Mshort} {0D}, {YYYY}")
+  def humanize_date(nil), do: "N/A"
 
-  def humanize_datetime(datetime) when datetime in [nil, ""], do: nil
+  def humanize_date(%Date{} = date),
+    do: Timex.format!(date, "{Mshort} {0D}, {YYYY}")
 
-  def humanize_datetime(datetime) do
-    datetime |> Timex.format!("{Mshort} {0D}, {YYYY}")
+  def humanize_date(%NaiveDateTime{} = dt),
+    do: Timex.format!(dt, "{Mshort} {0D}, {YYYY}")
+
+  def humanize_date(%DateTime{} = dt),
+    do: Timex.format!(dt, "{Mshort} {0D}, {YYYY}")
+
+  def humanize_date(string) when is_binary(string) do
+    case Timex.parse(string, "{ISO:Extended}") do
+      {:ok, parsed} -> Timex.format!(parsed, "{Mshort} {0D}, {YYYY}")
+      _ -> string
+    end
   end
 
   #  def generate_qr_code(qr_content) do
