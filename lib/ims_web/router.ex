@@ -319,8 +319,8 @@ defmodule ImsWeb.Router do
     get "/reports/training_applications", ReportsController, :export_training_applications
     get "/reports/training_projections", ReportsController, :export_training_projections
     get "/unauthorized", UnauthorizedController, :index
-    live "/training_projections/new", TrainingProjectionsLive.Index, :new
-    live "/training_projections/success", TrainingProjectionsSuccessLive
+    # live "/training_projections/new", TrainingProjectionsLive.Index, :new
+    # live "/training_projections/success", TrainingProjectionsSuccessLive
 
     live_session :current_user,
       on_mount: [{ImsWeb.UserAuth, :mount_current_user}] do
