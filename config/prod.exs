@@ -9,7 +9,7 @@ config :ims, ImsWeb.Endpoint,
   url: [
     host: "159.65.234.146",
     scheme: "https",
-    port: 443
+    port: 4000
   ],
   # force_ssl: [
   #   rewrite_on: [:x_forwarded_proto]
