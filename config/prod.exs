@@ -7,15 +7,15 @@ import Config
 # before starting your production server.
 config :ims, ImsWeb.Endpoint,
   url: [
-    host: "ims-app.gigalixirapp.com/",
+    host: "159.65.234.146",
     scheme: "https",
     port: 443
   ],
-  force_ssl: [
-    rewrite_on: [:x_forwarded_proto]
-  ],
+  # force_ssl: [
+  #   rewrite_on: [:x_forwarded_proto]
+  # ],
   check_origin: [
-    "https://ims-app.gigalixirapp.com/"
+    "http://159.65.234.146"
   ],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
@@ -30,3 +30,7 @@ config :logger, level: :info
 
 # Runtime production configuration, including reading
 # of environment variables, is done on config/runtime.exs.
+
+
+
+# echo 'export SECRET_KEY_BASE=Csskc6M2we39yODInUM6N5xifDGjp7UJl2bUEnzCdqCG0Rfe6anOm5Dh/bGZTnT2m+FuOvwf6MD07mlW1xZF2g==' >> ~/.bashrc
