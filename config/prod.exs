@@ -15,7 +15,8 @@ config :ims, ImsWeb.Endpoint,
   #   rewrite_on: [:x_forwarded_proto]
   # ],
   check_origin: [
-    "http://159.65.234.146"
+    "http://159.65.234.146",
+    "http://159.65.234.146:4000"
   ],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
