@@ -8,7 +8,7 @@ import Config
 config :ims, ImsWeb.Endpoint,
   url: [
     host: "159.65.234.146",
-    scheme: "https",
+    scheme: "http",
     port: 4000
   ],
   # force_ssl: [
