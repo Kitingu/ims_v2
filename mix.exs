@@ -73,6 +73,9 @@ defmodule Ims.MixProject do
       {:dotenv_parser, "~> 2.0"},
       {:icalendar, "~> 1.0"},
       {:slugger, "~> 0.2"},
+      {:goth, "~> 1.4"},
+      {:tesla, "~> 1.4"},
+      {:hackney, "~> 1.17"} # Tesla adapter
     ]
   end
 

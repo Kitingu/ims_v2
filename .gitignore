@@ -41,3 +41,4 @@ priv/static/uploads/
 
 # prod secrets
 config/prod.secret.exs
+.DS_Store

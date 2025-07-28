@@ -22,6 +22,10 @@ config :ims, ImsWeb.Endpoint,
   pubsub_server: Ims.PubSub,
   live_view: [signing_salt: "XFHzw63R"]
 
+config :goth, json: File.read!("config/credentials.json")
+# config :ims, :google_docs_key, "AIzaSyAfseCqJVDKkjQP9BASL9DBo9iSH1AF7VY"
+
+
 # Configures the mailer
 #
 # By default it uses the "Local" adapter which stores the emails
