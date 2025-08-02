@@ -1,0 +1,51 @@
+<.header>
+  Listing Files
+  <:actions>
+    <.link patch={~p"/files/new"}>
+      <.button>New File</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="files"
+  rows={@files}
+  current_user={@current_user}
+  resource="files"
+  actions={["move", "view"]}
+
+>
+  <:col :let={file} label="Folio number">{file.folio_number}</:col>
+  <:col :let={file} label="Subject matter">{file.subject_matter}</:col>
+  <:col :let={file} label="Ref no">{file.ref_no}</:col>
+  <:col :let={file} label="Current office">
+    <%= if file.current_office do %>
+      <%= file.current_office.name %>
+    <% else %>
+      <span class="text-gray-500">Unassigned</span>
+    <% end %>
+  </:col>
+  <:col :let={file} label="Created By">
+    <%= if file.user do %>
+      <%= "#{file.user.first_name} #{file.user.last_name}" %>
+    <% else %>
+      <span class="text-gray-500">Unknown</span>
+    <% end %>
+  </:col>
+  <:col :let={file} label="Created At">
+    <%= file.inserted_at |> Timex.format!("%Y-%m-%d %H:%M:%S", :strftime) %>
+  </:col>
+ 
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="file-modal" show on_cancel={JS.patch(~p"/files")}>
+  <.live_component
+    module={ImsWeb.FileLive.FormComponent}
+    id={@file.id || :new}
+    title={@page_title}
+    current_user={@current_user}
+    action={@live_action}
+    file={@file}
+    patch={~p"/files"}
+  />
+</.modal>

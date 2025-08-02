@@ -1,0 +1,26 @@
+<.header>
+  File movement {@file_movement.id}
+  <:subtitle>This is a file_movement record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/file_movements/#{@file_movement}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit file_movement</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Remarks">{@file_movement.remarks}</:item>
+</.list>
+
+<.back navigate={~p"/file_movements"}>Back to file_movements</.back>
+
+<.modal :if={@live_action == :edit} id="file_movement-modal" show on_cancel={JS.patch(~p"/file_movements/#{@file_movement}")}>
+  <.live_component
+    module={ImsWeb.FileMovementLive.FormComponent}
+    id={@file_movement.id}
+    title={@page_title}
+    action={@live_action}
+    file_movement={@file_movement}
+    patch={~p"/file_movements/#{@file_movement}"}
+  />
+</.modal>

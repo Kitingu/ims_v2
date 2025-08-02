@@ -124,6 +124,28 @@ defmodule Ims.Helpers do
     String.to_atom(key)
   end
 
+  defp atomize_keys(map) do
+    Enum.reduce(map, %{}, fn {k, v}, acc ->
+      key =
+        cond do
+          is_binary(k) ->
+            try do
+              String.to_existing_atom(k)
+            rescue
+              ArgumentError -> k
+            end
+
+          true ->
+            k
+        end
+
+      Map.put(acc, key, v)
+    end)
+  end
+
+  defp maybe_atom(k) when is_binary(k), do: String.to_existing_atom(k)
+  defp maybe_atom(k), do: k
+
   #  defp render_svg("<?xml version=\"1.0\" standalone=\"yes\"?>" <> svg) do
   #    svg
   #  end

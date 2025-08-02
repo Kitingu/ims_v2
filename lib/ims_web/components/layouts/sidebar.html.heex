@@ -6,7 +6,7 @@
       <img src={Ims.Settings.Setting.get_setting("logo_url")} alt="Logo" class="h-12 w-12 rounded-full shadow-md" />
       <span class="text-2xl font-bold tracking-wide">
         {
-          Ims.Settings.Setting.get_setting("app_name")
+        Ims.Settings.Setting.get_setting("app_name")
         }
       </span>
     </.link>
@@ -93,7 +93,7 @@
             </.link>
           </li>
 
-          
+
         </ul>
       </li>
 
@@ -252,10 +252,9 @@
             </.link>
           </li>
           <li>
-           
-            <.link 
-            :if={Canada.Can.can?(@current_user, ["index"], "training_projections" )}
-            navigate={~p"/hr/training_projections"}
+
+            <.link :if={Canada.Can.can?(@current_user, ["index"], "training_projections" )}
+              navigate={~p"/hr/training_projections"}
               class="flex items-center py-2 rounded-lg hover:text-white hover:bg-gray-800 transition">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor" class="w-4 h-4 mr-3">
@@ -267,7 +266,8 @@
           </li>
 
           <li>
-            <.link :if={Canada.Can.can?(@current_user, ["index"], "intern_attachees" )} navigate={~p"/hr/intern_attachees"}
+            <.link :if={Canada.Can.can?(@current_user, ["index"], "intern_attachees" )}
+              navigate={~p"/hr/intern_attachees"}
               class="flex items-center py-2 rounded-lg hover:text-white hover:bg-gray-800 transition">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                 stroke="currentColor" class="size-4 mr-3">
@@ -328,8 +328,8 @@
 
 
 
-       <!-- Settings Dropdown -->
-       <li :if={Canada.Can.can?(@current_user, ["index"], "welfare" )}>
+      <!-- Welfare Dropdown -->
+      <li :if={Canada.Can.can?(@current_user, ["index"], "welfare" )}>
         <button @click="openDropdown = openDropdown === 'welfare' ? '' : 'welfare'"
           class="flex items-center w-full px-4 py-3 text-lg font-medium text-gray-200 rounded-lg hover:bg-gray-800 hover:text-white transition">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -372,6 +372,18 @@
             </.link>
           </li>
         </ul>
+      </li>
+
+      <li :if={Canada.Can.can?(@current_user, ["index"], "file_movements" )}>
+        <.link navigate={~p"/files"}
+          class="flex items-center px-4 py-3 text-lg font-medium text-gray-200 rounded-lg hover:bg-gray-800 hover:text-white transition">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+            stroke="currentColor" class="size-4 mr-3">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 2.25c5.385 0 9.75 4.365 9.75 9.75S17.385 21.75 12 21.75 2.25 17.385 2.25 12 6.615 2.25 12 2.25Zm0 3a6.75 6.75 0 1 1-6.75 6.75A6.75 6.75 0 0 1 12 5.25Z" />
+          </svg>
+          File Movements
+        </.link>
       </li>
 
       <!-- Log Out -->

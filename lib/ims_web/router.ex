@@ -175,12 +175,21 @@ defmodule ImsWeb.Router do
       # live "/training_applications/:id", TrainingApplicationLive.Show, :show
       # live "/training_applications/:id/show/edit", TrainingApplicationLive.Show, :edit
 
-      # live "/revoked_devices", RevokedDeviceLive.Index, :index
-      # live "/revoked_devices/new", RevokedDeviceLive.Index, :new
-      # live "/revoked_devices/:id/edit", RevokedDeviceLive.Index, :edit
+       live "/files", FileLive.Index, :index
+       live "/files/new", FileLive.Index, :new
+       live "/files/:id/edit", FileLive.Index, :edit
 
-      # live "/revoked_devices/:id", RevokedDeviceLive.Show, :show
-      # live "/revoked_devices/:id/show/edit", RevokedDeviceLive.Show, :edit
+       live "/files/:id", FileLive.Show, :show
+       live "/files/:id/show/edit", FileLive.Show, :edit
+
+       live "/file_movements", FileMovementLive.Index, :index
+       live "/file_movements/new", FileMovementLive.Index, :new
+       live "/file_movements/:id/edit", FileMovementLive.Index, :edit
+
+       live "/file_movements/:id", FileMovementLive.Show, :show
+       live "/file_movements/:id/show/edit", FileMovementLive.Show, :edit
+
+
     end
   end
 

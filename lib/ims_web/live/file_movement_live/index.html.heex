@@ -1,0 +1,41 @@
+<.header>
+  Listing File movements
+  <:actions>
+    <.link patch={~p"/file_movements/new"}>
+      <.button>New File movement</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.table
+  id="file_movements"
+  rows={@streams.file_movements}
+  row_click={fn {_id, file_movement} -> JS.navigate(~p"/file_movements/#{file_movement}") end}
+>
+  <:col :let={{_id, file_movement}} label="Remarks">{file_movement.remarks}</:col>
+  <:action :let={{_id, file_movement}}>
+    <div class="sr-only">
+      <.link navigate={~p"/file_movements/#{file_movement}"}>Show</.link>
+    </div>
+    <.link patch={~p"/file_movements/#{file_movement}/edit"}>Edit</.link>
+  </:action>
+  <:action :let={{id, file_movement}}>
+    <.link
+      phx-click={JS.push("delete", value: %{id: file_movement.id}) |> hide("##{id}")}
+      data-confirm="Are you sure?"
+    >
+      Delete
+    </.link>
+  </:action>
+</.table>
+
+<.modal :if={@live_action in [:new, :edit]} id="file_movement-modal" show on_cancel={JS.patch(~p"/file_movements")}>
+  <.live_component
+    module={ImsWeb.FileMovementLive.FormComponent}
+    id={@file_movement.id || :new}
+    title={@page_title}
+    action={@live_action}
+    file_movement={@file_movement}
+    patch={~p"/file_movements"}
+  />
+</.modal>
