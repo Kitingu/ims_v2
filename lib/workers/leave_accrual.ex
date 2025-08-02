@@ -6,44 +6,70 @@ defmodule Ims.Workers.LeaveAccrualWorker do
   import Ecto.Query
   require Logger
 
-
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"type" => "monthly"}}) do
-    Logger.info("Leave Accrual Worker: Monthly accrual job started")
-    accrue_annual_leave()
+  def perform(%Oban.Job{args: %{"type" => "year_start"}}) do
+    Logger.info("Leave Accrual Worker: Financial year start job triggered")
+    reset_all_leave_balances()
   end
 
-  def perform(%Oban.Job{args: %{"type" => "year_end"}}) do
-    Logger.info("Leave Accrual Worker: Year-end reset job started")
-    year_end_reset()
-  end
+  defp reset_all_leave_balances do
+    leave_types = Repo.all(LeaveType)
 
-  defp accrue_annual_leave do
-    Logger.info("Leave Accrual Worker: Monthly accrual job started")
-    with %LeaveType{id: type_id} <- Repo.get_by(LeaveType, name: "Annual Leave") do
-      from(lb in LeaveBalance, where: lb.leave_type_id == ^type_id)
-      |> Repo.update_all(inc: [remaining_days: 1.75])
-    end
+    Enum.each(leave_types, fn leave_type ->
+      if leave_type.name == "Annual Leave" do
+        reset_annual_leave(leave_type)
+      else
+        reset_other_leave(leave_type)
+      end
+    end)
 
+    Logger.info("Leave Accrual Worker: All leave types processed.")
     :ok
   end
 
-  defp year_end_reset do
-    Logger.info("Leave Accrual Worker: Year-end reset job started")
-    with %LeaveType{id: type_id} <- Repo.get_by(LeaveType, name: "Annual Leave") do
-      balances =
-        Repo.all(from lb in LeaveBalance, where: lb.leave_type_id == ^type_id)
+  defp reset_annual_leave(%LeaveType{id: type_id}) do
+    Logger.info("Resetting Annual Leave balances...")
 
-      Enum.each(balances, fn lb ->
-        carry_forward = Decimal.new(lb.remaining_days) |> Decimal.div(2) |> Decimal.round(1)
+    balances = Repo.all(from lb in LeaveBalance, where: lb.leave_type_id == ^type_id)
 
-        LeaveBalance
-        |> Repo.get!(lb.id)
-        |> Ecto.Changeset.change(remaining_days: carry_forward)
-        |> Repo.update()
-      end)
-    end
+    Enum.each(balances, fn lb ->
+      carry_forward =
+        lb.remaining_days
+        |> Decimal.new()
+        |> Decimal.min(Decimal.new(15))
+        |> Decimal.round(1)
 
-    :ok
+      new_balance = Decimal.add(carry_forward, 30)
+
+      lb
+      |> Ecto.Changeset.change(remaining_days: new_balance)
+      |> Repo.update()
+      |> case do
+        {:ok, _} ->
+          Logger.info("User ##{lb.user_id} — Annual: Carry = #{carry_forward}, Total = #{new_balance}")
+
+        {:error, reason} ->
+          Logger.error("User ##{lb.user_id} — Failed to update Annual Leave: #{inspect(reason)}")
+      end
+    end)
+  end
+
+  defp reset_other_leave(%LeaveType{id: type_id, name: name, default_days: default}) do
+    Logger.info("Resetting #{name} balances to default (#{default || 0} days)...")
+
+    balances = Repo.all(from lb in LeaveBalance, where: lb.leave_type_id == ^type_id)
+
+    Enum.each(balances, fn lb ->
+      lb
+      |> Ecto.Changeset.change(remaining_days: Decimal.new(default || 0))
+      |> Repo.update()
+      |> case do
+        {:ok, _} ->
+          Logger.info("User ##{lb.user_id} — #{name} set to #{default || 0} days")
+
+        {:error, reason} ->
+          Logger.error("User ##{lb.user_id} — Failed to reset #{name}: #{inspect(reason)}")
+      end
+    end)
   end
 end

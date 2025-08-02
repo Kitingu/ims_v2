@@ -97,11 +97,9 @@ config :ims, Oban,
     Oban.Plugins.Pruner,
     {Oban.Plugins.Cron,
      crontab: [
-       # Run on the 1st of every month at 1 AM
-       {"0 1 1 * *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "monthly"}},
 
        # Run on Jan 1st every year at 1 AM
-       {"0 1 1 1 *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "year_end"}}
+       {"0 0 1 7 *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "year_start"}}
      ]}
   ],
   queues: [default: 10, welfare: 2]

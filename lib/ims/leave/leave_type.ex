@@ -7,6 +7,7 @@ defmodule Ims.Leave.LeaveType do
     field :max_days, :integer
     field :carry_forward, :boolean, default: false
     field :requires_approval, :boolean, default: false
+    field :default_days, :integer, default: 0
 
     timestamps(type: :utc_datetime)
   end
