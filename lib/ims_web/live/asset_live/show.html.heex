@@ -31,10 +31,10 @@
     <%= @asset.office && @asset.office.name || "—" %>
   </div>
   <div><strong>Purchase Date:</strong>
-    <%= Ims.Helpers.humanize_datetime(@asset.purchase_date) %>
+    <%= Ims.Helpers.humanize_date(@asset.purchase_date) %>
   </div>
   <div><strong>Warranty Expiry:</strong>
-    <%= Ims.Helpers.humanize_datetime(@asset.warranty_expiry) %>
+    <%= Ims.Helpers.humanize_date(@asset.warranty_expiry) %>
   </div>
 </div>
 
@@ -59,7 +59,7 @@
           <%= for log <- @asset_logs do %>
             <tr>
               <td class="px-4 py-2 whitespace-nowrap">
-                <%= if log.performed_at, do: Ims.Helpers.humanize_datetime(log.performed_at), else: "—" %>
+                <%= if log.performed_at, do: Ims.Helpers.humanize_date(log.performed_at), else: "—" %>
               </td>
               <td class="px-4 py-2 capitalize">
                 <%= log.action %>

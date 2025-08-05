@@ -18,7 +18,7 @@
   </:col>
 
   <:col :let={ request} label="Actioned at">
-    <%= Ims.Helpers.humanize_datetime(request.actioned_at) %>
+    <%= Ims.Helpers.humanize_date(request.actioned_at) %>
   </:col>
 
   <:col :let={request} label="Actioned By">

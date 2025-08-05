@@ -672,4 +672,30 @@ defmodule Ims.Accounts do
     |> Enum.map(fn {name, id} -> "#{name} (#{id})" end)
     |> Enum.join(", ")
   end
+
+  def list_staff_members do
+    Repo.all(User |> User.is_staff_member_query())
+  end
+
+  def get_staff_member!(id) do
+    User
+    |> User.is_staff_member_query()
+    |> Repo.get!(id)
+  end
+
+  def create_staff_member(attrs \\ %{}) do
+    %User{}
+    |> User.staff_member_changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def update_staff_member(%User{} = user, attrs) do
+    user
+    |> User.staff_member_changeset(attrs)
+    |> Repo.update()
+  end
+
+  def delete_staff_member(%User{} = user) do
+    Repo.delete(user)
+  end
 end

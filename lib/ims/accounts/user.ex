@@ -118,6 +118,34 @@ defmodule Ims.Accounts.User do
     |> validate_length(:personal_number, min: 6, max: 8)
   end
 
+  def staff_member_changeset(user, attrs) do
+    user
+    |> cast(attrs, [
+      :email,
+      :first_name,
+      :last_name,
+      :msisdn,
+      :personal_number,
+      :designation,
+      :gender,
+      :department_id,
+      :job_group_id,
+      :password_reset_required
+    ])
+    |> validate_required([
+      :email,
+      :first_name,
+      :last_name,
+      :msisdn,
+      :personal_number,
+      :designation,
+      :gender,
+      :department_id,
+      :job_group_id
+    ])
+    |> unique_constraint(:personal_number)
+  end
+
   def role_changeset(role, permissions) do
     role
     |> Ecto.Changeset.change()
@@ -305,5 +333,10 @@ defmodule Ims.Accounts.User do
       end)
 
     from(q in query, preload: [:department, :job_group, :roles])
+  end
+
+  def is_staff_member_query() do
+    from u in __MODULE__,
+      where: is_nil(u.hashed_password) and u.password_reset_required == true
   end
 end

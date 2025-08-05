@@ -59,7 +59,7 @@
           </:col>
 
           <:col :let={asset_log} label="Performed At">
-            <%= Ims.Helpers.humanize_datetime(asset_log.performed_at) %>
+            <!-- <%= Ims.Helpers.humanize_date(asset_log.performed_at) %> -->
           </:col>
         </.table>
 
@@ -91,7 +91,7 @@
             </:col>
 
             <:col :let={asset_log} label="Return Date">
-              <%= Ims.Helpers.humanize_datetime(asset_log.date_returned) %>
+              <%= Ims.Helpers.humanize_date(asset_log.date_returned) %>
             </:col>
 
             <:col :let={asset_log} label="Remarks">
@@ -102,7 +102,7 @@
             </:col>
 
             <:col :let={asset_log} label="Performed At">
-              <%= Ims.Helpers.humanize_datetime(asset_log.performed_at) %>
+              <%= Ims.Helpers.humanize_date(asset_log.performed_at) %>
             </:col>
           </.table>
 
@@ -140,7 +140,7 @@
                 <%= asset_log.performed_by.first_name %> - <%= asset_log.performed_by.designation %>
               </:col>
               <:col :let={asset_log} label="Performed At">
-                <%= Ims.Helpers.humanize_datetime(asset_log.performed_at) %>
+                <%= Ims.Helpers.humanize_date(asset_log.performed_at) %>
               </:col>
             </.table>
 
@@ -180,7 +180,7 @@
                 <%= asset_log.performed_by.first_name %> - <%= asset_log.performed_by.designation %>
               </:col>
               <:col :let={asset_log} label="Performed At">
-                <%= Ims.Helpers.humanize_datetime(asset_log.performed_at) %>
+                <%= Ims.Helpers.humanize_date(asset_log.performed_at) %>
               </:col>
             </.table>
 
@@ -211,7 +211,7 @@
                 </:col>
 
                 <:col :let={asset_log} label="Performed At">
-                  <%= Ims.Helpers.humanize_datetime(asset_log.performed_at) %>
+                  <%= Ims.Helpers.humanize_date(asset_log.performed_at) %>
                 </:col>
               </.table>
               <% end %>

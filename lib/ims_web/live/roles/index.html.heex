@@ -18,7 +18,7 @@
   <:col :let={ role} label="ID"><%= role.id %></:col>
     <:col :let={ role} label="Name"><%= role.name %></:col>
     <:col :let={ role} label="Description"><%= role.description %></:col>
-    <:col :let={role} label="Created at"> <%= Ims.Helpers.humanize_datetime( role.inserted_at) %>  </:col>
+    <:col :let={role} label="Created at"> <%= Ims.Helpers.humanize_date( role.inserted_at) %>  </:col>
     <:action :let={ role}>
       <div class="sr-only">
       
