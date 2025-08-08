@@ -1,30 +1,24 @@
 defmodule Ims.Workers.ProcessContributionsWorker do
   use Oban.Worker, queue: :default, max_attempts: 3
 
-  alias Ims.{Repo, Welfare.Contribution, Accounts.User, Welfare.Event}
+  alias Ims.{Repo, Welfare.Contribution, Accounts, Accounts.User, Welfare.Event}
   require Logger
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"file_path" => path}}) do
     # Parse the Excel file with xlsxir
-    {:ok, table_id} = Xlsxir.multi_extract(path, 0) |> IO.inspect(label: "Table ID")
-    # {:ok, _} = Xlsxir.get_table_info(table_id) |> IO.inspect(label: "Table Info")
-    rows = Xlsxir.get_list(table_id) |> IO.inspect(label: "Rows from Excel")
+    {:ok, table_id} = Xlsxir.multi_extract(path, 0)
+    rows = Xlsxir.get_list(table_id)
     Xlsxir.close(table_id)
-
-    IO.inspect(rows, label: "Rows from Excel")
 
     Logger.info("Processing contributions from file: #{path}")
 
-    Logger.info("Rows: #{inspect(rows)}")
-
     # Assume first row is headers, rest are data
-    [headers | data_rows] = rows |> IO.inspect(label: "Data Rows")
+    [headers | data_rows] = rows
 
     header_map =
       Enum.with_index(headers, fn h, i -> {h, i} end)
       |> Map.new()
-      |> IO.inspect(label: "Header Map")
 
     # Process each data row
     data_rows
@@ -36,18 +30,40 @@ defmodule Ims.Workers.ProcessContributionsWorker do
            {:ok, paid_at} <- parse_date(get_cell(row, header_map, "date paid")) do
         ensure_member_exists(user, event)
 
-        attrs = %{
-          amount: amount,
-          payment_reference: get_cell(row, header_map, "payment reference") || generate_payment_reference(user.id, event.id),
-          source: "MPESA",
-          user_id: user.id,
-          event_id: event.id,
-          date_paid: paid_at
-        }
+        # Check if payment_reference is provided, otherwise generate a unique one
+        payment_reference =
+          case get_cell(row, header_map, "payment reference") do
+            nil -> generate_payment_reference(user.id, event.id)
+            "" -> generate_payment_reference(user.id, event.id)
+            reference -> reference
+          end
 
-        %Contribution{}
-        |> Contribution.changeset(attrs)
-        |> Repo.insert!()
+        # Check if the payment reference already exists
+        case Repo.get_by(Contribution, payment_reference: payment_reference) do
+          nil ->
+            attrs = %{
+              amount: amount,
+              payment_reference: payment_reference,
+              source: "MPESA",
+              user_id: user.id,
+              event_id: event.id,
+              date_paid: paid_at
+            }
+
+            # Insert the contribution
+            %Contribution{}
+            |> Contribution.changeset(attrs)
+            |> Repo.insert!()
+
+            # Update the event's total amount_paid
+            update_event_amount_paid(event, amount)
+
+          _existing_contribution ->
+            # Log and skip the contribution if the payment reference exists
+            Logger.info(
+              "Payment reference #{payment_reference} already exists. Skipping this contribution."
+            )
+        end
       else
         {:error, reason} ->
           Logger.error("Failed to process row: #{inspect(row)}. Reason: #{reason}")
@@ -56,14 +72,6 @@ defmodule Ims.Workers.ProcessContributionsWorker do
 
     File.rm!(path)
     :ok
-  rescue
-    e in File.Error ->
-      Logger.error("Failed to read file: #{path}. Error: #{inspect(e)}")
-      {:error, :file_read_error}
-
-    e ->
-      Logger.error("Unexpected error processing file: #{path}. Error: #{inspect(e)}")
-      {:error, :processing_error}
   end
 
   defp get_cell(row, header_map, column) do
@@ -92,12 +100,25 @@ defmodule Ims.Workers.ProcessContributionsWorker do
   end
 
   defp find_user(personal_number) do
-    IO.inspect(personal_number, label: "Personal Number")
-    personal_number = to_string(personal_number) |> String.trim()
+    personal_number =
+      to_string(personal_number)
+      |> String.trim()
 
-    case Repo.get_by(User, personal_number: personal_number) do
-      nil -> {:error, "User not found"}
-      user -> {:ok, user}
+    case Ims.Accounts.get_user_by_personal_number(personal_number) do
+      {:error, _} ->
+        Logger.error("User with personal_number #{personal_number} not found.")
+        {:error, "User not found"}
+
+      {:ok, user} ->
+        # Safely access the :id field
+        user_id = Map.get(user, :id)
+
+        if user_id do
+          {:ok, user}
+        else
+          Logger.error("User ID is missing for personal_number #{personal_number}")
+          {:error, "User ID missing"}
+        end
     end
   end
 
@@ -125,6 +146,9 @@ defmodule Ims.Workers.ProcessContributionsWorker do
   defp ensure_member_exists(user, event) do
     alias Ims.Welfare.Member
 
+    # Log the result of the query with a proper label
+    Repo.get_by(Member, user_id: user.id)
+
     case Repo.get_by(Member, user_id: user.id) do
       nil ->
         # No member found, create new welfare member
@@ -137,7 +161,7 @@ defmodule Ims.Workers.ProcessContributionsWorker do
           amount_due: Decimal.new(0),
           eligibility: false,
           status: "active"
-        } |> IO.inspect()
+        }
 
         %Member{}
         |> Member.changeset(member_attrs)
@@ -151,12 +175,36 @@ defmodule Ims.Workers.ProcessContributionsWorker do
     end
   end
 
-  # lets make sure that the payment reference is unique if not uploaded
-  # we need to formulate it to make sure no duplicates
-
   def generate_payment_reference(user_id, event_id) do
-    # Generate a unique payment reference based on user_id and event_id
-    # This is just an example; you can customize the format as needed
-    "#{user_id}-#{event_id}"
+    # Combine user_id and event_id into a single string for hashing
+    input_string = "#{user_id}-#{event_id}"
+
+    # Generate a SHA256 hash from the input string
+    hash = :crypto.hash(:sha256, input_string) |> Base.encode16()
+
+    # Use the first 16 characters of the hash as the payment reference
+    payment_reference = String.slice(hash, 0, 16)
+
+    # Ensure uniqueness by checking if the reference already exists in the database
+    case Repo.get_by(Contribution, payment_reference: payment_reference) do
+      nil ->
+        # If unique, return the generated reference
+        payment_reference
+
+      _existing_contribution ->
+        # If the reference already exists, regenerate with a timestamp or counter
+        "#{payment_reference}-#{DateTime.utc_now() |> DateTime.to_unix()}"
+    end
+  end
+
+  defp update_event_amount_paid(event, amount) do
+    new_amount = Decimal.add(event.amount_paid, amount)
+
+    event
+    |> Event.changeset(%{amount_paid: new_amount})
+    |> Repo.update!()
+
+    Logger.info("Updated event amount_paid to #{new_amount} for event #{event.id}")
   end
 end
+

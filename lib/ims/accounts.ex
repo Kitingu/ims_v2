@@ -85,9 +85,38 @@ defmodule Ims.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
+
+  # def register_user(attrs) do
+  #   Ecto.Multi.new()
+  #   |> Ecto.Multi.insert(:user, User.registration_changeset(%User{}, attrs))
+  #   |> Ecto.Multi.run(:leave_balances, fn _repo, %{user: user} ->
+  #     set_default_leave_balances(user.id)
+  #   end)
+  #   |> Repo.transaction()
+  #   |> case do
+  #     {:ok, %{user: user}} ->
+  #       {:ok, user}
+
+  #     {:error, :user, changeset, _} ->
+  #       {:error, changeset}
+
+  #     {:error, :leave_balances, _error, _} ->
+  #       {:error,
+  #        Ecto.Changeset.change(%User{})
+  #        |> Ecto.Changeset.add_error(:base, "User created but failed to set leave balances")}
+  #   end
+  # end
+
   def register_user(attrs) do
+    changeset_fun =
+      if Map.get(attrs, "sys_user") == true or Map.get(attrs, :sys_user) == true do
+        &User.registration_changeset/2
+      else
+        &User.staff_member_changeset/2
+      end
+
     Ecto.Multi.new()
-    |> Ecto.Multi.insert(:user, User.registration_changeset(%User{}, attrs))
+    |> Ecto.Multi.insert(:user, changeset_fun.(%User{}, attrs))
     |> Ecto.Multi.run(:leave_balances, fn _repo, %{user: user} ->
       set_default_leave_balances(user.id)
     end)

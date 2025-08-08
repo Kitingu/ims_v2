@@ -1,6 +1,8 @@
 defmodule ImsWeb.UserLive.UploadUsersModal do
   use ImsWeb, :live_component
-  alias Ims.Workers.UploadUsersWorker
+  # alias Ims.Workers.UploadUsersWorker
+  alias Ims.Workers.UploadStaffMembersWorker
+  # UploadStaffMembersWorker
   import Phoenix.LiveView
 
   @impl true
@@ -41,7 +43,7 @@ defmodule ImsWeb.UserLive.UploadUsersModal do
 
         # Start the Oban job
         %{admin_id: socket.assigns.current_user.id, path: path}
-        |> UploadUsersWorker.new()
+        |> UploadStaffMembersWorker.new()
         |> IO.inspect(label: "Oban job")
         |> Oban.insert()
 

@@ -63,6 +63,21 @@ defmodule ImsWeb.UserLive do
   end
 
   @impl true
+  def handle_event("search", %{"query" => query}, socket) do
+    filters = atomize_keys(%{"query" => query})
+
+    opts = Keyword.merge(@paginator_opts, page: 1)
+
+    users = fetch_records(filters, opts)
+
+    {:noreply,
+     socket
+     |> assign(:filters, filters)
+     |> assign(:users, users)
+     |> assign(:page, socket.assigns.page || 1)}
+  end
+
+  @impl true
   def handle_event("show_modal", %{"user-id" => user_id}, socket) do
     {:noreply, assign(socket, show_modal: true, modal_user_id: String.to_integer(user_id))}
   end
@@ -128,16 +143,18 @@ defmodule ImsWeb.UserLive do
 
   def handle_event("render_page", %{"page" => page}, socket) do
     IO.inspect("page: #{page}")
+   current_page = socket.assigns.page |> IO.inspect(label: "Current Page")
 
-    new_page =
+    # Determine new page number based on the action
+
+   new_page =
       case page do
-        "next" -> socket.assigns.page + 1
-        "previous" -> socket.assigns.page - 1
-        # Convert string to integer for other cases
+        "next" -> current_page + 1
+        "previous" -> max(current_page - 1, 1)
         _ -> String.to_integer(page)
       end
 
-    IO.inspect("new_page: #{new_page}")
+
 
     opts = Keyword.merge(@paginator_opts, page: new_page)
     users = fetch_records(socket.assigns.filters, opts)
@@ -145,6 +162,7 @@ defmodule ImsWeb.UserLive do
     socket =
       socket
       |> assign(:users, users)
+      |> assign(:page, new_page)
 
     # No need for String.to_integer here
     {:noreply, socket}
@@ -159,30 +177,67 @@ defmodule ImsWeb.UserLive do
     |> Ims.Repo.paginate(opts)
   end
 
+  def atomize_keys(params) when is_map(params) do
+    Enum.reduce(params, %{}, fn {k, v}, acc ->
+      key =
+        case k do
+          k when is_atom(k) ->
+            k
+
+          k when is_binary(k) ->
+            try do
+              String.to_existing_atom(k)
+            rescue
+              ArgumentError -> k
+            end
+        end
+
+      Map.put(acc, key, v)
+    end)
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <div class="container mx-auto p-6">
-      <div class="flex justify-between items-center mb-6">
+      <div class="mb-6 space-y-4">
+        <!-- Title -->
         <h1 class="text-2xl font-bold text-gray-800">User Management</h1>
 
-        <div class="flex gap-4">
-          <.link
-            :if={Canada.Can.can?(@current_user, ["create_users"], "users")}
-            href={~p"/admin/users/register"}
-          >
-            <.button class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow-md hover:bg-blue-700">
-              Add User
-            </.button>
-          </.link>
+    <!-- Search and Buttons Row -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <!-- Search Bar -->
+          <form phx-change="search" phx-submit="search" class="flex-1">
+            <input
+              type="text"
+              name="query"
+              phx-debounce="300"
+              placeholder="Search by name or staff number..."
+              class="w-full border px-4 py-2 rounded shadow-sm focus:outline-none focus:ring focus:border-blue-300"
+              value={@filters["query"] || ""}
+            />
+            <!-- No submit button -->
+          </form>
 
-          <.button
-            :if={Canada.Can.can?(@current_user, ["upload_users"], "users")}
-            phx-click="show-upload-modal"
-            class="ml-4 bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Upload Users
-          </.button>
+    <!-- Action Buttons -->
+          <div class="flex gap-4">
+            <.link
+              :if={Canada.Can.can?(@current_user, ["create_users"], "users")}
+              href={~p"/admin/users/register"}
+            >
+              <.button class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700 transition">
+                Add User
+              </.button>
+            </.link>
+
+            <.button
+              :if={Canada.Can.can?(@current_user, ["upload_users"], "users")}
+              phx-click="show-upload-modal"
+              class="bg-blue-600 text-white px-5 py-2 rounded-lg shadow hover:bg-blue-700 transition"
+            >
+              Upload Users
+            </.button>
+          </div>
         </div>
       </div>
 

@@ -29,7 +29,7 @@
   rows={@rows}
   resource="leave_balances"
   current_user={@current_user}
-  actions={[]}
+  actions={["update_balance"]}
   >
 
     <:col :let={row}  label="Personal Number"> <%= row.personal_number %></:col>
@@ -67,3 +67,12 @@
  
   
 </div>
+
+<%= if @live_action == :edit and @user do %>
+  <.live_component
+    module={ImsWeb.LeaveBalancesLive.FormComponent}
+    id={"edit-user-#{@user.id}"}
+    user={@user}
+    return_to={Routes.leave_balances_index_path(@socket, :index)}
+  />
+<% end %>

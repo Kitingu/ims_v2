@@ -13,6 +13,7 @@ defmodule Ims.Accounts.User do
     field :password_confirmation, :string, virtual: true, redact: true
     field :first_name, :string
     field :last_name, :string
+    field :id_number, :string
     field :msisdn, :string
     belongs_to :department, Departments
     field :personal_number, :string
@@ -24,6 +25,7 @@ defmodule Ims.Accounts.User do
     field :password_reset_required, :boolean, default: true
     # New gender field
     field :gender, :string
+    field :sys_user, :boolean, default: false
 
     many_to_many :roles, Role,
       join_through: "user_roles",
@@ -73,6 +75,8 @@ defmodule Ims.Accounts.User do
       :department_id,
       :job_group_id,
       :gender,
+      :id_number,
+      :sys_user,
       :password_reset_required
     ])
     |> cast_assoc(:department)
@@ -94,6 +98,7 @@ defmodule Ims.Accounts.User do
     |> unique_constraint(:msisdn, name: "unique_msisdn")
     |> unique_constraint(:email, name: "unique_email")
     |> unique_constraint(:personal_number, name: "unique_personal_number")
+    |> unique_constraint(:id_number)
     |> validate_password(opts)
 
     # |> validate_password_confirmation()
@@ -116,6 +121,7 @@ defmodule Ims.Accounts.User do
     |> validate_msisdn()
     |> unique_constraint(:msisdn, name: "unique_msisdn")
     |> validate_length(:personal_number, min: 6, max: 8)
+    |> put_change(:sys_user, false)
   end
 
   def staff_member_changeset(user, attrs) do
@@ -130,20 +136,22 @@ defmodule Ims.Accounts.User do
       :gender,
       :department_id,
       :job_group_id,
-      :password_reset_required
+      :password_reset_required,
+      :id_number,
+      :sys_user
     ])
     |> validate_required([
-      :email,
       :first_name,
       :last_name,
-      :msisdn,
       :personal_number,
       :designation,
       :gender,
       :department_id,
       :job_group_id
     ])
+    |> unique_constraint(:id_number)
     |> unique_constraint(:personal_number)
+    |> put_change(:sys_user, false)
   end
 
   def role_changeset(role, permissions) do
@@ -312,6 +320,7 @@ defmodule Ims.Accounts.User do
   end
 
   def search(queryable \\ __MODULE__, filters) do
+    IO.inspect(filters, label: "Filters for search")
     query =
       Enum.reduce(filters, queryable, fn {k, v}, accum_query ->
         cond do
@@ -326,6 +335,12 @@ defmodule Ims.Accounts.User do
 
           k == :personl_number ->
             from(u in accum_query, where: ilike(u.personl_number, ^"%#{v}%"))
+
+          k == :query ->
+            IO.inspect(v, label: "Query for search")
+            from(u in accum_query, where: ilike(u.first_name, ^"%#{v}%") or
+              ilike(u.last_name, ^"%#{v}%") or
+              ilike(u.personal_number, ^"%#{v}%"))
 
           true ->
             accum_query

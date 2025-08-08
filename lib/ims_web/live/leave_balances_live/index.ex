@@ -12,20 +12,36 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    IO.inspect("params: #{inspect(params)}")
-
-    page = Leave.paginated_leave_balances(params)
+    live_action = socket.assigns[:live_action] || :index
     leave_types = Repo.all(from lt in Ims.Leave.LeaveType, select: lt.name)
 
-    {:noreply,
-     socket
-     |> assign(:rows, page)
-     |> assign(:columns, leave_types)
-     |> assign(:all_leave_types, leave_types)
-     |> assign(:search, Map.get(params, "search", ""))
-     |> assign(:selected_type, Map.get(params, "leave_type", ""))
-     |> assign(:params, params)
-     |> assign(:live_action, socket.assigns[:live_action] || :index)}
+    case live_action do
+      :edit ->
+        user_id = params["id"]
+        user = Ims.Accounts.get_user!(user_id)
+
+        {:noreply,
+         socket
+         |> assign(:page_title, "Edit Leave Balances")
+         |> assign(:user, user)
+         |> assign(:all_leave_types, leave_types)
+         |> assign(:live_action, :edit)}
+
+      :index ->
+        page = Leave.paginated_leave_balances(params)
+
+        {:noreply,
+         socket
+         |> assign(:rows, page)
+         |> assign(:columns, leave_types)
+         |> assign(:all_leave_types, leave_types)
+         |> assign(:search, Map.get(params, "search", ""))
+         |> assign(:selected_type, Map.get(params, "leave_type", ""))
+         |> assign(:params, params)
+         |> assign(:page_title, "Leave Balances")
+         |> assign(:user, nil)
+         |> assign(:live_action, :index)}
+    end
   end
 
   defp assign_defaults(socket) do
@@ -73,6 +89,14 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
      |> assign(:page_size, size)
      |> assign(:params, params)
      |> assign(:rows, page)}
+  end
+
+  def handle_event("open_update_modal", %{"id" => user_id}, socket) do
+    {:noreply,
+     push_patch(socket,
+       to: Routes.leave_balances_index_path(socket, :edit, user_id),
+       replace: true
+     )}
   end
 
   # def handle_event("export_excel", _params, socket) do

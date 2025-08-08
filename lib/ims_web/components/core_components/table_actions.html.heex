@@ -207,6 +207,22 @@
             <% end %>
         </li>
 
+        <!-- update_balance leave -->
+        <li>
+          <%= if "update_balance" in @actions && Canada.Can.can?(@current_user,["update_balance"], @resource) do %>
+            <button phx-click={"update_balance" <> to_string(@item.id)}
+              class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full"
+              >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                  d="M12 6.75v10.5m3.75-5.25h-7.5m9.75 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Update Balance
+            </button>
+            <% end %>
+        </li>
+
 
       </ul>
     </div>

@@ -8,97 +8,96 @@ defmodule ImsWeb.UserRegistrationLive do
   def render(assigns) do
     ~H"""
     <div class="mx-auto max-w-3xl p-8 sm:p-10 bg-white rounded-2xl shadow-lg border border-gray-100">
-  <.header class="text-center mb-8">
-    <h2 class="text-3xl font-bold text-gray-800">
-      <%= if @edit_mode, do: "Edit Account", else: "Register for an Account..." %>
-    </h2>
-  </.header>
+      <.header class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-800">
+          {if @edit_mode, do: "Edit Account", else: "Register for an Account..."}
+        </h2>
+      </.header>
 
-  <.simple_form
-    for={@form}
-    id="registration_form"
-    phx-submit="save"
-    phx-change="validate"
-    phx-trigger-action={@trigger_submit || false}
-    action={~p"/users/log_in?_action=registered"}
-    method="post"
-    class="space-y-8"
-  >
-    <.error :if={@check_errors} class="text-red-600 text-sm font-medium bg-red-50 p-4 rounded-md border border-red-200">
-      Oops, something went wrong! Please check the errors below.
-    </.error>
+      <.simple_form
+        for={@form}
+        id="registration_form"
+        phx-submit="save"
+        phx-change="validate"
+        phx-trigger-action={@trigger_submit || false}
+        action={~p"/users/log_in?_action=registered"}
+        method="post"
+        class="space-y-8"
+      >
+        <.error
+          :if={@check_errors}
+          class="text-red-600 text-sm font-medium bg-red-50 p-4 rounded-md border border-red-200"
+        >
+          Oops, something went wrong! Please check the errors below.
+        </.error>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-  <.input
-    field={@form[:first_name]}
-    type="text"
-    label="First name"
-    required
-    class="input-field"
-    label_class="input-label"
-  />
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <.input
+            field={@form[:first_name]}
+            type="text"
+            label="First name"
+            required
+            class="input-field"
+            label_class="input-label"
+          />
 
-  <.input
-    field={@form[:gender]}
-    type="select"
-    label="Gender"
-    options={[
-      {:Male, "Male"},
-      {:Female, "Female"}
-    ]}
-    required
-    class="input-field"
-    label_class="input-label"
-  />
+          <.input
+            field={@form[:gender]}
+            type="select"
+            label="Gender"
+            options={[
+              {:Male, "Male"},
+              {:Female, "Female"}
+            ]}
+            required
+            class="input-field"
+            label_class="input-label"
+          />
 
-  <.input
-    field={@form[:last_name]}
-    type="text"
-    label="Last name"
-    required
-    class="input-field"
-    label_class="input-label"
-  />
+          <.input
+            field={@form[:last_name]}
+            type="text"
+            label="Last name"
+            required
+            class="input-field"
+            label_class="input-label"
+          />
 
-  <.input
-    field={@form[:email]}
-    type="email"
-    label="Email"
-    required
-    class="input-field"
-    label_class="input-label"
-  />
+          <.input
+            field={@form[:email]}
+            type="email"
+            label="Email"
+            class="input-field"
+            label_class="input-label"
+          />
 
-  <.input
-    field={@form[:personal_number]}
-    type="text"
-    label="Personal Number"
-    required
-    class="input-field"
-    label_class="input-label"
-  />
+          <.input
+            field={@form[:personal_number]}
+            type="text"
+            label="Personal Number"
+            required
+            class="input-field"
+            label_class="input-label"
+          />
 
-  <.input
-    field={@form[:msisdn]}
-    type="text"
-    label="Phone Number"
-    required
-    class="input-field"
-    label_class="input-label"
-  />
+          <.input
+            field={@form[:msisdn]}
+            type="text"
+            label="Phone Number"
+            class="input-field"
+            label_class="input-label"
+          />
 
-  <.input
-    field={@form[:designation]}
-    type="text"
-    label="Designation"
-    required
-    class="input-field"
-    label_class="input-label"
-  />
+          <.input
+            field={@form[:designation]}
+            type="text"
+            label="Designation"
+            required
+            class="input-field"
+            label_class="input-label"
+          />
 
-
-
-  <%!-- <.input
+          <%!-- <.input
     :if={!@edit_mode}
     field={@form[:password_confirmation]}
     type="password"
@@ -106,52 +105,57 @@ defmodule ImsWeb.UserRegistrationLive do
     required
     class="input-field"
     label_class="input-label"
-  /> --%>
+    /> --%>
 
-  <.input
-    field={@form[:department_id]}
-    type="select"
-    label="Department"
-    options={@departments}
-    required
-    class="input-field"
-    label_class="input-label"
-  />
+          <.input
+            field={@form[:department_id]}
+            type="select"
+            label="Department"
+            options={@departments}
+            required
+            class="input-field"
+            label_class="input-label"
+          />
 
-  <.input
-    field={@form[:job_group_id]}
-    type="select"
-    label="Job Group"
-    options={@job_groups}
-    required
-    class="input-field"
-    label_class="input-label"
-  />
+          <.input
+            field={@form[:job_group_id]}
+            type="select"
+            label="Job Group"
+            options={@job_groups}
+            required
+            class="input-field"
+            label_class="input-label"
+          />
 
-  <.input
-    :if={!@edit_mode}
-    field={@form[:password]}
-    type="hidden"
-    value="Password@12345"
-    required
-    class="input-field"
-    label_class="input-label"
-  />
-</div>
+          <.input
+            :if={!@edit_mode}
+            field={@form[:password]}
+            type="hidden"
+            value="Password@12345"
+            required
+            class="input-field"
+            label_class="input-label"
+          />
 
+          <.input
+            field={@form[:sys_user]}
+            type="checkbox"
+            label="System User?"
+            class="input-checkbox"
+            label_class="input-label"
+          />
+        </div>
 
-    <:actions>
-      <.button
-        phx-disable-with={@disable_text}
-        class="w-full py-3 px-4 text-white bg-brand rounded-md hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand transition-all font-semibold"
-      >
-        {@button_text}
-      </.button>
-    </:actions>
-  </.simple_form>
-</div>
-
-
+        <:actions>
+          <.button
+            phx-disable-with={@disable_text}
+            class="w-full py-3 px-4 text-white bg-brand rounded-md hover:bg-brand-dark focus:outline-none focus:ring-2 focus:ring-brand transition-all font-semibold"
+          >
+            {@button_text}
+          </.button>
+        </:actions>
+      </.simple_form>
+    </div>
     """
   end
 
@@ -200,7 +204,6 @@ defmodule ImsWeb.UserRegistrationLive do
      )}
   end
 
-
   def mount(params, _session, socket) do
     # Ensure `user` and `form` initialization
     user =
@@ -234,9 +237,18 @@ defmodule ImsWeb.UserRegistrationLive do
   end
 
   def handle_event("save", %{"user" => user_params}, socket) do
+    sys_user = Map.get(user_params, "sys_user") in ["true", "1", "on"]
+
+    changeset_fun =
+      if sys_user do
+        &User.registration_changeset/2
+      else
+        &User.staff_member_changeset/2
+      end
+
     case socket.assigns.edit_mode do
       true ->
-        # Editing an existing user
+        # update user — here you can call update_user with staff or system changeset if needed
         case Accounts.update_user(socket.assigns.form.data, user_params) do
           {:ok, _user} ->
             {:noreply, assign(socket, trigger_submit: true)}
@@ -246,22 +258,78 @@ defmodule ImsWeb.UserRegistrationLive do
         end
 
       false ->
-        # Creating a new user
-        case Accounts.register_user(user_params) do
-          {:ok, user} ->
-            {:ok, _} =
-              Accounts.deliver_user_confirmation_instructions(
-                user,
-                &url(~p"/users/confirm/#{&1}")
-              )
+        case Repo.transaction(
+               Ecto.Multi.new()
+               |> Ecto.Multi.insert(:user, changeset_fun.(%User{}, user_params))
+               |> Ecto.Multi.run(:leave_balances, fn _repo, %{user: user} ->
+                 Accounts.set_default_leave_balances(user.id)
+               end)
+             ) do
+          {:ok, %{user: user}} ->
+            case user.sys_user do
+              true ->
+                # we sent confirmation instructions only for system users
+                {:ok, _} =
+                  Accounts.deliver_user_confirmation_instructions(
+                    user,
+                    &url(~p"/users/confirm/#{&1}")
+                  )
+
+              false ->
+                # for staff members, we might not need to send confirmation instructions
+                :ok
+            end
+            # {:ok, _} =
+            #   Accounts.deliver_user_confirmation_instructions(
+            #     user,
+            #     &url(~p"/users/confirm/#{&1}")
+            #   )
 
             {:noreply, assign(socket, trigger_submit: true)}
 
-          {:error, %Ecto.Changeset{} = changeset} ->
+          {:error, :user, changeset, _} ->
             {:noreply, assign_form(socket, changeset)}
+
+          {:error, :leave_balances, _error, _} ->
+            {:noreply,
+             assign_form(
+               socket,
+               Ecto.Changeset.change(%User{})
+               |> Ecto.Changeset.add_error(:base, "User created but failed to set leave balances")
+             )}
         end
     end
   end
+
+  # def handle_event("save", %{"user" => user_params}, socket) do
+  #   case socket.assigns.edit_mode do
+  #     true ->
+  #       # Editing an existing user
+  #       case Accounts.update_user(socket.assigns.form.data, user_params) do
+  #         {:ok, _user} ->
+  #           {:noreply, assign(socket, trigger_submit: true)}
+
+  #         {:error, %Ecto.Changeset{} = changeset} ->
+  #           {:noreply, assign_form(socket, changeset)}
+  #       end
+
+  #     false ->
+  #       # Creating a new user
+  #       case Accounts.register_user(user_params) do
+  #         {:ok, user} ->
+  #           {:ok, _} =
+  #             Accounts.deliver_user_confirmation_instructions(
+  #               user,
+  #               &url(~p"/users/confirm/#{&1}")
+  #             )
+
+  #           {:noreply, assign(socket, trigger_submit: true)}
+
+  #         {:error, %Ecto.Changeset{} = changeset} ->
+  #           {:noreply, assign_form(socket, changeset)}
+  #       end
+  #   end
+  # end
 
   def handle_event("validate", %{"user" => user_params}, socket) do
     changeset = Accounts.change_user_registration(socket.assigns.form.data, user_params)
