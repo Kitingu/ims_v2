@@ -1,90 +1,274 @@
-defmodule ImsWeb.LeaveBalancesLive.FormComponent do
+# lib/ims_web/live/leave_balances_live/manage_component.ex
+defmodule ImsWeb.LeaveBalancesLive.ManageComponent do
   use ImsWeb, :live_component
 
-  alias Ims.Leave
-  alias Ims.Leave.LeaveBalance
+  alias Ims.Repo
+  import Ecto.Query, only: [from: 2]
+  alias Ims.Accounts
+  # alias Ims.Accounts.User
+  alias Ims.Leave.{LeaveType, LeaveBalance}
+  alias Ecto.Changeset
+  require Logger
+
+  @impl true
+  def update(assigns, socket) do
+    users =
+      Ims.Accounts.list_users()
+      |> Enum.map(&{&1.first_name, &1.id})
+
+    leave_types = list_leave_types()
+
+    {:ok,
+     socket
+     |> assign(assigns)
+     # [{label, id}]
+     |> assign(:user_options, users)
+     # [%LeaveType{}]
+     |> assign(:leave_types, leave_types)
+     |> assign(:selected_user_id, nil)
+     # %{lt_id => %{balance_id: id | nil, remaining_days: "0"}}
+     |> assign(:balances_map, %{})}
+  end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="fixed inset-0 z-50 bg-black bg-opacity-50 flex justify-center items-center">
-      <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-lg">
-        <h2 class="text-lg font-semibold mb-4">
-          Update Leave Balances for {@user.first_name} {@user.last_name}
-        </h2>
+    <div id={@id} class="relative">
+      <!-- Overlay -->
+      <div class="fixed inset-0 z-40 bg-black/40" phx-click="close_manage_balances"></div>
 
-        <.form id="leave-balance-form" phx-target={@myself} phx-submit="save">
-          <%= for {balance_id, %{leave_type_name: type, remaining_days: value}} <- @balance_map do %>
-            <div class="mb-4">
-              <label class="block text-sm font-medium mb-1">{type}</label>
-              <input
-                type="number"
-                name={"leave_balances[#{balance_id}]"}
-                value={value}
-                step="0.1"
-                min="0"
-                class="w-full border p-2 rounded"
-              />
-            </div>
-          <% end %>
-
-          <div class="flex justify-end gap-2">
-            <.link patch={@return_to} class="bg-gray-300 px-4 py-2 rounded">Cancel</.link>
-            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
+    <!-- Modal -->
+      <div class="fixed inset-0 z-50 flex items-start justify-center p-6 overflow-auto">
+        <div class="w-full max-w-3xl bg-white rounded shadow-lg">
+          <div class="flex items-center justify-between p-4 border-b">
+            <h2 class="text-lg font-semibold">Update Leave Balances</h2>
+            <button
+              phx-click="close_manage_balances"
+              class="px-2 py-1 rounded hover:bg-gray-100"
+              aria-label="Close"
+            >
+              ✕
+            </button>
           </div>
-        </.form>
+
+    <!-- User selector -->
+          <form phx-change="select_user" phx-target={@myself} class="p-4 space-y-2">
+            <label class="block text-sm font-medium">User</label>
+            <select name="user_id" class="w-full border rounded px-3 py-2">
+              <option value="">-- Select user --</option>
+              <%= for {label, id} <- @user_options do %>
+                <option value={id} selected={to_string(id) == to_string(@selected_user_id)}>
+                  {label}
+                </option>
+              <% end %>
+            </select>
+          </form>
+
+          <%= if @selected_user_id do %>
+            <form phx-submit="save" phx-target={@myself} class="p-4 space-y-4">
+              <input type="hidden" name="user_id" value={@selected_user_id} />
+
+              <div class="overflow-hidden rounded border">
+                <table class="w-full text-left">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-3 py-2">Leave Type</th>
+                      <th class="px-3 py-2">Remaining Days</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <%= for lt <- @visible_leave_types do %>
+                      <% row = Map.get(@balances_map, lt.id) || %{remaining_days: "0"} %>
+                      <tr class="border-t">
+                        <td class="px-3 py-2">{lt.name}</td>
+                        <td class="px-3 py-2">
+                          <input
+                            type="number"
+                            name={"balances[#{lt.id}]"}
+                            value={row.remaining_days}
+                            step="0.1"
+                            min="0"
+                            class="w-40 border rounded px-2 py-1"
+                            aria-label={"Remaining days for #{lt.name}"}
+                          />
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="flex justify-end gap-2">
+                <button
+                  type="button"
+                  phx-click="close_manage_balances"
+                  class="px-4 py-2 rounded border"
+                >
+                  Cancel
+                </button>
+                <button type="submit" class="px-4 py-2 rounded bg-black text-white">Save</button>
+              </div>
+            </form>
+          <% else %>
+            <p class="px-4 pb-4 text-gray-600">
+              Select a user to view and edit their leave balances.
+            </p>
+          <% end %>
+        </div>
       </div>
     </div>
     """
   end
 
   @impl true
-  def update(%{user: user} = assigns, socket) do
-    balances = Leave.get_user_leave_balances(user.id)
-
-    # Create map like %{balance_id => %{type: "Annual", days: 10.0}}
-    balance_map =
-      balances
-      |> Enum.into(%{}, fn balance ->
-        {
-          balance.id,
-          %{
-            leave_type_name: balance.leave_type.name,
-            remaining_days: Decimal.to_float(balance.remaining_days)
-          }
-        }
-      end)
-
-    {:ok,
+  def handle_event("select_user", %{"user_id" => ""}, socket) do
+    {:noreply,
      socket
-     |> assign(assigns)
-     |> assign(:balances, balances)
-     |> assign(:balance_map, balance_map)}
+     |> assign(:selected_user_id, nil)
+     |> assign(:visible_leave_types, socket.assigns.leave_types)
+     |> assign(:balances_map, %{})}
   end
 
-  @impl true
-  def handle_event("save", %{"leave_balances" => form_data}, socket) do
-    results =
-      Enum.map(form_data, fn {balance_id_str, days_str} ->
-        id = String.to_integer(balance_id_str)
-        new_days = String.to_float(days_str)
+  def handle_event("select_user", %{"user_id" => user_id}, socket) do
+    id = String.to_integer(user_id)
+    user = Accounts.get_user!(id)
 
-        case Leave.get_leave_balance!(id) do
-          %LeaveBalance{} = balance ->
-            Leave.update_leave_balance(balance, %{remaining_days: new_days})
+    visible = filter_leave_types_by_gender(socket.assigns.leave_types, user.gender)
+    map = balances_map_for_user(id, visible)
 
-          _ ->
-            {:error, "Balance not found"}
+    {:noreply,
+     socket
+     |> assign(:selected_user_id, id)
+     |> assign(:visible_leave_types, visible)
+     |> assign(:balances_map, map)}
+  end
+
+  def handle_event("save", %{"user_id" => uid, "balances" => balances_params}, socket) do
+    user_id = String.to_integer(uid)
+
+    case upsert_balances(user_id, balances_params) do
+      {:ok, _} ->
+        new_map = balances_map_for_user(user_id, socket.assigns.visible_leave_types)
+        send(self(), {:flash, :info, "Leave balances updated."})
+        # <-- tell parent to close
+        send(self(), :close_manage_balances)
+        {:noreply, assign(socket, :balances_map, new_map)}
+
+      {:error, step, %Changeset{} = cs, _} ->
+        msg = changeset_errors_to_string(cs) || "Failed at #{inspect(step)}."
+        send(self(), {:flash, :error, msg})
+        {:noreply, socket}
+
+      {:error, msg} ->
+        send(self(), {:flash, :error, msg})
+        {:noreply, socket}
+    end
+  end
+
+  ## Data helpers
+
+  defp list_leave_types do
+    from(lt in LeaveType, order_by: [asc: lt.name]) |> Repo.all()
+  end
+
+  # %{lt_id => %{balance_id: id | nil, remaining_days: "decimal_str"}}
+  defp balances_map_for_user(user_id, leave_types) do
+    existing =
+      from(lb in LeaveBalance,
+        where: lb.user_id == ^user_id,
+        select: {lb.leave_type_id, lb.id, lb.remaining_days}
+      )
+      |> Repo.all()
+      |> Map.new(fn {lt_id, id, days} ->
+        {lt_id, %{balance_id: id, remaining_days: decimal_to_string(days)}}
+      end)
+
+    Map.new(leave_types, fn lt ->
+      {lt.id, Map.get(existing, lt.id, %{balance_id: nil, remaining_days: "0"})}
+    end)
+  end
+
+  defp upsert_balances(user_id, balances_params) do
+    existing =
+      from(lb in LeaveBalance, where: lb.user_id == ^user_id, select: {lb.leave_type_id, lb})
+      |> Repo.all()
+      |> Map.new()
+
+    multi =
+      Enum.reduce(balances_params, Ecto.Multi.new(), fn {lt_id_str, val}, m ->
+        lt_id = String.to_integer(lt_id_str)
+
+        days =
+          case Decimal.parse(String.trim(to_string(val))) do
+            :error -> Decimal.new("0")
+            {dec, _} -> dec
+          end
+
+        case Map.get(existing, lt_id) do
+          nil ->
+            cs =
+              LeaveBalance.changeset(%LeaveBalance{}, %{
+                user_id: user_id,
+                leave_type_id: lt_id,
+                remaining_days: days
+              })
+
+            Ecto.Multi.insert(m, {:insert, lt_id}, cs)
+
+          %LeaveBalance{} = lb ->
+            cs = LeaveBalance.changeset(lb, %{remaining_days: days})
+            Ecto.Multi.update(m, {:update, lt_id}, cs)
         end
       end)
 
-    if Enum.all?(results, &match?({:ok, _}, &1)) do
-      send(self(), {:saved, :leave_balances})
-      {:noreply, push_patch(socket, to: socket.assigns.return_to)}
-    else
-      {:noreply,
-       socket
-       |> put_flash(:error, "Failed to update some balances")}
+    case Repo.transaction(multi) do
+      {:ok, res} ->
+        {:ok, res}
+
+      {:error, step, %Changeset{} = cs, _} ->
+        {:error, step, cs, multi}
+
+      {:error, _step, reason, _} ->
+        Logger.error("Upsert balances failed: #{inspect(reason)}")
+        {:error, "Could not save balances."}
+    end
+  end
+
+  defp decimal_to_string(nil), do: "0"
+  defp decimal_to_string(%Decimal{} = d), do: Decimal.to_string(d, :normal)
+  defp decimal_to_string(n) when is_integer(n) or is_float(n), do: to_string(n)
+
+  defp changeset_errors_to_string(%Changeset{} = cs) do
+    cs
+    |> Changeset.traverse_errors(fn {msg, opts} ->
+      Enum.reduce(opts, msg, fn {k, v}, acc -> String.replace(acc, "%{#{k}}", to_string(v)) end)
+    end)
+    |> Enum.map(fn {field, msgs} -> "#{field}: #{Enum.join(msgs, ", ")}" end)
+    |> Enum.join("; ")
+  end
+
+  defp filter_leave_types_by_gender(leave_types, gender) do
+    g = normalize_gender(gender)
+
+    Enum.reject(leave_types, fn lt ->
+      case lt.name do
+        "Paternity Leave" -> g == :female
+        "Maternity Leave" -> g == :male
+        _ -> false
+      end
+    end)
+  end
+
+  defp normalize_gender(nil), do: :other
+  defp normalize_gender(g) when is_atom(g), do: normalize_gender(to_string(g))
+
+  defp normalize_gender(g) when is_binary(g) do
+    case String.downcase(String.trim(g)) do
+      "m" -> :male
+      "male" -> :male
+      "f" -> :female
+      "female" -> :female
+      _ -> :other
     end
   end
 end

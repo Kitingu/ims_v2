@@ -2,8 +2,15 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
   use ImsWeb, :live_view
   import Ecto.Query
 
-  alias Ims.Leave
   alias Ims.Repo
+  alias Ims.Leave
+  alias Ims.Leave.LeaveType
+  alias Ims.Accounts
+  alias Decimal
+  require Logger
+
+  # If you rely on Routes.* helpers (Phoenix < 1.7 style)
+  alias ImsWeb.Router.Helpers, as: Routes
 
   @impl true
   def mount(_params, _session, socket) do
@@ -13,18 +20,22 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
   @impl true
   def handle_params(params, _url, socket) do
     live_action = socket.assigns[:live_action] || :index
-    leave_types = Repo.all(from lt in Ims.Leave.LeaveType, select: lt.name)
+
+    # Keep your original columns = names
+    leave_types = Repo.all(from lt in LeaveType, select: lt.name)
 
     case live_action do
       :edit ->
         user_id = params["id"]
-        user = Ims.Accounts.get_user!(user_id)
+        user = Accounts.get_user!(user_id)
 
         {:noreply,
          socket
          |> assign(:page_title, "Edit Leave Balances")
          |> assign(:user, user)
          |> assign(:all_leave_types, leave_types)
+         |> assign(:visible_leave_types, leave_types)
+         |> assign(:columns, leave_types)
          |> assign(:live_action, :edit)}
 
       :index ->
@@ -40,17 +51,34 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
          |> assign(:params, params)
          |> assign(:page_title, "Leave Balances")
          |> assign(:user, nil)
+         |> assign(:show_manage_modal, false)
          |> assign(:live_action, :index)}
     end
   end
 
   defp assign_defaults(socket) do
-    assign(socket, search: "", selected_type: nil)
+    assign(socket,
+      search: "",
+      selected_type: nil,
+      show_manage_modal: false
+    )
   end
 
-  def handle_event("render_page", %{"page" => page}, socket) do
-    IO.inspect("page: #{page}")
+  ## ===== Modal open/close + table controls =====
 
+  # Open the Manage Balances modal when the top button is clicked
+  @impl true
+  def handle_event("update_leave_balance", _params, socket) do
+    {:noreply, assign(socket, :show_manage_modal, true)}
+  end
+
+  # Close modal (overlay/✕ inside the component sends this to parent)
+  def handle_event("close_manage_balances", _params, socket) do
+    {:noreply, assign(socket, :show_manage_modal, false)}
+  end
+
+  @impl true
+  def handle_event("render_page", %{"page" => page}, socket) do
     current_page = String.to_integer(Map.get(socket.assigns.params, "page", "1"))
 
     new_page =
@@ -60,10 +88,7 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
         _ -> String.to_integer(page)
       end
 
-    params =
-      socket.assigns.params
-      |> Map.put("page", Integer.to_string(new_page))
-
+    params = Map.put(socket.assigns.params, "page", Integer.to_string(new_page))
     page_data = Leave.paginated_leave_balances(params)
 
     {:noreply,
@@ -74,12 +99,9 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
   end
 
   def handle_event("resize_table", %{"size" => size}, socket) do
-    IO.inspect(size, label: "Resized table to")
-
     params =
       socket.assigns.params
       |> Map.put("page_size", size)
-      # optional: reset page to 1 on resize
       |> Map.put("page", "1")
 
     page = Leave.paginated_leave_balances(params)
@@ -99,25 +121,56 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
      )}
   end
 
-  # def handle_event("export_excel", _params, socket) do
-  #   case LeaveBalance.export_leave_balances() do
-  #     {:ok, file_path} ->
-  #       # Assuming you have a function to send the file
-  #       send_file(socket, file_path)
+  # Matches your filter/search controls in index.html.heex
+  def handle_event("filter_leave_type", %{"leave_type" => lt}, socket) do
+    params =
+      socket.assigns.params
+      |> Map.put("leave_type", lt)
+      |> Map.put("page", "1")
 
-  #     {:error, reason} ->
-  #       # Handle error case
-  #       IO.inspect(reason, label: "Export Error")
-  #   end
+    page = Leave.paginated_leave_balances(params)
 
-  #   {:noreply, socket}
-  # end
+    {:noreply,
+     socket
+     |> assign(:selected_type, lt)
+     |> assign(:params, params)
+     |> assign(:rows, page)}
+  end
 
-  # defp send_file(socket, filepath) do
-  #   socket
-  #   |> push_event("download", %{
-  #     url: Routes.leave_balance_path(socket, :download_export, filepath),
-  #     filename: Path.basename(filepath)
-  #   })
-  # end
+  def handle_event("search_user", %{"search" => search}, socket) do
+    params =
+      socket.assigns.params
+      |> Map.put("search", search)
+      |> Map.put("page", "1")
+
+    page = Leave.paginated_leave_balances(params)
+
+    {:noreply,
+     socket
+     |> assign(:search, search)
+     |> assign(:params, params)
+     |> assign(:rows, page)}
+  end
+
+  def handle_event("export_excel", _params, socket) do
+    {:noreply, put_flash(socket, :info, "Export is not implemented yet.")}
+  end
+
+  ## ===== Messages from the ManageComponent =====
+  # ManageComponent calls: send(self(), {:flash, :info, "Leave balances updated."})
+  @impl true
+  def handle_info({:flash, level, msg}, socket) when level in [:info, :error, :warning] do
+    # Refresh the table after an update, keep the modal open so they can continue editing
+    params = socket.assigns.params || %{}
+    page = Leave.paginated_leave_balances(params)
+    {:noreply, socket |> put_flash(level, msg) |> assign(:rows, page)}
+  end
+
+  @impl true
+  def handle_info(:close_manage_balances, socket) do
+    {:noreply, assign(socket, :show_manage_modal, false)}
+  end
+
+  # Ignore anything else
+  def handle_info(_msg, socket), do: {:noreply, socket}
 end

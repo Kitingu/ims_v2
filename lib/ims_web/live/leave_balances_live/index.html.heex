@@ -7,8 +7,10 @@
       <select phx-change="filter_leave_type" name="leave_type" class="w-full border p-2 rounded">
         <option value="">All</option>
         <%= for leave_type <- @all_leave_types do %>
-          <option value={leave_type} selected={@selected_type == leave_type}><%= leave_type %></option>
-        <% end %>
+          <option value={leave_type} selected={@selected_type==leave_type}>
+            <%= leave_type %>
+          </option>
+          <% end %>
       </select>
     </div>
 
@@ -22,57 +24,65 @@
       <button phx-click="export_excel" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
         Export to Excel
       </button>
+
+      <button phx-click="update_leave_balance" class="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+        Update Leave Balances
+      </button>
     </div>
   </div>
 
-  <.table id="leave-balances" 
-  rows={@rows}
-  resource="leave_balances"
-  current_user={@current_user}
-  actions={["update_balance"]}
-  >
+  <.table id="leave-balances" rows={@rows} resource="leave_balances" current_user={@current_user}>
 
-    <:col :let={row}  label="Personal Number"> <%= row.personal_number %></:col>
-  
+    <:col :let={row} label="Personal Number">
+      <%= row.personal_number %>
+    </:col>
 
-    <:col :let={row} label="First Name"> <%= row.first_name %></:col>
-  
-  
-    <:col :let={row} label="Last Name"> <%= row.last_name %></:col>
 
-    
-  <:col :let={row} label="Annual Leave">
-    <%= Map.get(row, "Annual Leave", 0) %>
-  </:col>
+    <:col :let={row} label="First Name">
+      <%= row.first_name %>
+    </:col>
 
-  <:col :let={row} label="Sick Leave">
-    <%= Map.get(row, "Sick Leave", 0) %>
-  </:col>
 
-  <:col :let={row} label="Maternity Leave">
-    <%= Map.get(row, "Maternity Leave", 0) %>
-  </:col>
+    <:col :let={row} label="Last Name">
+      <%= row.last_name %>
+    </:col>
 
-  <:col :let={row} label="Paternity Leave">
-    <%= Map.get(row, "Paternity Leave", 0) %>
-  </:col>
 
-  <:col :let={row} label="Terminal Leave">
-    <%= Map.get(row, "Terminal Leave", 0) %>
-  </:col>
-  
+    <:col :let={row} label="Annual Leave">
+      <%= Map.get(row, "Annual Leave" , 0) %>
+    </:col>
+
+    <:col :let={row} label="Sick Leave">
+      <%= Map.get(row, "Sick Leave" , 0) %>
+    </:col>
+
+    <:col :let={row} label="Maternity Leave">
+      <%= Map.get(row, "Maternity Leave" , 0) %>
+    </:col>
+
+    <:col :let={row} label="Paternity Leave">
+      <%= Map.get(row, "Paternity Leave" , 0) %>
+    </:col>
+
+    <:col :let={row} label="Terminal Leave">
+      <%= Map.get(row, "Terminal Leave" , 0) %>
+    </:col>
+
 
   </.table>
-  
- 
-  
+
+
+
 </div>
 
-<%= if @live_action == :edit and @user do %>
+<%= if @live_action==:edit and @user do %>
+  <.live_component module={ImsWeb.LeaveBalancesLive.FormComponent} id={"edit-user-#{@user.id}"} user={@user}
+    return_to={Routes.leave_balances_index_path(@socket, :index)} />
+  <% end %>
+
+  <%= if @show_manage_modal do %>
   <.live_component
-    module={ImsWeb.LeaveBalancesLive.FormComponent}
-    id={"edit-user-#{@user.id}"}
-    user={@user}
-    return_to={Routes.leave_balances_index_path(@socket, :index)}
+    module={ImsWeb.LeaveBalancesLive.ManageComponent}
+    id="manage-balances"
   />
 <% end %>
