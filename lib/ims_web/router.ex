@@ -143,7 +143,7 @@ defmodule ImsWeb.Router do
 
       # live "/devices/:id", DeviceLive.Show, :show
       # live "/devices/:id/show/edit", DeviceLive.Show, :edit
-
+      get "/leave-balances/export", LeaveBalanceExportController, :export
       # users
 
       live "/requests", RequestLive.Index, :index
@@ -175,21 +175,19 @@ defmodule ImsWeb.Router do
       # live "/training_applications/:id", TrainingApplicationLive.Show, :show
       # live "/training_applications/:id/show/edit", TrainingApplicationLive.Show, :edit
 
-       live "/files", FileLive.Index, :index
-       live "/files/new", FileLive.Index, :new
-       live "/files/:id/edit", FileLive.Index, :edit
+      live "/files", FileLive.Index, :index
+      live "/files/new", FileLive.Index, :new
+      live "/files/:id/edit", FileLive.Index, :edit
 
-       live "/files/:id", FileLive.Show, :show
-       live "/files/:id/show/edit", FileLive.Show, :edit
+      live "/files/:id", FileLive.Show, :show
+      live "/files/:id/show/edit", FileLive.Show, :edit
 
-       live "/file_movements", FileMovementLive.Index, :index
-       live "/file_movements/new", FileMovementLive.Index, :new
-       live "/file_movements/:id/edit", FileMovementLive.Index, :edit
+      live "/file_movements", FileMovementLive.Index, :index
+      live "/file_movements/new", FileMovementLive.Index, :new
+      live "/file_movements/:id/edit", FileMovementLive.Index, :edit
 
-       live "/file_movements/:id", FileMovementLive.Show, :show
-       live "/file_movements/:id/show/edit", FileMovementLive.Show, :edit
-
-
+      live "/file_movements/:id", FileMovementLive.Show, :show
+      live "/file_movements/:id/show/edit", FileMovementLive.Show, :edit
     end
   end
 
@@ -316,7 +314,6 @@ defmodule ImsWeb.Router do
       live "/events/:id/edit", EventLive.Index, :edit
       live "/events/:id", EventLive.Show, :show
       live "/events/:id/show/edit", EventLive.Show, :edit
-
     end
   end
 

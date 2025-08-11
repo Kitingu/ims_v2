@@ -152,8 +152,71 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
      |> assign(:rows, page)}
   end
 
+  @impl true
   def handle_event("export_excel", _params, socket) do
-    {:noreply, put_flash(socket, :info, "Export is not implemented yet.")}
+    params = socket.assigns.params || %{}
+    leave_types = socket.assigns.all_leave_types || []
+    headers = ["Personal Number", "First Name", "Last Name"] ++ leave_types
+
+    rows =
+      gather_all_balances(params)
+      |> Enum.map(fn row ->
+        base = [row.personal_number, row.first_name, row.last_name]
+        balances = Enum.map(leave_types, fn lt -> Map.get(row, lt, 0) end)
+        base ++ balances
+      end)
+
+    csv_iodata =
+      [headers | rows]
+      |> Enum.map(&csv_line/1)
+      |> Enum.intersperse("\r\n")
+
+    filename = "leave_balances_#{Date.utc_today()}.csv"
+
+    {:noreply,
+     Phoenix.LiveView.send_download(
+       socket,
+       {:binary, IO.iodata_to_binary(csv_iodata)},
+       filename: filename,
+       content_type: "text/csv"
+     )}
+  end
+
+  # Pull every page matching current filters
+  defp gather_all_balances(params) do
+    base = params |> Map.put_new("page_size", "500") |> Map.put("page", "1")
+    page = Ims.Leave.paginated_leave_balances(base)
+
+    entries =
+      Enum.reduce((page.page_number + 1)..page.total_pages, page.entries, fn p, acc ->
+        more =
+          base
+          |> Map.put("page", Integer.to_string(p))
+          |> Ims.Leave.paginated_leave_balances()
+          |> Map.get(:entries)
+
+        acc ++ more
+      end)
+
+    entries
+  end
+
+  # Minimal CSV escaping
+  defp csv_line(list) do
+    list
+    |> Enum.map(&csv_cell/1)
+    |> Enum.intersperse(",")
+  end
+
+  defp csv_cell(nil), do: "\"\""
+
+  defp csv_cell(v) do
+    s =
+      v
+      |> to_string()
+      |> String.replace("\"", "\"\"")
+
+    ["\"", s, "\""]
   end
 
   ## ===== Messages from the ManageComponent =====

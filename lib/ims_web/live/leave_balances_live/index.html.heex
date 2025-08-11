@@ -21,9 +21,12 @@
     </div>
 
     <div class="flex items-end">
-      <button phx-click="export_excel" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+      <a href={~p"/leave-balances/export?#{@params}"}
+        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
         Export to Excel
-      </button>
+      </a>
+
+
 
       <button phx-click="update_leave_balance" class="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
         Update Leave Balances
@@ -80,9 +83,6 @@
     return_to={Routes.leave_balances_index_path(@socket, :index)} />
   <% end %>
 
-  <%= if @show_manage_modal do %>
-  <.live_component
-    module={ImsWeb.LeaveBalancesLive.ManageComponent}
-    id="manage-balances"
-  />
-<% end %>
+    <%= if @show_manage_modal do %>
+      <.live_component module={ImsWeb.LeaveBalancesLive.ManageComponent} id="manage-balances" />
+      <% end %>
