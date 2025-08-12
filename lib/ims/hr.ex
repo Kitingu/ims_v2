@@ -7,6 +7,7 @@ defmodule Ims.HR do
   alias Ims.Repo
 
   alias Ims.HR.AwayRequest
+  alias Ims.Interns.InternAttachee
 
   @doc """
   Returns the list of away_requests.
@@ -100,5 +101,23 @@ defmodule Ims.HR do
   """
   def change_away_request(%AwayRequest{} = away_request, attrs \\ %{}) do
     AwayRequest.changeset(away_request, attrs)
+  end
+
+  # def list_away_requests do
+  #   AwayRequest
+  #   |> where([ar], ar.status == "active")
+  #   |> Repo.all()
+  # end
+
+  def list_interns do
+    InternAttachee
+    |> where([i], i.program == "intern")
+    |> Repo.all()
+  end
+
+  def list_attachees do
+    InternAttachee
+    |> where([i], i.program == "attachee")
+    |> Repo.all()
   end
 end

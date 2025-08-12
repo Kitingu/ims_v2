@@ -313,7 +313,6 @@ defmodule Ims.Welfare do
       raise "Cannot refresh balance: no contributions found for user #{member.user_id}"
     end
 
-
     # sum of Total payable from events after first contribution
     total_payable =
       from(e in Event,
@@ -349,5 +348,30 @@ defmodule Ims.Welfare do
       eligibility: eligibility
     )
     |> Repo.update!()
+  end
+
+  def list_members do
+    Member
+    |> where([m], m.status == "active")
+    |> Repo.all()
+  end
+
+  def list_recent_events(limit \\ 5) do
+    Event
+    |> where([e], e.status == "active")
+    |> order_by([e], desc: e.inserted_at)
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  def get_total_contributions do
+    query =
+      from c in Contribution,
+        select: sum(c.amount)
+
+    case Repo.one(query) do
+      nil -> 0.0
+      amount -> Decimal.to_float(amount)
+    end
   end
 end

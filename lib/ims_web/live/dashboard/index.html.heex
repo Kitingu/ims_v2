@@ -1,139 +1,224 @@
-<div class="min-h-screen bg-gray-100">
-  <!-- Header -->
-  <header class="bg-white shadow p-6 flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-gray-800">Inventory Dashboard</h1>
-    <div class="flex items-center">
-      <form phx-change="search" class="flex items-center bg-gray-200 rounded-lg shadow-sm">
-        <input type="text" name="search" placeholder="Search inventory..."
-          class="border-none bg-transparent rounded-lg px-4 py-2 focus:ring focus:ring-blue-500 w-64 placeholder-gray-500 text-gray-700"
-          value={@search} />
-      </form>
-    </div>
-  </header>
+<div class="min-h-screen bg-gray-50">
+  <!-- Header + Tabs -->
+  <div class="px-6 py-5 border-b bg-white">
+    <div class="flex items-center justify-between gap-4">
+      <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
 
-  <!-- Main Content -->
-  <main class="p-6 space-y-10">
-    <!-- Status Overview Cards -->
-
-    <!-- Status Overview Cards -->
-    <section class="grid grid-cols-1 md:grid-cols-4 gap-6">
-      <%= for {status, count, color, path} <- [ {"Lost", @inventory_counts.lost || 0, "red" , "/lost_devices" },
-        {"Assigned", @inventory_counts.assigned || 0, "green" , "/assigned_devices" }, {"Available",
-        @inventory_counts.available || 0, "blue" , "/available_devices" }, {"Decomissioned",
-        @inventory_counts.decommissioned || 0, "red" , "/decomissioned_devices" }, ] do %>
-        <a href={path} class={"bg-#{color}-100 p-6 rounded-lg shadow-md flex flex-col items-center transition-transform
-          transform hover:scale-105 no-underline"}>
-          <h2 class="text-lg font-semibold text-gray-700">
-            <%= status %>
-          </h2>
-          <p class="text-5xl font-bold text-#{color}-700 mt-2">
-            <%= count %>
-          </p>
-        </a>
+      <nav class="flex gap-1 rounded-lg p-1 bg-gray-100">
+        <%= for tab <- @visible_tabs do %>
+          <button
+            phx-click="set_tab"
+            phx-value-tab={tab}
+            class={[
+              "px-4 py-2 rounded-md text-sm font-medium transition focus:outline-none",
+              if(@active_tab == tab, do: "bg-white shadow text-gray-800", else: "text-gray-600 hover:text-gray-800")
+            ]}>
+            <%= ImsWeb.DashboardLive.Index.tab_label(tab) %>
+          </button>
         <% end %>
-    </section>
+      </nav>
+    </div>
+  </div>
 
-
-    <section class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-bold text-gray-700 mb-6">Device Statistics Per Category</h2>
-      <div class="space-y-4">
-        <%= for %{category: category, total: total, assigned: assigned, lost: lost, available: available} <-
-          @category_stats do %>
-          <div class="bg-gray-100 p-6 rounded-lg shadow-md flex justify-between items-center">
-            <div class="flex flex-col">
-              <h3 class="text-lg font-semibold text-gray-800">
-                <%= category %>
-              </h3>
-              <p class="text-sm text-gray-600">Total Devices: <%= total %>
-              </p>
-            </div>
-            <div class="flex space-x-8">
-              <div class="flex flex-col items-center">
-                <span class="text-sm text-gray-500">Assigned</span>
-                <span class="text-lg font-bold text-green-600">
-                  <%= assigned %>
-                </span>
-              </div>
-              <div class="flex flex-col items-center">
-                <span class="text-sm text-gray-500">Lost</span>
-                <span class="text-lg font-bold text-red-600">
-                  <%= lost %>
-                </span>
-              </div>
-              <div class="flex flex-col items-center">
-                <span class="text-sm text-gray-500">Available</span>
-                <span class="text-lg font-bold text-blue-600">
-                  <%= available %>
-                </span>
-              </div>
-            </div>
-          </div>
-          <% end %>
+  <div class="p-6 space-y-6">
+    <%= if @loading? do %>
+      <!-- Skeleton -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <%= for _ <- 1..4 do %>
+          <div class="h-24 bg-gray-200/60 animate-pulse rounded-xl"></div>
+        <% end %>
       </div>
-    </section>
+      <div class="mt-6 space-y-3">
+        <%= for _ <- 1..5 do %>
+          <div class="h-16 bg-gray-200/60 animate-pulse rounded-xl"></div>
+        <% end %>
+      </div>
+    <% else %>
+      <%= if @active_tab == :welfare do %>
+        <!-- Welfare -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Eligible Members</p>
+            <p class="text-2xl font-semibold"><%= @welfare.eligible %></p>
+          </div>
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Ineligible Members</p>
+            <p class="text-2xl font-semibold"><%= @welfare.ineligible %></p>
+          </div>
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Total Contributions</p>
+            <p class="text-2xl font-semibold">
+              KSh <%= Decimal.to_string(@welfare.total_contributions, :normal) %>
+            </p>
+          </div>
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Events Tracked</p>
+            <p class="text-2xl font-semibold"><%= length(@welfare.last5_events) %></p>
+          </div>
+        </div>
 
+        <div class="bg-white rounded-xl border overflow-hidden">
+          <div class="px-5 py-4 border-b">
+            <h3 class="font-semibold text-gray-800">Last 5 Events — Total Contribution</h3>
+          </div>
+          <%= if Enum.empty?(@welfare.last5_events) do %>
+            <div class="px-5 py-10 text-center text-gray-500">
+              <p class="font-medium">No events yet</p>
+              <p class="text-sm mt-1">Events and their contributions will appear here.</p>
+            </div>
+          <% else %>
+            <div class="divide-y">
+              <%= for e <- @welfare.last5_events do %>
+                <div class="px-5 py-4 flex items-center justify-between">
+                  <div>
+                    <p class="font-medium text-gray-900"><%= e.title %></p>
+                    <p class="text-sm text-gray-500"><%= e.description %></p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-sm text-gray-500">Total Contributed</p>
+                    <p class="text-lg font-semibold">KSh <%= e.total_contributed %></p>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
 
-    <section class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-bold text-gray-700 mb-6">Top 5 Departments with Most Devices</h2>
-      <table class="w-full border-collapse rounded-lg overflow-hidden shadow">
-        <thead>
-          <tr class="bg-gray-200">
-            <th class="border-b p-4 text-left text-gray-600 font-semibold">Department</th>
-            <th class="border-b p-4 text-left text-gray-600 font-semibold">Total Devices</th>
-            <th class="border-b p-4 text-left text-gray-600 font-semibold">Percentage</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white">
-          <%= for department <- @top_departments do %>
-            <tr class="hover:bg-gray-100 transition">
-              <td class="p-4 text-gray-700">
-                <%= department.name %>
-              </td>
-              <td class="p-4 text-gray-700 font-bold">
-                <%= department.total_assets %>
-              </td>
-              <td class="p-4 text-gray-700 font-bold">
-                <%= department.percentage %>%
-              </td>
-            </tr>
+      <%= if @active_tab == :hr do %>
+        <!-- HR -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Total Employees</p>
+            <p class="text-2xl font-semibold"><%= @hr.total_employees %></p>
+          </div>
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Out of Office Requests</p>
+            <p class="text-2xl font-semibold"><%= @hr.out_of_office %></p>
+          </div>
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Interns & Attachees</p>
+            <p class="text-2xl font-semibold"><%= @hr.total_interns %></p>
+          </div>
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Leave Types Tracked</p>
+            <p class="text-2xl font-semibold"><%= length(@hr.leave_by_type) %></p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border overflow-hidden">
+          <div class="px-5 py-4 border-b">
+            <h3 class="font-semibold text-gray-800">Leave by Type (total remaining days)</h3>
+          </div>
+          <%= if Enum.empty?(@hr.leave_by_type) do %>
+            <div class="px-5 py-10 text-center text-gray-500">
+              <p class="font-medium">No leave data</p>
+              <p class="text-sm mt-1">Add leave balances or switch to active leave requests.</p>
+            </div>
+          <% else %>
+            <table class="min-w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Leave Type</th>
+                  <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Total (days)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y">
+                <%= for {type, days} <- @hr.leave_by_type do %>
+                  <tr class="bg-white">
+                    <td class="px-5 py-3 text-gray-800"><%= type %></td>
+                    <td class="px-5 py-3 text-right font-medium"><%= days %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%= if @active_tab == :ict do %>
+        <!-- ICT -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Available</p>
+            <p class="text-2xl font-semibold"><%= Map.get(@ict.asset_counts, :available, 0) %></p>
+          </div>
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Assigned</p>
+            <p class="text-2xl font-semibold"><%= Map.get(@ict.asset_counts, :assigned, 0) %></p>
+          </div>
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Revoked</p>
+            <p class="text-2xl font-semibold"><%= Map.get(@ict.asset_counts, :revoked, 0) %></p>
+          </div>
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Lost</p>
+            <p class="text-2xl font-semibold"><%= Map.get(@ict.asset_counts, :lost, 0) %></p>
+          </div>
+          <div class="bg-white rounded-xl border p-4">
+            <p class="text-sm text-gray-500">Decommissioned</p>
+            <p class="text-2xl font-semibold"><%= Map.get(@ict.asset_counts, :decommissioned, 0) %></p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-xl border overflow-hidden">
+            <div class="px-5 py-4 border-b">
+              <h3 class="font-semibold text-gray-800">Departments with Most Devices</h3>
+            </div>
+            <%= if Enum.empty?(@ict.top_departments) do %>
+              <div class="px-5 py-10 text-center text-gray-500">No device data yet.</div>
+            <% else %>
+              <table class="min-w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Department</th>
+                    <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Total</th>
+                    <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">% Share</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y">
+                  <%= for dep <- @ict.top_departments do %>
+                    <tr class="bg-white">
+                      <td class="px-5 py-3 text-gray-800"><%= dep.name %></td>
+                      <td class="px-5 py-3 text-right font-medium"><%= dep.total_assets %></td>
+                      <td class="px-5 py-3 text-right"><%= dep.percentage %>%</td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
             <% end %>
-        </tbody>
-      </table>
-    </section>
+          </div>
 
-
-    <section class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-xl font-bold text-gray-700 mb-6">Top 5 Users with Most Devices</h2>
-      <table class="w-full border-collapse rounded-lg overflow-hidden shadow">
-        <thead>
-          <tr class="bg-gray-200">
-            <th class="border-b p-4 text-left text-gray-600 font-semibold">User</th>
-            <th class="border-b p-4 text-left text-gray-600 font-semibold">Total Devices</th>
-            <th class="border-b p-4 text-left text-gray-600 font-semibold">Percentage</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white">
-          <%= for user <- @top_users do %>
-            <tr class="hover:bg-gray-100 transition">
-              <td class="p-4 text-gray-700">
-                <%= user.first_name %>
-                  <%= user.last_name %>
-              </td>
-              <td class="p-4 text-gray-700 font-bold">
-                <%= user.total_assets %>
-              </td>
-              <td class="p-4 text-gray-700">
-                <%= user.percentage %>%
-              </td>
-            </tr>
+          <div class="bg-white rounded-xl border overflow-hidden">
+            <div class="px-5 py-4 border-b">
+              <h3 class="font-semibold text-gray-800">Users with Most Devices</h3>
+            </div>
+            <%= if Enum.empty?(@ict.top_users) do %>
+              <div class="px-5 py-10 text-center text-gray-500">No assignments yet.</div>
+            <% else %>
+              <table class="min-w-full">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">User</th>
+                    <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">Total</th>
+                    <th class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-5 py-3">% Share</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y">
+                  <%= for u <- @ict.top_users do %>
+                    <tr class="bg-white">
+                      <td class="px-5 py-3 text-gray-800"><%= u.first_name %> <%= u.last_name %></td>
+                      <td class="px-5 py-3 text-right font-medium"><%= u.total_assets %></td>
+                      <td class="px-5 py-3 text-right"><%= u.percentage %>%</td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
             <% end %>
-        </tbody>
-      </table>
-    </section>
-
-
-
-
-
-  </main>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
 </div>
