@@ -39,6 +39,7 @@ defmodule ImsWeb.Plugs.EnsureAuthorizedPlug do
   defp get_resource_from_path("/hr" <> _), do: "hr_dashboard"
   defp get_resource_from_path("/welfare" <> _), do: "welfare_dashboard"
   defp get_resource_from_path("/assets" <> _), do: "assets_dashboard"
+  # defp get_resource_from_path("/" <> _), do: "all_routes"
 
   # ✅ Matches `/admin` and all subpaths
   defp get_resource_from_path("/admin" <> _), do: "admin_panel"

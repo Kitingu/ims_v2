@@ -17,17 +17,19 @@ defmodule ImsWeb.DashboardLive.Index do
   def mount(_params, _session, socket) do
     current_user = socket.assigns.current_user
 
-    visible_tabs =
-      Enum.filter(@tabs, &can_view_tab?(current_user, &1))
+    visible_tabs = Enum.filter(@tabs, &can_view_tab?(current_user, &1))
+    has_dashboard = can_view_dashboard?(current_user)
 
-    # fall back to :ict if no specific tab permission but generic "dashboard" exists
-    active_tab = List.first(visible_tabs) || :ict
+    # only set an active tab if there is at least one visible
+    active_tab = List.first(visible_tabs)
+    loading? = not is_nil(active_tab)
 
     {:ok,
      assign(socket,
        visible_tabs: visible_tabs,
-       active_tab: active_tab,
-       loading?: true,
+       active_tab: active_tab,     # nil when no tab rights
+       has_dashboard?: has_dashboard,
+       loading?: loading?,
        welfare: nil,
        hr: nil,
        ict: nil
@@ -45,10 +47,17 @@ defmodule ImsWeb.DashboardLive.Index do
     end
   end
 
+  @impl true
   def handle_params(_params, _uri, socket) do
-    # initial load if /dashboard has no ?tab=
-    send(self(), {:load_tab, socket.assigns.active_tab})
-    {:noreply, assign(socket, loading?: true)}
+    case socket.assigns.active_tab do
+      nil ->
+        # no tab rights; stop loading and show placeholders
+        {:noreply, assign(socket, loading?: false)}
+
+      tab ->
+        send(self(), {:load_tab, tab})
+        {:noreply, assign(socket, loading?: true)}
+    end
   end
 
   @impl true
@@ -66,9 +75,7 @@ defmodule ImsWeb.DashboardLive.Index do
 
   @impl true
   def handle_event("set_tab", %{"tab" => tab}, socket) do
-    # Use standard Routes helper so this works pre-1.7
-   {:noreply, push_patch(socket, to: ~p"/dashboard?tab=#{tab}")}
-
+    {:noreply, push_patch(socket, to: ~p"/dashboard?tab=#{tab}")}
   end
 
   # ---------- Data loaders ----------
@@ -137,14 +144,18 @@ defmodule ImsWeb.DashboardLive.Index do
 
   # ---------- Helpers ----------
 
+  # show a tab only when the user explicitly has that tab right
   defp can_view_tab?(user, :welfare),
-    do: Canada.Can.can?(user, ["view"], "dashboard_welfare") || Canada.Can.can?(user, ["view"], "dashboard")
+    do: Canada.Can.can?(user, ["view"], "dashboard_welfare")
 
   defp can_view_tab?(user, :hr),
-    do: Canada.Can.can?(user, ["view"], "dashboard_hr") || Canada.Can.can?(user, ["view"], "dashboard")
+    do: Canada.Can.can?(user, ["view"], "dashboard_hr")
 
   defp can_view_tab?(user, :ict),
-    do: Canada.Can.can?(user, ["view"], "dashboard_ict") || Canada.Can.can?(user, ["view"], "dashboard")
+    do: Canada.Can.can?(user, ["view"], "dashboard_ict")
+
+  defp can_view_dashboard?(user),
+    do: Canada.Can.can?(user, ["view"], "dashboard")
 
   def tab_label(:welfare), do: "Welfare"
   def tab_label(:hr), do: "HR"

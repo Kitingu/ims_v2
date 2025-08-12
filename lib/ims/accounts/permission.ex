@@ -160,6 +160,15 @@ defmodule Ims.Accounts.Permission do
       # dash
       %{name: "dashboard.view"},
 
+      # dashboards
+      %{name: "dashboard_welfare.view"},
+      %{name: "dashboard_hr.view"},
+      %{name: "dashboard_ict.view"},
+
+
+      # main sidebar
+      %{name: "welfare.index"},
+
       # settingspUploadUsersWorker
       %{name: "settings.new"},
       %{name: "settings.index"},

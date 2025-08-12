@@ -76,8 +76,8 @@ defmodule ImsWeb.Router do
 
     live_session :require_authenticated_user,
       on_mount: [{ImsWeb.UserAuth, :ensure_authenticated}] do
-      live "/", UserProfileLive, :index
-      live "/dashboard", DashboardLive.Index, :index
+      # live "/", UserProfileLive, :index
+      live "/", DashboardLive.Index, :index
 
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email

@@ -126,11 +126,22 @@ defmodule ImsWeb.RoleLive.FormComponent do
   end
 
   # Add a catch-all clause for cases where permissions are not explicitly passed:
-  def update(%{role: _role} = assigns, socket) do
-    permissions = assigns[:permissions] || []
+  @impl true
+def handle_event("validate", %{"role" => role_params}, socket) do
+  selected_ids = parse_permission_ids(role_params)
 
-    update(Map.put(assigns, :permissions, permissions), socket)
-  end
+  # Optional: if your changeset tracks permission_ids, you can put it in changes
+  changeset =
+    socket.assigns.role
+    |> Role.change_role(role_params)
+    |> Map.put(:action, :validate)
+
+  {:noreply,
+   socket
+   |> assign(:selected_permission_ids, selected_ids)
+   |> assign(:form, to_form(changeset))}
+end
+
 
   @impl true
   def handle_event("validate", %{"role" => role_params}, socket) do
@@ -180,6 +191,15 @@ defmodule ImsWeb.RoleLive.FormComponent do
         {:noreply, assign(socket, form: to_form(changeset))}
     end
   end
+
+  defp parse_permission_ids(params) do
+  params
+  |> Map.get("permission_ids", [])
+  |> Enum.map(fn
+    id when is_integer(id) -> id
+    id when is_binary(id) -> String.to_integer(id)
+  end)
+end
 
   defp notify_parent(msg), do: send(self(), {__MODULE__, msg})
 end

@@ -5,36 +5,70 @@
       <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
 
       <nav class="flex gap-1 rounded-lg p-1 bg-gray-100">
-        <%= for tab <- @visible_tabs do %>
-          <button
-            phx-click="set_tab"
-            phx-value-tab={tab}
-            class={[
-              "px-4 py-2 rounded-md text-sm font-medium transition focus:outline-none",
-              if(@active_tab == tab, do: "bg-white shadow text-gray-800", else: "text-gray-600 hover:text-gray-800")
-            ]}>
-            <%= ImsWeb.DashboardLive.Index.tab_label(tab) %>
-          </button>
+        <%= if Enum.any?(@visible_tabs) do %>
+          <%= for tab <- @visible_tabs do %>
+            <button
+              phx-click="set_tab"
+              phx-value-tab={tab}
+              class={[
+                "px-4 py-2 rounded-md text-sm font-medium transition focus:outline-none",
+                if(@active_tab == tab, do: "bg-white shadow text-gray-800", else: "text-gray-600 hover:text-gray-800")
+              ]}>
+              <%= ImsWeb.DashboardLive.Index.tab_label(tab) %>
+            </button>
+          <% end %>
+        <% else %>
+          <!-- locked placeholders when user has dashboard access but no tab rights -->
+          <span class="px-4 py-2 rounded-md text-sm text-gray-400 bg-gray-100 border">Welfare</span>
+          <span class="px-4 py-2 rounded-md text-sm text-gray-400 bg-gray-100 border">HR</span>
+          <span class="px-4 py-2 rounded-md text-sm text-gray-400 bg-gray-100 border">ICT</span>
         <% end %>
       </nav>
     </div>
   </div>
 
   <div class="p-6 space-y-6">
-    <%= if @loading? do %>
-      <!-- Skeleton -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <%= for _ <- 1..4 do %>
-          <div class="h-24 bg-gray-200/60 animate-pulse rounded-xl"></div>
-        <% end %>
-      </div>
-      <div class="mt-6 space-y-3">
-        <%= for _ <- 1..5 do %>
-          <div class="h-16 bg-gray-200/60 animate-pulse rounded-xl"></div>
-        <% end %>
-      </div>
-    <% else %>
-      <%= if @active_tab == :welfare do %>
+    <%= cond do %>
+      <% @loading? -> %>
+        <!-- Skeleton -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <%= for _ <- 1..4 do %>
+            <div class="h-24 bg-gray-200/60 animate-pulse rounded-xl"></div>
+          <% end %>
+        </div>
+        <div class="mt-6 space-y-3">
+          <%= for _ <- 1..5 do %>
+            <div class="h-16 bg-gray-200/60 animate-pulse rounded-xl"></div>
+          <% end %>
+        </div>
+
+      <% is_nil(@active_tab) and @has_dashboard? -> %>
+        <!-- Placeholder/locked content -->
+        <div class="bg-white rounded-xl border p-8 text-center">
+          <div class="mx-auto mb-3 h-10 w-10 rounded-full border flex items-center justify-center text-gray-500">🔒</div>
+          <h3 class="font-semibold text-gray-900">Limited access</h3>
+          <p class="text-gray-500 text-sm mt-1">
+            You can view the dashboard, but you don’t have permission to access any sections yet.
+          </p>
+          <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="h-24 bg-gray-100 rounded-xl border border-dashed flex items-center justify-center text-gray-400">Welfare</div>
+            <div class="h-24 bg-gray-100 rounded-xl border border-dashed flex items-center justify-center text-gray-400">HR</div>
+            <div class="h-24 bg-gray-100 rounded-xl border border-dashed flex items-center justify-center text-gray-400">ICT</div>
+          </div>
+          <p class="text-xs text-gray-400 mt-6">Ask an admin to grant access to specific sections.</p>
+        </div>
+
+      <% not @has_dashboard? -> %>
+        <!-- No dashboard access at all -->
+        <div class="bg-white rounded-xl border p-8 text-center">
+          <div class="mx-auto mb-3 h-10 w-10 rounded-full border flex items-center justify-center text-gray-500">🚫</div>
+          <h3 class="font-semibold text-gray-900">No dashboard access</h3>
+          <p class="text-gray-500 text-sm mt-1">
+            You don’t have permission to view the dashboard.
+          </p>
+        </div>
+
+      <% @active_tab == :welfare -> %>
         <!-- Welfare -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="bg-white rounded-xl border p-4">
@@ -83,9 +117,8 @@
             </div>
           <% end %>
         </div>
-      <% end %>
 
-      <%= if @active_tab == :hr do %>
+      <% @active_tab == :hr -> %>
         <!-- HR -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div class="bg-white rounded-xl border p-4">
@@ -134,9 +167,8 @@
             </table>
           <% end %>
         </div>
-      <% end %>
 
-      <%= if @active_tab == :ict do %>
+      <% @active_tab == :ict -> %>
         <!-- ICT -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div class="bg-white rounded-xl border p-4">
@@ -218,7 +250,6 @@
             <% end %>
           </div>
         </div>
-      <% end %>
     <% end %>
   </div>
 </div>
