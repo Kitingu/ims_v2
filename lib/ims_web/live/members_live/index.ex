@@ -5,7 +5,6 @@ defmodule ImsWeb.Welfare.MemberLive.Index do
   alias Ims.Welfare.Member
 
   @paginator_opts [order_by: [desc: :inserted_at], page_size: 10]
-
   # --------- Mount / Params ---------
 
   @impl true
@@ -29,20 +28,20 @@ defmodule ImsWeb.Welfare.MemberLive.Index do
   def handle_params(params, _uri, socket) do
     page = String.to_integer(params["page"] || "1")
 
-    # Accept only known filter keys; drop blanks
     raw_filters =
       params
-      |> Map.take(["status", "user_id"])
+      |> Map.take(["status", "user_id", "personal_number", "user_name", "entry_date"])
       |> Enum.reject(fn {_k, v} -> v in [nil, ""] end)
       |> Enum.into(%{})
 
-    filters = parse_filters(raw_filters)
+    filters = normalize_filters(raw_filters)
 
     socket =
       socket
       |> assign(:page, page)
-      |> assign(:filters, raw_filters) # keep raw for query string round-trips
-      |> assign(:members, fetch_records(filters, Keyword.put(@paginator_opts, :page, page)))
+      # keep raw for round-trips
+      |> assign(:filters, raw_filters)
+      |> assign(:members, fetch_records(filters, page))
 
     {:noreply, socket}
   end
@@ -68,7 +67,10 @@ defmodule ImsWeb.Welfare.MemberLive.Index do
 
   @impl true
   def handle_event("refresh_all", _params, socket) do
-    Enum.each(socket.assigns.members.entries || socket.assigns.members, &Welfare.refresh_member_balance/1)
+    Enum.each(
+      socket.assigns.members.entries || socket.assigns.members,
+      &Welfare.refresh_member_balance/1
+    )
 
     {:noreply,
      socket
@@ -101,8 +103,12 @@ defmodule ImsWeb.Welfare.MemberLive.Index do
     base = maybe_put(%{}, :status, s)
 
     case Map.get(params, "user_id") do
-      nil -> base
-      "" -> base
+      nil ->
+        base
+
+      "" ->
+        base
+
       uid ->
         case Integer.parse("#{uid}") do
           {int, _} -> Map.put(base, :user_id, int)
@@ -118,11 +124,52 @@ defmodule ImsWeb.Welfare.MemberLive.Index do
   defp maybe_put(map, k, v), do: Map.put(map, k, v)
 
   # Centralized fetch (swap in your paginator if/when available)
-  defp fetch_records(filters, opts) do
-    # If you introduce pagination later, return a %Scrivener.Page{} here.
-    # For now, keep it simple and just return a list or a struct your UI expects.
-    _opts = Keyword.merge(@paginator_opts, opts)
-    Welfare.list_members(filters)
+  defp fetch_records(filters, page) do
+    # IMPORTANT: pass schema as 1st arg to search/2
+    query = Member.search(Member, filters)
+    Ims.Repo.paginate(query, page: page, page_size: 10)
+  end
+
+  defp normalize_filters(raw) do
+    raw
+    |> Enum.into(%{}, fn {k, v} -> {to_atom_if_exists(k), v} end)
+    |> maybe_update(:user_id, &to_int/1)
+    |> maybe_update(:entry_date, &to_date/1)
+  end
+
+  defp to_atom_if_exists(k) when is_binary(k) do
+    try do
+      String.to_existing_atom(k)
+    rescue
+      ArgumentError -> String.to_atom(k)
+    end
+  end
+
+  defp to_atom_if_exists(k), do: k
+
+  defp maybe_update(map, key, fun) do
+    case Map.fetch(map, key) do
+      {:ok, v} when v not in [nil, ""] -> Map.put(map, key, fun.(v))
+      _ -> map
+    end
+  end
+
+  defp to_int(v) when is_integer(v), do: v
+
+  defp to_int(v) when is_binary(v) do
+    case Integer.parse(v) do
+      {i, _} -> i
+      :error -> v
+    end
+  end
+
+  defp to_date(%Date{} = d), do: d
+
+  defp to_date(v) when is_binary(v) do
+    case Date.from_iso8601(v) do
+      {:ok, d} -> d
+      _ -> v
+    end
   end
 
   # --------- View Utilities ---------
