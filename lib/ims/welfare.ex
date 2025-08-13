@@ -6,13 +6,12 @@ defmodule Ims.Welfare do
   import Ecto.Query, warn: false
   alias Ims.Repo
 
-  alias Ims.Welfare.EventType
+  # alias Ims.Welfare.EventType
   alias Ims.Accounts
 
-  alias Ims.Welfare.{
-    Member,
-    Contribution
-  }
+  alias Ims.Welfare.{Member, Event, EventType, Contribution}
+
+
 
   @doc """
   Returns the list of event_types.
@@ -296,51 +295,48 @@ defmodule Ims.Welfare do
     {:ok, "Contribution verified successfully"}
   end
 
-  def refresh_member_balance(%Member{} = member) do
-    # Get the datetime of the first contribution by the user
-    first_contribution_at =
-      from(c in Contribution,
-        where: c.user_id == ^member.user_id,
-        order_by: [asc: c.inserted_at],
-        limit: 1,
-        select: c.inserted_at
-      )
-      |> Repo.one()
-      |> IO.inspect(label: "First Contribution At")
+ defp dec0, do: Decimal.new(0)
 
-    # If no contribution found, do not proceed
-    if is_nil(first_contribution_at) do
-      raise "Cannot refresh balance: no contributions found for user #{member.user_id}"
-    end
+  defp dec(value) when is_number(value), do: Decimal.new(value)
+  defp dec(value) when is_binary(value), do: Decimal.new(value)
+  defp dec(%Decimal{} = value), do: value
+  defp dec(nil), do: dec0()
 
-    # sum of Total payable from events after first contribution
+  @doc """
+  Refreshes the member's balance based on their contributions and events.
+  """
+
+def refresh_member_balance(%Member{} = member) do
+    # 1) Total payable across all non-archived events (sum of event_type.amount)
     total_payable =
       from(e in Event,
         join: et in assoc(e, :event_type),
-        where: e.inserted_at >= ^first_contribution_at,
+        where: e.status != ^"archived",
         select: coalesce(sum(et.amount), 0)
       )
       |> Repo.one()
-      |> IO.inspect(label: "Total Payable")
+      |> dec()
 
-    # Total paid via contributions after first contribution
+    # 2) Member's total PAID toward those same events (only verified)
     total_paid =
       from(c in Contribution,
-        where: c.user_id == ^member.user_id and c.inserted_at >= ^first_contribution_at,
+        join: e in Event, on: e.id == c.event_id,
+        where:
+          c.user_id == ^member.user_id and
+          c.verified == true and
+          e.status != ^"archived",
         select: coalesce(sum(c.amount), 0)
       )
       |> Repo.one()
-      |> IO.inspect(label: "Total Paid")
+      |> dec()
 
-    # Compute amount due
+    # 3) Compute eligibility and amount_due
+    eligibility = Decimal.cmp(total_paid, total_payable) != :lt
     amount_due =
-      Decimal.sub(total_payable, total_paid)
-      |> IO.inspect(label: "Amount Due")
+      total_payable
+      |> Decimal.sub(total_paid)
+      |> (fn d -> if Decimal.cmp(d, 0) == :lt, do: Decimal.new(0), else: d end).()
 
-    # Determine eligibility --> member should have paid for all events after the first contribution
-    eligibility = Decimal.eq?(total_payable, total_paid)
-
-    # Update member record
     member
     |> Ecto.Changeset.change(
       amount_paid: total_paid,
@@ -353,6 +349,13 @@ defmodule Ims.Welfare do
   def list_members do
     Member
     |> where([m], m.status == "active")
+    |> Repo.all()
+  end
+
+   def list_members(filters \\ %{}) when is_map(filters) do
+    Member
+    |> Member.search(filters)
+    |> order_by([m], desc: m.inserted_at)
     |> Repo.all()
   end
 

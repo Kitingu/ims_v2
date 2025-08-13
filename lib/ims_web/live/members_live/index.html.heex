@@ -1,0 +1,102 @@
+
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-semibold">Welfare Members</h1>
+
+    <%= if @flash[:info] do %>
+      <div class="text-sm text-emerald-700"><%= @flash[:info] %></div>
+    <% end %>
+  </div>
+
+  <!-- Filters -->
+
+  <!-- Filters -->
+<!-- Filters -->
+<!-- Filters / Toolbar -->
+<div class="rounded-md border bg-white p-3">
+  <.simple_form for={%{}} as={:filters} phx-submit="filter" :let={f}>
+    <div class="grid gap-3 md:grid-cols-4">
+      <.input
+        field={f[:status]}
+        type="select"
+        label="Status"
+        prompt="All"
+        options={[{"Active", "active"}, {"Archived", "archived"}]}
+        value={@filters["status"]}
+      />
+
+      <.input
+        field={f[:user_id]}
+        type="text"
+        label="User ID"
+        value={@filters["user_id"]}
+        placeholder="e.g. 123"
+        phx-debounce="300"
+        input_class="!h-10"
+      />
+
+      <div class="md:col-span-2 flex items-end gap-2">
+        <.button type="submit" class="!h-10 px-4">Apply</.button>
+        <.link patch={~p"/welfare/members"} class="px-3 py-2 border rounded hover:bg-gray-50">
+          Clear
+        </.link>
+        <div class="ml-auto"></div>
+      </div>
+    </div>
+  </.simple_form>
+</div>
+
+
+
+  
+
+  <!-- Table -->
+  <div class="overflow-x-auto rounded border">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-3 py-2 text-left font-medium">ID</th>
+          <th class="px-3 py-2 text-left font-medium">User</th>
+          <th class="px-3 py-2 text-left font-medium">Status</th>
+          <th class="px-3 py-2 text-left font-medium">Entry</th>
+          <th class="px-3 py-2 text-left font-medium">Paid</th>
+          <th class="px-3 py-2 text-left font-medium">Due</th>
+          <th class="px-3 py-2 text-left font-medium">Eligibility</th>
+          <th class="px-3 py-2 text-right font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      <%= for m <- @members do %>
+        <% badge = eligibility_badge(m.eligibility) %>
+        <tr class="border-t">
+          <td class="px-3 py-2"><%= m.id %></td>
+          <td class="px-3 py-2">
+            <%= if m.user do %>
+              <div class="font-medium"><%= m.user.first_name || "User ##{m.user_id}" %></div>
+              <div class="text-gray-500"><%= m.user.email %></div>
+            <% else %>
+              User ##{m.user_id}
+            <% end %>
+          </td>
+          <td class="px-3 py-2"><%= m.status %></td>
+          <td class="px-3 py-2"><%= m.entry_date %></td>
+          <td class="px-3 py-2"><%= money(m.amount_paid) %></td>
+          <td class="px-3 py-2"><%= money(m.amount_due) %></td>
+          <td class="px-3 py-2">
+            <span class={badge.class}><%= badge.label %></span>
+          </td>
+          <td class="px-3 py-2 text-right">
+            <.button phx-click="refresh_member" phx-value-id={m.id} data-confirm="Recalculate this member's balance now?">
+              Refresh balance
+            </.button>
+          </td>
+        </tr>
+      <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%= if Enum.empty?(@members) do %>
+    <p class="text-gray-500 text-sm">No members found. Try adjusting the filters.</p>
+  <% end %>
+</div>

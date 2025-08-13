@@ -314,6 +314,8 @@ defmodule ImsWeb.Router do
       live "/events/:id/edit", EventLive.Index, :edit
       live "/events/:id", EventLive.Show, :show
       live "/events/:id/show/edit", EventLive.Show, :edit
+
+        live "/members", Welfare.MemberLive.Index, :index
     end
   end
 
