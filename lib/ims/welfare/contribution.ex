@@ -11,6 +11,7 @@ defmodule Ims.Welfare.Contribution do
     # mpesa number
     field :source, :string
     field :verified, :boolean, default: false
+     field :date_paid, :utc_datetime
     belongs_to :user, Ims.Accounts.User
     belongs_to :event, Ims.Welfare.Event
     belongs_to :payment_gateway, Ims.Payments.PaymentGateway
@@ -19,11 +20,15 @@ defmodule Ims.Welfare.Contribution do
   end
 
   @doc false
-  def changeset(contribution, attrs) do
+   def changeset(contribution, attrs) do
     contribution
-    |> cast(attrs, [:amount, :payment_reference, :event_id, :user_id, :source, :verified])
-    |> validate_required([:amount, :payment_reference, :source, :verified])
+    |> cast(attrs, [:amount, :payment_reference, :event_id, :user_id, :source, :verified, :date_paid])
+    |> validate_required([:amount, :payment_reference, :source, :verified, :event_id, :user_id])
     |> unique_constraint(:payment_reference)
+    |> unique_constraint(:user_event,
+      name: :contributions_user_id_event_id_index,
+      message: "You have already contributed to this event."
+    )
   end
 
   def create(attrs) do

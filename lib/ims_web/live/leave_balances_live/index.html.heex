@@ -1,88 +1,94 @@
 <div class="p-4">
   <h1 class="text-xl font-bold mb-4">Leave Balances Dashboard</h1>
 
-  <div class="flex flex-wrap gap-4 mb-4">
-    <div class="w-1/3">
-      <label class="block text-sm font-medium mb-1">Filter by Leave Type</label>
-      <select phx-change="filter_leave_type" name="leave_type" class="w-full border p-2 rounded">
-        <option value="">All</option>
-        <%= for leave_type <- @all_leave_types do %>
-          <option value={leave_type} selected={@selected_type==leave_type}>
-            <%= leave_type %>
-          </option>
-          <% end %>
-      </select>
-    </div>
-
-    <div class="w-1/3">
+  <!-- Search + action buttons -->
+  <div class="flex flex-wrap items-end gap-4 mb-6">
+    <!-- Search -->
+    <form phx-change="search_user" phx-submit="noop" phx-debounce="300" class="w-full md:w-1/3">
       <label class="block text-sm font-medium mb-1">Search by Name</label>
-      <input type="text" name="search" value={@search} phx-debounce="300" phx-change="search_user"
-        class="w-full border p-2 rounded" placeholder="Enter name..." />
-    </div>
+      <input type="text" name="search" value={@search} class="w-full border p-2 rounded"
+             placeholder="Enter name or personal no..." />
+    </form>
 
-    <div class="flex items-end">
+    <!-- Actions -->
+    <div class="flex items-end gap-2">
+      <!-- Export -->
       <a href={~p"/leave-balances/export?#{@params}"}
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+         class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
         Export to Excel
       </a>
 
-
-
-      <button phx-click="update_leave_balance" class="ml-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+      <!-- Update -->
+      <button phx-click="update_leave_balance"
+              class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
         Update Leave Balances
       </button>
+
+      <!-- Import Excel (single file input, visually hidden NOT display:none) -->
+      <form class="flex items-center gap-2" phx-change="noop">
+        <!-- Wrap input inside label: always works -->
+        <label class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded cursor-pointer">
+          Import Excel
+          <!-- live_file_input renders <input type="file">; keep it visible to a11y but offscreen -->
+          <.live_file_input upload={@uploads.balances}
+                            id="balances-input"
+                            class="sr-only" />
+        </label>
+
+        <!-- Show selected filename -->
+        <%= if entry = List.first(@uploads.balances.entries) do %>
+          <span class="text-sm text-gray-600"><%= entry.client_name %></span>
+        <% end %>
+
+        <!-- Show any upload errors -->
+        <%= for err <- Phoenix.Component.upload_errors(@uploads.balances) do %>
+          <span class="text-xs text-red-600">
+            <%= Phoenix.Component.upload_error_to_string(err) %>
+          </span>
+        <% end %>
+
+        <!-- Show import job status -->
+        <%= if @import_status do %>
+          <span class={
+            "text-xs px-2 py-1 rounded " <>
+            case @import_status do
+              "queued" -> "bg-yellow-100 text-yellow-800"
+              "executing" -> "bg-blue-100 text-blue-800"
+              "completed" -> "bg-green-100 text-green-800"
+              "retryable" -> "bg-orange-100 text-orange-800"
+              "discarded" -> "bg-red-100 text-red-800"
+              "cancelled" -> "bg-gray-100 text-gray-800"
+              _ -> "bg-gray-100 text-gray-800"
+            end
+          }>
+            <%= String.capitalize(@import_status) %>
+          </span>
+        <% end %>
+      </form>
     </div>
   </div>
 
+  <!-- Table -->
   <.table id="leave-balances" rows={@rows} resource="leave_balances" current_user={@current_user}>
-
-    <:col :let={row} label="Personal Number">
-      <%= row.personal_number %>
-    </:col>
-
-
-    <:col :let={row} label="First Name">
-      <%= row.first_name %>
-    </:col>
-
-
-    <:col :let={row} label="Last Name">
-      <%= row.last_name %>
-    </:col>
-
-
-    <:col :let={row} label="Annual Leave">
-      <%= Map.get(row, "Annual Leave" , 0) %>
-    </:col>
-
-    <:col :let={row} label="Sick Leave">
-      <%= Map.get(row, "Sick Leave" , 0) %>
-    </:col>
-
-    <:col :let={row} label="Maternity Leave">
-      <%= Map.get(row, "Maternity Leave" , 0) %>
-    </:col>
-
-    <:col :let={row} label="Paternity Leave">
-      <%= Map.get(row, "Paternity Leave" , 0) %>
-    </:col>
-
-    <:col :let={row} label="Terminal Leave">
-      <%= Map.get(row, "Terminal Leave" , 0) %>
-    </:col>
-
-
+    <:col :let={row} label="Personal Number"><%= row.personal_number %></:col>
+    <:col :let={row} label="First Name"><%= row.first_name %></:col>
+    <:col :let={row} label="Last Name"><%= row.last_name %></:col>
+    <:col :let={row} label="Annual Leave"><%= Map.get(row, "Annual Leave", 0) %></:col>
+    <:col :let={row} label="Sick Leave"><%= Map.get(row, "Sick Leave", 0) %></:col>
+    <:col :let={row} label="Maternity Leave"><%= Map.get(row, "Maternity Leave", 0) %></:col>
+    <:col :let={row} label="Paternity Leave"><%= Map.get(row, "Paternity Leave", 0) %></:col>
+    <:col :let={row} label="Terminal Leave"><%= Map.get(row, "Terminal Leave", 0) %></:col>
   </.table>
-
-
-
 </div>
 
-<%= if @live_action==:edit and @user do %>
-  <.live_component module={ImsWeb.LeaveBalancesLive.FormComponent} id={"edit-user-#{@user.id}"} user={@user}
-    return_to={Routes.leave_balances_index_path(@socket, :index)} />
-  <% end %>
+<!-- Edit user drawer/modal -->
+<%= if @live_action == :edit and @user do %>
+  <.live_component module={ImsWeb.LeaveBalancesLive.FormComponent}
+                   id={"edit-user-#{@user.id}"} user={@user}
+                   return_to={Routes.leave_balances_index_path(@socket, :index)} />
+<% end %>
 
-    <%= if @show_manage_modal do %>
-      <.live_component module={ImsWeb.LeaveBalancesLive.ManageComponent} id="manage-balances" />
-      <% end %>
+<!-- Manage balances modal -->
+<%= if @show_manage_modal do %>
+  <.live_component module={ImsWeb.LeaveBalancesLive.ManageComponent} id="manage-balances" />
+<% end %>

@@ -12,22 +12,27 @@ defmodule ImsWeb.LeaveBalancesLive.ManageComponent do
 
   @impl true
   def update(assigns, socket) do
-    users =
+    user_options =
       Ims.Accounts.list_users()
-      |> Enum.map(&{&1.first_name, &1.id})
+      |> Enum.sort_by(&{&1.first_name, &1.last_name})
+      |> Enum.map(fn u ->
+        {"#{u.first_name} #{u.last_name} (#{u.personal_number})", u.id}
+      end)
 
     leave_types = list_leave_types()
+
+    # Provide a tiny form so the select has name="manage[user_id]"
+    form = to_form(%{"user_id" => ""}, as: :manage)
 
     {:ok,
      socket
      |> assign(assigns)
-     # [{label, id}]
-     |> assign(:user_options, users)
-     # [%LeaveType{}]
+     |> assign(:user_options, user_options)
      |> assign(:leave_types, leave_types)
+     |> assign(:visible_leave_types, leave_types)
      |> assign(:selected_user_id, nil)
-     # %{lt_id => %{balance_id: id | nil, remaining_days: "0"}}
-     |> assign(:balances_map, %{})}
+     |> assign(:balances_map, %{})
+     |> assign(:form, form)}
   end
 
   @impl true
@@ -52,7 +57,7 @@ defmodule ImsWeb.LeaveBalancesLive.ManageComponent do
           </div>
 
     <!-- User selector -->
-          <form phx-change="select_user" phx-target={@myself} class="p-4 space-y-2">
+          <%!-- <form phx-change="select_user" phx-target={@myself} class="p-4 space-y-2">
             <label class="block text-sm font-medium">User</label>
             <select name="user_id" class="w-full border rounded px-3 py-2">
               <option value="">-- Select user --</option>
@@ -62,7 +67,26 @@ defmodule ImsWeb.LeaveBalancesLive.ManageComponent do
                 </option>
               <% end %>
             </select>
-          </form>
+          </form> --%>
+
+          <div class="relative w-full px-4 py-3 mb-4" phx-update="ignore" id="select_user_container">
+            <label class="block text-sm font-medium mb-1">Select a User</label>
+            <select
+              id="select_user_id"
+              name="manage[user_id]"
+              phx-hook="select2JS"
+              data-phx-event="select_changed"
+              data-placeholder="Search for a user..."
+              class="hidden"
+            >
+              <option value="">-- Select user --</option>
+              <%= for {label, id} <- @user_options do %>
+                <option value={id} selected={to_string(id) == to_string(@selected_user_id)}>
+                  {label}
+                </option>
+              <% end %>
+            </select>
+          </div>
 
           <%= if @selected_user_id do %>
             <form phx-submit="save" phx-target={@myself} class="p-4 space-y-4">
@@ -141,6 +165,35 @@ defmodule ImsWeb.LeaveBalancesLive.ManageComponent do
      |> assign(:selected_user_id, id)
      |> assign(:visible_leave_types, visible)
      |> assign(:balances_map, map)}
+  end
+
+  @impl true
+  def handle_event(
+        "select_changed",
+        %{"select_id" => "select_user_id", "manage[user_id]" => user_id},
+        socket
+      ) do
+    case user_id do
+      "" ->
+        {:noreply,
+         socket
+         |> assign(:selected_user_id, nil)
+         |> assign(:visible_leave_types, socket.assigns.leave_types)
+         |> assign(:balances_map, %{})}
+
+      _ ->
+        id = String.to_integer(user_id)
+        user = Ims.Accounts.get_user!(id)
+
+        visible = filter_leave_types_by_gender(socket.assigns.leave_types, user.gender)
+        map = balances_map_for_user(id, visible)
+
+        {:noreply,
+         socket
+         |> assign(:selected_user_id, id)
+         |> assign(:visible_leave_types, visible)
+         |> assign(:balances_map, map)}
+    end
   end
 
   def handle_event("save", %{"user_id" => uid, "balances" => balances_params}, socket) do

@@ -75,7 +75,7 @@ defmodule ImsWeb.DashboardLive.Index do
 
   @impl true
   def handle_event("set_tab", %{"tab" => tab}, socket) do
-    {:noreply, push_patch(socket, to: ~p"/dashboard?tab=#{tab}")}
+    {:noreply, push_patch(socket, to: ~p"/?tab=#{tab}")}
   end
 
   # ---------- Data loaders ----------

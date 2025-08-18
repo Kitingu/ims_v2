@@ -2,6 +2,7 @@ defmodule Ims.Welfare do
   @moduledoc """
   The Welfare context.
   """
+  require Logger
 
   import Ecto.Query, warn: false
   alias Ims.Repo
@@ -323,7 +324,7 @@ def refresh_member_balance(%Member{} = member) do
         join: e in Event, on: e.id == c.event_id,
         where:
           c.user_id == ^member.user_id and
-          c.verified == true and
+          # c.verified == true and
           e.status != ^"archived",
         select: coalesce(sum(c.amount), 0)
       )
@@ -331,11 +332,11 @@ def refresh_member_balance(%Member{} = member) do
       |> dec()
 
     # 3) Compute eligibility and amount_due
-    eligibility = Decimal.cmp(total_paid, total_payable) != :lt
+    eligibility = Decimal.compare(total_paid, total_payable) != :lt
     amount_due =
       total_payable
       |> Decimal.sub(total_paid)
-      |> (fn d -> if Decimal.cmp(d, 0) == :lt, do: Decimal.new(0), else: d end).()
+      |> (fn d -> if Decimal.compare(d, 0) == :lt, do: Decimal.new(0), else: d end).()
 
     member
     |> Ecto.Changeset.change(
@@ -344,6 +345,29 @@ def refresh_member_balance(%Member{} = member) do
       eligibility: eligibility
     )
     |> Repo.update!()
+  end
+
+  def update_member_amount_paid(user_id, event_id, amount) do
+    # Find the member for this user
+    member =
+      from(m in Member,
+        where: m.user_id == ^user_id,
+        select: m
+      )
+      |> Repo.one()
+
+    if member do
+      # Update the member's amount paid
+      new_amount_paid = Decimal.add(member.amount_paid, dec(amount))
+
+      member
+      |> Ecto.Changeset.change(amount_paid: new_amount_paid)
+      |> Repo.update!()
+
+      Logger.info("Updated member #{member.id} amount_paid to #{new_amount_paid}")
+    else
+      Logger.warn("No member found for user_id=#{user_id}")
+    end
   end
 
   def list_members do

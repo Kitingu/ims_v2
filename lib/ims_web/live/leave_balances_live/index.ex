@@ -6,22 +6,79 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
   alias Ims.Leave
   alias Ims.Leave.LeaveType
   alias Ims.Accounts
-  alias Decimal
   require Logger
 
-  # If you rely on Routes.* helpers (Phoenix < 1.7 style)
+  alias Ims.Leave.Workers.LeaveBalanceUploadWorker
+  alias Oban
+  alias Oban.Job
+
   alias ImsWeb.Router.Helpers, as: Routes
 
   @impl true
   def mount(_params, _session, socket) do
+    socket =
+      socket
+      |> allow_upload(:balances,
+        # LiveView 1.0.9: accept lowercase ext or MIME
+        accept: ~w(.xlsx),
+        max_entries: 1,
+        auto_upload: true,
+        max_file_size: 10_000_000,
+        progress: &handle_upload_progress/3
+      )
+      |> assign(:import_job_id, nil)
+      |> assign(:import_status, nil)
+
     {:ok, assign_defaults(socket)}
+  end
+
+  # LV 1.0.9: consume_uploaded_entries/3 -> returns a LIST (not {list, socket})
+  defp handle_upload_progress(:balances, entry, socket) do
+    Logger.debug("upload balances=#{inspect(entry.client_name)} done?=#{entry.done?}")
+
+    if entry.done? do
+      paths =
+        consume_uploaded_entries(socket, :balances, fn %{path: path}, entry ->
+          dest_dir = Path.join(:code.priv_dir(:ims), "uploads")
+          File.mkdir_p!(dest_dir)
+
+          dest = Path.join(dest_dir, "#{entry.uuid}-#{Path.basename(entry.client_name)}")
+          # File.cp!(path, dest)
+          {:ok, dest}
+        end)
+
+      case paths do
+        [xlsx_path | _] ->
+          Logger.debug("enqueue oban job for path=#{xlsx_path}")
+
+          case Oban.insert(LeaveBalanceUploadWorker.new(%{"xlsx_path" => xlsx_path})) do
+            {:ok, %Job{id: jid}} ->
+              Process.send_after(self(), {:poll_job, jid}, 500)
+
+              {:noreply,
+               socket
+               |> put_flash(:info, "Import queued.")
+               |> assign(:import_job_id, jid)
+               |> assign(:import_status, "queued")
+               |> assign(:show_manage_modal, false)}
+
+            {:error, reason} ->
+              Logger.error("failed to queue oban job: #{inspect(reason)}")
+              {:noreply, put_flash(socket, :error, "Failed to queue job: #{inspect(reason)}")}
+          end
+
+        [] ->
+          Logger.error("consume_uploaded_entries returned no paths")
+          {:noreply, put_flash(socket, :error, "No file received.")}
+      end
+    else
+      {:noreply, socket}
+    end
   end
 
   @impl true
   def handle_params(params, _url, socket) do
     live_action = socket.assigns[:live_action] || :index
-
-    # Keep your original columns = names
     leave_types = Repo.all(from lt in LeaveType, select: lt.name)
 
     case live_action do
@@ -64,17 +121,30 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
     )
   end
 
-  ## ===== Modal open/close + table controls =====
+  # ===== Search & table controls =====
 
-  # Open the Manage Balances modal when the top button is clicked
   @impl true
   def handle_event("update_leave_balance", _params, socket) do
     {:noreply, assign(socket, :show_manage_modal, true)}
   end
 
-  # Close modal (overlay/✕ inside the component sends this to parent)
   def handle_event("close_manage_balances", _params, socket) do
     {:noreply, assign(socket, :show_manage_modal, false)}
+  end
+
+  def handle_event("search_user", %{"search" => search}, socket) do
+    params =
+      socket.assigns.params
+      |> Map.put("search", search)
+      |> Map.put("page", "1")
+
+    page = Leave.paginated_leave_balances(params)
+
+    {:noreply,
+     socket
+     |> assign(:search, search)
+     |> assign(:params, params)
+     |> assign(:rows, page)}
   end
 
   @impl true
@@ -121,7 +191,6 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
      )}
   end
 
-  # Matches your filter/search controls in index.html.heex
   def handle_event("filter_leave_type", %{"leave_type" => lt}, socket) do
     params =
       socket.assigns.params
@@ -133,21 +202,6 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
     {:noreply,
      socket
      |> assign(:selected_type, lt)
-     |> assign(:params, params)
-     |> assign(:rows, page)}
-  end
-
-  def handle_event("search_user", %{"search" => search}, socket) do
-    params =
-      socket.assigns.params
-      |> Map.put("search", search)
-      |> Map.put("page", "1")
-
-    page = Leave.paginated_leave_balances(params)
-
-    {:noreply,
-     socket
-     |> assign(:search, search)
      |> assign(:params, params)
      |> assign(:rows, page)}
   end
@@ -182,48 +236,52 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
      )}
   end
 
-  # Pull every page matching current filters
-  defp gather_all_balances(params) do
-    base = params |> Map.put_new("page_size", "500") |> Map.put("page", "1")
-    page = Ims.Leave.paginated_leave_balances(base)
+  @impl true
+  def handle_event("noop", _params, socket), do: {:noreply, socket}
 
-    entries =
-      Enum.reduce((page.page_number + 1)..page.total_pages, page.entries, fn p, acc ->
-        more =
-          base
-          |> Map.put("page", Integer.to_string(p))
-          |> Ims.Leave.paginated_leave_balances()
-          |> Map.get(:entries)
+  # ===== Job polling =====
 
-        acc ++ more
-      end)
+  @impl true
+  def handle_info({:poll_job, job_id}, socket) do
+    case get_job_state(job_id) do
+      nil ->
+        Logger.debug("job #{job_id} not found; stopping poll")
+        {:noreply, socket |> assign(:import_status, nil) |> assign(:import_job_id, nil)}
 
-    entries
+      state when state in ~w(completed discarded cancelled) ->
+        Logger.debug("job #{job_id} finished state=#{state}")
+        params = socket.assigns.params || %{}
+        page = Leave.paginated_leave_balances(params)
+
+        {flash_level, flash_msg} =
+          case state do
+            "completed" -> {:info, "Import finished."}
+            "discarded" -> {:error, "Import failed. Check logs."}
+            "cancelled" -> {:warning, "Import cancelled."}
+          end
+
+        Process.send_after(self(), :clear_status, 5_000)
+
+        {:noreply,
+         socket
+         |> put_flash(flash_level, flash_msg)
+         |> assign(:rows, page)
+         |> assign(:import_status, state)
+         |> assign(:import_job_id, nil)}
+
+      state ->
+        Process.send_after(self(), {:poll_job, job_id}, 800)
+        {:noreply, assign(socket, :import_status, state)}
+    end
   end
 
-  # Minimal CSV escaping
-  defp csv_line(list) do
-    list
-    |> Enum.map(&csv_cell/1)
-    |> Enum.intersperse(",")
+  @impl true
+  def handle_info(:clear_status, socket) do
+    {:noreply, assign(socket, :import_status, nil)}
   end
 
-  defp csv_cell(nil), do: "\"\""
-
-  defp csv_cell(v) do
-    s =
-      v
-      |> to_string()
-      |> String.replace("\"", "\"\"")
-
-    ["\"", s, "\""]
-  end
-
-  ## ===== Messages from the ManageComponent =====
-  # ManageComponent calls: send(self(), {:flash, :info, "Leave balances updated."})
   @impl true
   def handle_info({:flash, level, msg}, socket) when level in [:info, :error, :warning] do
-    # Refresh the table after an update, keep the modal open so they can continue editing
     params = socket.assigns.params || %{}
     page = Leave.paginated_leave_balances(params)
     {:noreply, socket |> put_flash(level, msg) |> assign(:rows, page)}
@@ -234,6 +292,33 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
     {:noreply, assign(socket, :show_manage_modal, false)}
   end
 
-  # Ignore anything else
   def handle_info(_msg, socket), do: {:noreply, socket}
+
+  # ===== Helpers =====
+
+  defp get_job_state(job_id) do
+    case Repo.get(Job, job_id) do
+      nil -> nil
+      %Job{state: state} -> to_string(state)
+    end
+  end
+
+  defp gather_all_balances(params) do
+    base = params |> Map.put_new("page_size", "500") |> Map.put("page", "1")
+    page = Ims.Leave.paginated_leave_balances(base)
+
+    Enum.reduce((page.page_number + 1)..page.total_pages, page.entries, fn p, acc ->
+      more =
+        base
+        |> Map.put("page", Integer.to_string(p))
+        |> Ims.Leave.paginated_leave_balances()
+        |> Map.get(:entries)
+
+      acc ++ more
+    end)
+  end
+
+  defp csv_line(list), do: list |> Enum.map(&csv_cell/1) |> Enum.intersperse(",")
+  defp csv_cell(nil), do: "\"\""
+  defp csv_cell(v), do: ["\"", v |> to_string() |> String.replace("\"", "\"\""), "\""]
 end

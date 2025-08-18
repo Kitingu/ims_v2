@@ -120,7 +120,7 @@ defmodule Ims.Accounts.User do
     |> validate_length(:email, max: 160)
     |> validate_msisdn()
     |> unique_constraint(:msisdn, name: "unique_msisdn")
-    |> validate_length(:personal_number, min: 6, max: 8)
+    |> validate_length(:personal_number, min: 2)
     |> put_change(:sys_user, false)
   end
 

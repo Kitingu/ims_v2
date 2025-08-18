@@ -6,21 +6,18 @@ defmodule Ims.Workers.ProcessContributionsWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"file_path" => path}}) do
-    # Parse the Excel file with xlsxir
     {:ok, table_id} = Xlsxir.multi_extract(path, 0)
     rows = Xlsxir.get_list(table_id)
     Xlsxir.close(table_id)
 
     Logger.info("Processing contributions from file: #{path}")
 
-    # Assume first row is headers, rest are data
     [headers | data_rows] = rows
 
     header_map =
       Enum.with_index(headers, fn h, i -> {h, i} end)
       |> Map.new()
 
-    # Process each data row
     data_rows
     |> Enum.each(fn row ->
       with {:ok, event_id} <- parse_event_id(get_cell(row, header_map, "event_id")),
@@ -30,7 +27,6 @@ defmodule Ims.Workers.ProcessContributionsWorker do
            {:ok, paid_at} <- parse_date(get_cell(row, header_map, "date paid")) do
         ensure_member_exists(user, event)
 
-        # Check if payment_reference is provided, otherwise generate a unique one
         payment_reference =
           case get_cell(row, header_map, "payment reference") do
             nil -> generate_payment_reference(user.id, event.id)
@@ -38,32 +34,38 @@ defmodule Ims.Workers.ProcessContributionsWorker do
             reference -> reference
           end
 
-        # Check if the payment reference already exists
-        case Repo.get_by(Contribution, payment_reference: payment_reference) do
-          nil ->
-            attrs = %{
-              amount: amount,
-              payment_reference: payment_reference,
-              source: "MPESA",
-              user_id: user.id,
-              event_id: event.id,
-              date_paid: paid_at
-            }
+        # ---------- INSERT with ON CONFLICT DO NOTHING ----------
+        attrs = %{
+          amount: amount,
+          payment_reference: payment_reference,
+          source: "MPESA",
+          user_id: user.id,
+          event_id: event.id,
+          date_paid: paid_at
+        }
 
-            # Insert the contribution
-            %Contribution{}
-            |> Contribution.changeset(attrs)
-            |> Repo.insert!()
+        insert_result =
+          Repo.insert(
+            %Contribution{} |> Contribution.changeset(attrs),
+            on_conflict: :nothing,
+            conflict_target: [:user_id, :event_id]
+          )
 
-            # Update the event's total amount_paid
+        case insert_result do
+          {:ok, %Contribution{}} ->
             update_event_amount_paid(event, amount)
+            Ims.Welfare.update_member_amount_paid(user.id, event.id, amount)
 
-          _existing_contribution ->
-            # Log and skip the contribution if the payment reference exists
-            Logger.info(
-              "Payment reference #{payment_reference} already exists. Skipping this contribution."
-            )
+          {:error, changeset} ->
+            # Handle other errors (e.g., payment_reference unique)
+            Logger.error("Failed to insert contribution: #{inspect(changeset.errors)}")
+
+          {:ok, nil} ->
+            # Conflict hit (user already has a contribution for this event)
+            Logger.info("User #{user.id} already contributed to event #{event.id}; skipping.")
         end
+
+        # -------------------------------------------------------
       else
         {:error, reason} ->
           Logger.error("Failed to process row: #{inspect(row)}. Reason: #{reason}")
@@ -110,7 +112,6 @@ defmodule Ims.Workers.ProcessContributionsWorker do
         {:error, "User not found"}
 
       {:ok, user} ->
-        # Safely access the :id field
         user_id = Map.get(user, :id)
 
         if user_id do
@@ -146,12 +147,10 @@ defmodule Ims.Workers.ProcessContributionsWorker do
   defp ensure_member_exists(user, event) do
     alias Ims.Welfare.Member
 
-    # Log the result of the query with a proper label
     Repo.get_by(Member, user_id: user.id)
 
     case Repo.get_by(Member, user_id: user.id) do
       nil ->
-        # No member found, create new welfare member
         entry_date = event.inserted_at |> DateTime.to_date()
 
         member_attrs = %{
@@ -170,30 +169,18 @@ defmodule Ims.Workers.ProcessContributionsWorker do
         Logger.info("Created new welfare member for user_id=#{user.id}")
 
       _member ->
-        # Member already exists, nothing to do
         :ok
     end
   end
 
   def generate_payment_reference(user_id, event_id) do
-    # Combine user_id and event_id into a single string for hashing
     input_string = "#{user_id}-#{event_id}"
-
-    # Generate a SHA256 hash from the input string
     hash = :crypto.hash(:sha256, input_string) |> Base.encode16()
-
-    # Use the first 16 characters of the hash as the payment reference
     payment_reference = String.slice(hash, 0, 16)
 
-    # Ensure uniqueness by checking if the reference already exists in the database
     case Repo.get_by(Contribution, payment_reference: payment_reference) do
-      nil ->
-        # If unique, return the generated reference
-        payment_reference
-
-      _existing_contribution ->
-        # If the reference already exists, regenerate with a timestamp or counter
-        "#{payment_reference}-#{DateTime.utc_now() |> DateTime.to_unix()}"
+      nil -> payment_reference
+      _existing_contribution -> "#{payment_reference}-#{DateTime.utc_now() |> DateTime.to_unix()}"
     end
   end
 
@@ -207,4 +194,3 @@ defmodule Ims.Workers.ProcessContributionsWorker do
     Logger.info("Updated event amount_paid to #{new_amount} for event #{event.id}")
   end
 end
-

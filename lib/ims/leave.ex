@@ -356,9 +356,10 @@ defmodule Ims.Leave do
   def paginated_leave_balances(params) do
     page = Map.get(params, "page", "1") |> String.to_integer()
     page_size = Map.get(params, "page_size", "10") |> String.to_integer()
+    search = Map.get(params, "search", "") |> to_string() |> String.trim()
+    lt_filter = Map.get(params, "leave_type", "") |> to_string() |> String.trim()
 
-    # First get all users with pagination
-    user_query =
+    base_user_q =
       from u in Ims.Accounts.User,
         select: %{
           id: u.id,
@@ -367,13 +368,31 @@ defmodule Ims.Leave do
           last_name: u.last_name
         }
 
-    user_page = Ims.Repo.paginate(user_query, page: page, page_size: page_size)
+    # Apply search (if any)
+    user_q =
+      if search == "" do
+        base_user_q
+      else
+        like = "%#{search}%"
 
-    # Get all leave types
+        where(
+          base_user_q,
+          [u],
+          ilike(u.first_name, ^like) or
+            ilike(u.last_name, ^like) or
+            ilike(fragment("concat(?, ' ', ?)", u.first_name, u.last_name), ^like) or
+            ilike(u.personal_number, ^like)
+        )
+      end
+
+    # Paginate *after* filtering users
+    user_page = Ims.Repo.paginate(user_q, page: page, page_size: page_size)
+
+    # Get all leave types (for columns)
     leave_types = Repo.all(from lt in Ims.Leave.LeaveType, select: lt.name)
 
-    # Get leave balances for these users
-    balances_query =
+    # Balances for users on this page (optionally filter by a specific leave type)
+    balances_q =
       from lb in Ims.Leave.LeaveBalance,
         join: u in assoc(lb, :user),
         join: lt in assoc(lb, :leave_type),
@@ -384,18 +403,25 @@ defmodule Ims.Leave do
           remaining_days: lb.remaining_days
         }
 
-    balances = Repo.all(balances_query)
+    balances_q =
+      if lt_filter == "" do
+        balances_q
+      else
+        where(balances_q, [lb, _u, lt], ilike(lt.name, ^lt_filter))
+      end
 
-    # Build the result with all leave types for each user
+    balances = Repo.all(balances_q)
+
     entries =
       user_page.entries
       |> Enum.map(fn user ->
         user_balances =
-          Enum.filter(balances, &(&1.user_id == user.id))
+          balances
+          |> Enum.filter(&(&1.user_id == user.id))
           |> Enum.map(fn b -> {b.leave_type, Decimal.to_float(b.remaining_days)} end)
           |> Enum.into(%{})
 
-        # Merge with default 0 values for all leave types
+        # default 0.0 for all displayed leave types
         complete_balances =
           leave_types
           |> Enum.map(&{&1, 0.0})
@@ -466,6 +492,4 @@ defmodule Ims.Leave do
       )
     end)
   end
-
-  
 end

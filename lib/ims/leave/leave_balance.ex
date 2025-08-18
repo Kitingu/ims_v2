@@ -78,4 +78,23 @@ defmodule Ims.Leave.LeaveBalance do
         {:error, "Not enough leave balance"}
     end
   end
+
+  def upsert_leave_balance(%{user_id: user_id, leave_type_id: leave_type_id, remaining_days: remaining_days}) do
+    now = DateTime.utc_now(:second)
+
+    insert = %__MODULE__{
+      user_id: user_id,
+      leave_type_id: leave_type_id,
+      remaining_days: remaining_days,
+      inserted_at: now,
+      updated_at: now
+    }
+
+    Repo.insert(
+      insert,
+      on_conflict: [set: [remaining_days: remaining_days, updated_at: now]],
+      conflict_target: [:user_id, :leave_type_id],
+      returning: true
+    )
+  end
 end
