@@ -2,7 +2,7 @@ defmodule ImsWeb.EventLive.Show do
   use ImsWeb, :live_view
   alias Ims.Welfare
   alias Ims.Welfare.Contribution
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
 
   @paginator_opts [order_by: [desc: :inserted_at], page_size: 10]
 

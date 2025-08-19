@@ -5,7 +5,7 @@ defmodule ImsWeb.UserConfirmationLiveTest do
   import Ims.AccountsFixtures
 
   alias Ims.Accounts
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
 
   setup do
     %{user: user_fixture()}

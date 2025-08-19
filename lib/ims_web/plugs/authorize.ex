@@ -3,7 +3,7 @@ defmodule ImsWeb.Plugs.EnsureAuthorizedPlug do
   import Phoenix.Controller
   # import Phoenix.VerifiedRoutes
 
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   alias Ims.Accounts.User
 
   @behaviour Plug

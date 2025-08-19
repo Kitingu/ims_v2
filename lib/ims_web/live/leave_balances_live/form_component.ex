@@ -2,7 +2,7 @@
 defmodule ImsWeb.LeaveBalancesLive.ManageComponent do
   use ImsWeb, :live_component
 
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   import Ecto.Query, only: [from: 2]
   alias Ims.Accounts
   # alias Ims.Accounts.User

@@ -1,4 +1,4 @@
-alias Ims.Repo
+  alias Ims.Repo
 alias Ims.Inventory.AssetType
 alias Ims.Inventory.AssetName
 alias Ims.Inventory.Category

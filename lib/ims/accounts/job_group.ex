@@ -2,7 +2,7 @@ defmodule Ims.Accounts.JobGroup do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   use Ims.RepoHelpers, repo: Repo
 
   schema "job_groups" do

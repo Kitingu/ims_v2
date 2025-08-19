@@ -2,7 +2,7 @@
 defmodule ImsWeb.LeaveBalanceExportController do
   use ImsWeb, :controller
   import Ecto.Query, only: [from: 2]
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   alias Ims.Leave
   alias Ims.Leave.LeaveType
 

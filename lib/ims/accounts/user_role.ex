@@ -1,7 +1,7 @@
 defmodule Ims.Accounts.UserRole do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   use Ims.RepoHelpers, repo: Repo
 
   schema "user_roles" do

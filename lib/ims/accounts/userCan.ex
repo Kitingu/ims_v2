@@ -3,7 +3,7 @@ defimpl Canada.Can, for: Ims.Accounts.User do
   Checks if a user has the required permissions for the given action and resource.
   Dynamically fetches roles and permissions since they cannot be preloaded.
   """
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   alias Ims.Accounts.Role
   alias Ims.Accounts.Permission
   import Ecto.Query

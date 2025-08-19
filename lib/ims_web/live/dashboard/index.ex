@@ -1,7 +1,7 @@
 defmodule ImsWeb.DashboardLive.Index do
   use ImsWeb, :live_view
   import Ecto.Query
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
 
   # Schemas
   alias Ims.Accounts.User

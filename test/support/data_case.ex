@@ -18,7 +18,7 @@ defmodule Ims.DataCase do
 
   using do
     quote do
-      alias Ims.Repo
+      alias Ims.Repo.Audited, as: Repo
 
       import Ecto
       import Ecto.Changeset

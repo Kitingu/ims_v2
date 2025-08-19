@@ -4,7 +4,8 @@ defmodule Ims.Accounts do
   """
 
   import Ecto.Query, warn: false
-  alias Ims.Repo
+  # alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
 
   alias Ims.Accounts.{User, Role, Departments, UserToken, UserNotifier}
   alias Ims.Leave.LeaveBalance

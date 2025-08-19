@@ -1,7 +1,7 @@
 defmodule Ims.Workers.LeaveAccrualWorker do
   use Oban.Worker, queue: :default, max_attempts: 1
 
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   alias Ims.Leave.{LeaveBalance, LeaveType}
   import Ecto.Query
   require Logger

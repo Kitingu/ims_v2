@@ -4,7 +4,7 @@ defmodule Ims.Settings do
   """
 
   import Ecto.Query, warn: false
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
 
   alias Ims.Settings.Setting
 

@@ -1,9 +1,9 @@
 defmodule Ims.Settings.Setting do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Ims.Repo.Audited, as: Repo
   use Ims.RepoHelpers, repo: Ims.Repo
   import Ecto.Query
-  alias Ims.Repo
 
   schema "settings" do
     field :name, :string
@@ -20,7 +20,7 @@ defmodule Ims.Settings.Setting do
   end
 
   def get_setting(name) do
-    case Ims.Repo.get_by(__MODULE__, name: name) do
+    case Repo.get_by(__MODULE__, name: name) do
       nil -> nil
       setting -> setting.value
     end

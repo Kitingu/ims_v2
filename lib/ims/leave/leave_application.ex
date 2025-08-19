@@ -2,7 +2,7 @@ defmodule Ims.Leave.LeaveApplication do
   use Ecto.Schema
   import Ecto.Changeset
   alias Ims.Leave.{LeaveBalance, LeaveType}
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   use Ims.RepoHelpers, repo: Repo
   import Ecto.Query
 

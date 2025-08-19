@@ -2,7 +2,7 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
   use Oban.Worker, queue: :default, max_attempts: 3
 
   alias Ims.Accounts.{User, JobGroup}
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
 
   import Ecto.Query
   require Logger

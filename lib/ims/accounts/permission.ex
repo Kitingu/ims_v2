@@ -8,7 +8,7 @@ defmodule Ims.Accounts.Permission do
   #   alias Ims.SystemUserRole
   #   alias Ims.SystemUser
 
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
 
   @type t :: %__MODULE__{name: String.t(), approval_levels: Integer.t()}
   @timestamps_opts [type: :naive_datetime_usec]

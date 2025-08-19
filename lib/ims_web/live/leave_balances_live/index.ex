@@ -2,7 +2,7 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
   use ImsWeb, :live_view
   import Ecto.Query
 
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   alias Ims.Leave
   alias Ims.Leave.LeaveType
   alias Ims.Accounts
@@ -43,7 +43,7 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
           File.mkdir_p!(dest_dir)
 
           dest = Path.join(dest_dir, "#{entry.uuid}-#{Path.basename(entry.client_name)}")
-          # File.cp!(path, dest)
+          File.cp!(path, dest)
           {:ok, dest}
         end)
 
@@ -246,10 +246,14 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
     case get_job_state(job_id) do
       nil ->
         Logger.debug("job #{job_id} not found; stopping poll")
-        {:noreply, socket |> assign(:import_status, nil) |> assign(:import_job_id, nil)}
+
+        {:noreply,
+         socket
+         |> assign(%{import_status: nil, import_job_id: nil})}
 
       state when state in ~w(completed discarded cancelled) ->
         Logger.debug("job #{job_id} finished state=#{state}")
+
         params = socket.assigns.params || %{}
         page = Leave.paginated_leave_balances(params)
 
@@ -260,18 +264,33 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
             "cancelled" -> {:warning, "Import cancelled."}
           end
 
+        # 🧹 Try to clean up the uploaded file
+        case Repo.get(Job, job_id) do
+          %Job{args: %{"xlsx_path" => path}} ->
+            Logger.debug("cleaning up uploaded file #{path}")
+            _ = File.rm(path)
+
+          _ ->
+            :ok
+        end
+
         Process.send_after(self(), :clear_status, 5_000)
 
         {:noreply,
          socket
          |> put_flash(flash_level, flash_msg)
-         |> assign(:rows, page)
-         |> assign(:import_status, state)
-         |> assign(:import_job_id, nil)}
+         |> assign(%{
+           rows: page,
+           import_status: state,
+           import_job_id: nil
+         })}
 
       state ->
         Process.send_after(self(), {:poll_job, job_id}, 800)
-        {:noreply, assign(socket, :import_status, state)}
+
+        {:noreply,
+         socket
+         |> assign(%{import_status: state})}
     end
   end
 

@@ -1,4 +1,4 @@
-alias Ims.Repo
+  alias Ims.Repo
 alias Ims.Settings.Setting
 
 settings = [

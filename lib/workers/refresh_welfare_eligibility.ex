@@ -1,7 +1,7 @@
 defmodule Ims.Workers.Welfare.MemberRefreshWorkers do
   use Oban.Worker, queue: :welfare, max_attempts: 3
 
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   alias Ims.Welfare
   import Ecto.Query
 
@@ -41,5 +41,5 @@ defmodule Ims.Workers.Welfare.MemberRefreshWorkers do
     end)
   end
 
- 
+
 end

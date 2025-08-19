@@ -11,6 +11,7 @@ defmodule ImsWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_current_user
+    plug ImsWeb.Plugs.AuditPlug
   end
 
   pipeline :api do
@@ -60,7 +61,7 @@ defmodule ImsWeb.Router do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     live_session :redirect_if_user_is_authenticated,
-      on_mount: [{ImsWeb.UserAuth, :redirect_if_user_is_authenticated}] do
+      on_mount: [{ImsWeb.UserAuth, :redirect_if_user_is_authenticated},{ImsWeb.Hooks.AuditOnMount, :set_actor} ] do
       live "/users/log_in", UserLoginLive, :new
       live "/users/reset_password", UserForgotPasswordLive, :new
       live "/users/reset_password/:token", UserResetPasswordLive, :edit
@@ -75,7 +76,7 @@ defmodule ImsWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{ImsWeb.UserAuth, :ensure_authenticated}] do
+      on_mount: [{ImsWeb.UserAuth, :ensure_authenticated},{ImsWeb.Hooks.AuditOnMount, :set_actor} ] do
       # live "/", UserProfileLive, :index
       live "/", DashboardLive.Index, :index
 
@@ -196,7 +197,7 @@ defmodule ImsWeb.Router do
 
     live_session :admin,
       # ✅ Mounts `current_user`
-      on_mount: [{ImsWeb.UserAuth, :mount_current_user}] do
+      on_mount: [{ImsWeb.UserAuth, :mount_current_user},{ImsWeb.Hooks.AuditOnMount, :set_actor} ] do
       get "/users/download_template", UserController, :download_template
 
       live "/users", UserLive, :index
@@ -252,7 +253,7 @@ defmodule ImsWeb.Router do
     pipe_through [:admin_auth]
 
     live_session :hr,
-      on_mount: [{ImsWeb.UserAuth, :mount_current_user}] do
+      on_mount: [{ImsWeb.UserAuth, :mount_current_user},{ImsWeb.Hooks.AuditOnMount, :set_actor} ] do
       live "/leave_applications", LeaveApplicationLive.Index, :index
 
       live "/leave_applications/:id/edit", LeaveApplicationLive.Index, :edit
@@ -301,7 +302,7 @@ defmodule ImsWeb.Router do
     pipe_through [:admin_auth]
 
     live_session :welfare,
-      on_mount: [{ImsWeb.UserAuth, :mount_current_user}] do
+      on_mount: [{ImsWeb.UserAuth, :mount_current_user},{ImsWeb.Hooks.AuditOnMount, :set_actor} ] do
       live "/event_types", EventTypeLive.Index, :index
       live "/event_types/new", EventTypeLive.Index, :new
       live "/event_types/:id/edit", EventTypeLive.Index, :edit

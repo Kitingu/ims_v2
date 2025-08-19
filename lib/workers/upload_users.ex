@@ -2,7 +2,7 @@ defmodule Ims.Workers.UploadUsersWorker do
   use Oban.Worker, queue: :default, max_attempts: 3
 
   alias Ims.Accounts.User
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   alias Ims.Leave.LeaveType
   alias Ims.Leave.LeaveBalance
 

@@ -5,7 +5,7 @@ defmodule Ims.Welfare do
   require Logger
 
   import Ecto.Query, warn: false
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
 
   # alias Ims.Welfare.EventType
   alias Ims.Accounts

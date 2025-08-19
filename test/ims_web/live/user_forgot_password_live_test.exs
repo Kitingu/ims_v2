@@ -5,7 +5,7 @@ defmodule ImsWeb.UserForgotPasswordLiveTest do
   import Ims.AccountsFixtures
 
   alias Ims.Accounts
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
 
   describe "Forgot password page" do
     test "renders email page", %{conn: conn} do

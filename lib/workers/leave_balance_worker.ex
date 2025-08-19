@@ -12,7 +12,7 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
 
   use Oban.Worker, queue: :imports, max_attempts: 3
 
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   import Ecto.Query
 
   alias Ims.Accounts.{User, Departments}

@@ -2,7 +2,7 @@ defmodule Ims.Welfare.Member do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   require Logger
   alias Ims.Welfare.Event
 

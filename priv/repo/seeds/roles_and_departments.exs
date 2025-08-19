@@ -1,4 +1,4 @@
-alias Ims.Repo
+  alias Ims.Repo
 alias Ims.Accounts.{Role, Departments, Permission, JobGroup}
 
 admin_role = Repo.insert!(%Role{name: "Admin"})

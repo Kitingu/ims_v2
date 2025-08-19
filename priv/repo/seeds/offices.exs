@@ -1,4 +1,4 @@
-alias Ims.Repo
+  alias Ims.Repo
 alias Ims.Inventory.Office
 alias Ims.Inventory.Location
 IO.puts("🌱 Seeding offices...")

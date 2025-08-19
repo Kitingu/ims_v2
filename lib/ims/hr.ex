@@ -4,7 +4,7 @@ defmodule Ims.HR do
   """
 
   import Ecto.Query, warn: false
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
 
   alias Ims.HR.AwayRequest
   alias Ims.Interns.InternAttachee

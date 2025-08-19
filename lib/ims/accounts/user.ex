@@ -1,7 +1,7 @@
 defmodule Ims.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   import Ecto.Query
   alias Ims.Accounts.{Role, Departments, JobGroup}
   alias Ims.Leave.{LeaveBalance, LeaveType}
@@ -321,6 +321,7 @@ defmodule Ims.Accounts.User do
 
   def search(queryable \\ __MODULE__, filters) do
     IO.inspect(filters, label: "Filters for search")
+
     query =
       Enum.reduce(filters, queryable, fn {k, v}, accum_query ->
         cond do
@@ -338,9 +339,13 @@ defmodule Ims.Accounts.User do
 
           k == :query ->
             IO.inspect(v, label: "Query for search")
-            from(u in accum_query, where: ilike(u.first_name, ^"%#{v}%") or
-              ilike(u.last_name, ^"%#{v}%") or
-              ilike(u.personal_number, ^"%#{v}%"))
+
+            from(u in accum_query,
+              where:
+                ilike(u.first_name, ^"%#{v}%") or
+                  ilike(u.last_name, ^"%#{v}%") or
+                  ilike(u.personal_number, ^"%#{v}%")
+            )
 
           true ->
             accum_query

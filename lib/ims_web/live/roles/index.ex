@@ -1,7 +1,7 @@
 defmodule ImsWeb.RoleLive.Index do
   use ImsWeb, :live_view
 
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   alias Ims.Accounts.Role
   alias Ims.Accounts.Permission
 

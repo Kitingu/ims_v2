@@ -2,7 +2,7 @@ defmodule Ims.Trainings.TrainingApplication do
   use Ecto.Schema
   import Ecto.Changeset
   import Ecto.Query
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   alias Elixlsx.{Workbook, Sheet}
 
   schema "training_applications" do

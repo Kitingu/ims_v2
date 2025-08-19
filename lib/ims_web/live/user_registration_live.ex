@@ -3,7 +3,7 @@ defmodule ImsWeb.UserRegistrationLive do
   use ImsWeb, :live_view
 
   alias Ims.Accounts.{User, Departments, JobGroup}
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
 
   def render(assigns) do
     ~H"""

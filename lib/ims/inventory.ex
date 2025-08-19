@@ -4,7 +4,7 @@ defmodule Ims.Inventory do
   """
 
   import Ecto.Query, warn: false
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
   alias Ims.Inventory.Request
 
   alias Ims.Inventory.Location

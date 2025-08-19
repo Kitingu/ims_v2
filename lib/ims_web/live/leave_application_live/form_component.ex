@@ -3,7 +3,7 @@ defmodule ImsWeb.LeaveApplicationLive.FormComponent do
 
   alias Ims.Leave
   alias Ims.Leave.LeaveApplication
-  alias Ims.Repo
+  alias Ims.Repo.Audited, as: Repo
 
   @impl true
   def render(assigns) do
