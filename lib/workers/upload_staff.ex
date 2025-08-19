@@ -74,8 +74,11 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
                "Invalid Excel headers. Required: #{Enum.join(@required_headers, ", ")}, got: #{inspect(header)}"}
             end
 
-          [_] -> {:error, "Excel file contains only headers"}
-          [] -> {:error, "Excel sheet is empty"}
+          [_] ->
+            {:error, "Excel file contains only headers"}
+
+          [] ->
+            {:error, "Excel sheet is empty"}
         end
 
       {:error, reason} ->
@@ -98,29 +101,50 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
           case safe_parse_row_to_attrs(row, admin_id) do
             {:ok, attrs} ->
               # Critical keys present & not blank?
-              case ensure_required_attrs(attrs, [:personal_number, :id_number, :designation, :job_group_id]) do
+              case ensure_required_attrs(attrs, [
+                     :personal_number,
+                     :id_number,
+                     :designation,
+                     :job_group_id
+                   ]) do
                 :ok ->
                   if personal_number_exists?(attrs.personal_number) do
-                    Logger.warning("⚠️ [Row #{index}] Duplicate personal_number: #{attrs.personal_number}")
+                    Logger.warning(
+                      "⚠️ [Row #{index}] Duplicate personal_number: #{attrs.personal_number}"
+                    )
+
                     {:skipped_duplicate, index, %{personal_number: attrs.personal_number}}
                   else
                     case create_user(attrs) do
                       {:ok, %User{} = user} ->
-                        Logger.info("✅ [Row #{index}] Inserted user: #{user.first_name} #{user.last_name}")
+                        Logger.info(
+                          "✅ [Row #{index}] Inserted user: #{user.first_name} #{user.last_name}"
+                        )
+
                         {:ok, index, %{id: user.id, pn: user.personal_number}}
 
                       {:error, %Ecto.Changeset{} = changeset} ->
-                        Logger.error("❌ [Row #{index}] Insert failed: #{inspect(changeset.errors)}")
-                        {:error_changeset, index, %{errors: changeset.errors, attrs: redact(attrs)}}
+                        Logger.error(
+                          "❌ [Row #{index}] Insert failed: #{inspect(changeset.errors)}"
+                        )
+
+                        {:error_changeset, index,
+                         %{errors: changeset.errors, attrs: redact(attrs)}}
 
                       {:error, reason} ->
-                        Logger.error("❌ [Row #{index}] Unexpected insert error: #{inspect(reason)}")
+                        Logger.error(
+                          "❌ [Row #{index}] Unexpected insert error: #{inspect(reason)}"
+                        )
+
                         {:error_other, index, %{reason: inspect(reason), attrs: redact(attrs)}}
                     end
                   end
 
                 {:missing, missing_keys} ->
-                  Logger.error("❌ [Row #{index}] Missing required fields: #{Enum.join(missing_keys, ", ")}")
+                  Logger.error(
+                    "❌ [Row #{index}] Missing required fields: #{Enum.join(missing_keys, ", ")}"
+                  )
+
                   {:error_missing_keys, index, %{missing: missing_keys, row: row}}
               end
 
@@ -130,8 +154,10 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
           end
         rescue
           e ->
-            Logger.error("💥 [Row #{index}] Exception (#{inspect(e.__struct__)}):\n" <>
-                           Exception.format(:error, e, __STACKTRACE__))
+            Logger.error(
+              "💥 [Row #{index}] Exception (#{inspect(e.__struct__)}):\n" <>
+                Exception.format(:error, e, __STACKTRACE__)
+            )
 
             {:error_exception, index, %{error: Exception.message(e), type: e.__struct__}}
         end
@@ -204,6 +230,7 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
         password = if sys_user, do: generate_temp_password(), else: nil
 
         job_group_name = job_group_name |> to_string() |> String.trim()
+
         if job_group_name == "" do
           {:error, "Job Group is blank"}
         else
@@ -313,7 +340,8 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
     |> String.split(~r/\s+/, trim: true)
     |> Enum.map(fn word ->
       case String.length(word) do
-        1 -> String.upcase(word)   # keep initials like "Z"
+        # keep initials like "Z"
+        1 -> String.upcase(word)
         _ -> String.capitalize(word)
       end
     end)
@@ -325,19 +353,60 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
   # ============================================================
 
   # Return shape: {:ok, %User{}} | {:error, reason}
+  # defp create_user(attrs) do
+  #   Repo.transaction(fn ->
+  #     changeset =
+  #       if attrs.sys_user do
+  #         %User{}
+  #         |> User.registration_changeset(attrs)
+  #         |> Ecto.Changeset.put_change(:confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second))
+  #       else
+  #         %User{} |> User.staff_member_changeset(attrs)
+  #       end
+
+  #     case Repo.insert(changeset) do
+  #       {:ok, user} ->
+  #         if user.sys_user do
+  #           {:ok, _} =
+  #             Ims.Accounts.deliver_user_confirmation_instructions(
+  #               user,
+  #               fn token -> ImsWeb.Endpoint.url() <> "/users/confirm/#{token}" end
+  #             )
+  #         end
+
+  #         user  # return the struct from inside the txn
+
+  #       {:error, changeset} ->
+  #         Repo.rollback(changeset)
+  #     end
+  #   end)
+  #   |> case do
+  #     {:ok, %User{} = user} -> {:ok, user}
+  #     {:error, reason} -> {:error, reason}
+  #   end
+  # end
+
   defp create_user(attrs) do
     Repo.transaction(fn ->
       changeset =
         if attrs.sys_user do
           %User{}
           |> User.registration_changeset(attrs)
-          |> Ecto.Changeset.put_change(:confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second))
+          |> Ecto.Changeset.put_change(
+            :confirmed_at,
+            DateTime.utc_now() |> DateTime.truncate(:second)
+          )
         else
           %User{} |> User.staff_member_changeset(attrs)
         end
 
-      case Repo.insert(changeset) do
-        {:ok, user} ->
+      case Repo.insert(
+             changeset,
+             on_conflict: :nothing,
+             # ✅ option A: column, not tuple/list
+             conflict_target: :personal_number
+           ) do
+        {:ok, %User{} = user} ->
           if user.sys_user do
             {:ok, _} =
               Ims.Accounts.deliver_user_confirmation_instructions(
@@ -346,14 +415,19 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
               )
           end
 
-          user  # return the struct from inside the txn
+          {:inserted, user}
 
-        {:error, changeset} ->
-          Repo.rollback(changeset)
+        # duplicate personal_number -> nothing inserted
+        {:ok, _} ->
+          {:skipped, :duplicate_personal_number}
+
+        {:error, %Ecto.Changeset{} = cs} ->
+          Repo.rollback(cs)
       end
     end)
     |> case do
-      {:ok, %User{} = user} -> {:ok, user}
+      {:ok, {:inserted, %User{} = user}} -> {:ok, user}
+      {:ok, {:skipped, :duplicate_personal_number}} -> {:skipped, :duplicate_personal_number}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -374,7 +448,11 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
 
         changeset = JobGroup.changeset(%JobGroup{}, params)
 
-        case Repo.insert(changeset, on_conflict: :nothing, conflict_target: :name, returning: true) do
+        case Repo.insert(changeset,
+               on_conflict: :nothing,
+               conflict_target: :name,
+               returning: true
+             ) do
           {:ok, %JobGroup{} = jg} -> jg
           {:ok, _} -> Repo.get_by!(JobGroup, name: name)
           {:error, _} -> Repo.get_by!(JobGroup, name: name)
@@ -413,7 +491,9 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
   defp email_exists?(email), do: Repo.exists?(from u in User, where: u.email == ^email)
 
   defp personal_number_exists?(nil), do: false
-  defp personal_number_exists?(pn), do: Repo.exists?(from u in User, where: u.personal_number == ^pn)
+
+  defp personal_number_exists?(pn),
+    do: Repo.exists?(from u in User, where: u.personal_number == ^pn)
 
   # ============================================================
   # Misc parsers
@@ -454,8 +534,10 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
         inserted: for({:ok, idx, info} <- results, do: %{row: idx, info: info}),
         duplicates: for({:skipped_duplicate, idx, info} <- results, do: %{row: idx, info: info}),
         parse_errors: for({:error_parse, idx, info} <- results, do: %{row: idx, info: info}),
-        missing_key_errors: for({:error_missing_keys, idx, info} <- results, do: %{row: idx, info: info}),
-        changeset_errors: for({:error_changeset, idx, info} <- results, do: %{row: idx, info: info}),
+        missing_key_errors:
+          for({:error_missing_keys, idx, info} <- results, do: %{row: idx, info: info}),
+        changeset_errors:
+          for({:error_changeset, idx, info} <- results, do: %{row: idx, info: info}),
         other_errors: for({:error_other, idx, info} <- results, do: %{row: idx, info: info}),
         exceptions: for({:error_exception, idx, info} <- results, do: %{row: idx, info: info})
       }
@@ -485,13 +567,33 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
         "Exceptions: #{c.exceptions}, Total: #{c.total_rows}"
     )
 
-    Enum.each(summary.inserted, fn %{row: r, info: i} -> Logger.debug("➕ inserted row=#{r} #{inspect(i)}") end)
-    Enum.each(summary.duplicates, fn %{row: r, info: i} -> Logger.debug("🔁 duplicate row=#{r} #{inspect(i)}") end)
-    Enum.each(summary.parse_errors, fn %{row: r, info: i} -> Logger.debug("🧹 parse error row=#{r} #{inspect(i)}") end)
-    Enum.each(summary.missing_key_errors, fn %{row: r, info: i} -> Logger.debug("🚫 missing keys row=#{r} #{inspect(i)}") end)
-    Enum.each(summary.changeset_errors, fn %{row: r, info: i} -> Logger.debug("📝 changeset error row=#{r} #{inspect(i)}") end)
-    Enum.each(summary.other_errors, fn %{row: r, info: i} -> Logger.debug("❓ other error row=#{r} #{inspect(i)}") end)
-    Enum.each(summary.exceptions, fn %{row: r, info: i} -> Logger.debug("💥 exception row=#{r} #{inspect(i)}") end)
+    Enum.each(summary.inserted, fn %{row: r, info: i} ->
+      Logger.debug("➕ inserted row=#{r} #{inspect(i)}")
+    end)
+
+    Enum.each(summary.duplicates, fn %{row: r, info: i} ->
+      Logger.debug("🔁 duplicate row=#{r} #{inspect(i)}")
+    end)
+
+    Enum.each(summary.parse_errors, fn %{row: r, info: i} ->
+      Logger.debug("🧹 parse error row=#{r} #{inspect(i)}")
+    end)
+
+    Enum.each(summary.missing_key_errors, fn %{row: r, info: i} ->
+      Logger.debug("🚫 missing keys row=#{r} #{inspect(i)}")
+    end)
+
+    Enum.each(summary.changeset_errors, fn %{row: r, info: i} ->
+      Logger.debug("📝 changeset error row=#{r} #{inspect(i)}")
+    end)
+
+    Enum.each(summary.other_errors, fn %{row: r, info: i} ->
+      Logger.debug("❓ other error row=#{r} #{inspect(i)}")
+    end)
+
+    Enum.each(summary.exceptions, fn %{row: r, info: i} ->
+      Logger.debug("💥 exception row=#{r} #{inspect(i)}")
+    end)
   end
 
   defp summary_to_message(summary) do
