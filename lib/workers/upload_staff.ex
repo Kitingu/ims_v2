@@ -400,26 +400,24 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
           %User{} |> User.staff_member_changeset(attrs)
         end
 
-      case Repo.insert(
-             changeset,
-             on_conflict: :nothing,
-             # ✅ option A: column, not tuple/list
-             conflict_target: :personal_number
-           ) do
+      # Insert only; skip on any unique conflict (no conflict_target -> no 42P10)
+      case Repo.insert(changeset, on_conflict: :nothing) do
         {:ok, %User{} = user} ->
+          # optional: only for freshly inserted sys users
           if user.sys_user do
-            {:ok, _} =
-              Ims.Accounts.deliver_user_confirmation_instructions(
-                user,
-                fn token -> ImsWeb.Endpoint.url() <> "/users/confirm/#{token}" end
-              )
+            :ok
+            # {:ok, _} =
+            #   Ims.Accounts.deliver_user_confirmation_instructions(
+            #     user,
+            #     fn token -> ImsWeb.Endpoint.url() <> "/users/confirm/#{token}" end
+            #   )
           end
 
           {:inserted, user}
 
-        # duplicate personal_number -> nothing inserted
-        {:ok, _} ->
-          {:skipped, :duplicate_personal_number}
+        # duplicate on any unique (personal_number/email/msisdn/id_number) -> skipped
+        {:ok, _noop} ->
+          {:skipped, :duplicate}
 
         {:error, %Ecto.Changeset{} = cs} ->
           Repo.rollback(cs)
@@ -427,7 +425,7 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
     end)
     |> case do
       {:ok, {:inserted, %User{} = user}} -> {:ok, user}
-      {:ok, {:skipped, :duplicate_personal_number}} -> {:skipped, :duplicate_personal_number}
+      {:ok, {:skipped, :duplicate}} -> {:skipped, :duplicate}
       {:error, reason} -> {:error, reason}
     end
   end
