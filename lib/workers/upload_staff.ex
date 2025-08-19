@@ -400,10 +400,11 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
           %User{} |> User.staff_member_changeset(attrs)
         end
 
-      # Insert only; skip on any unique conflict (no conflict_target -> no 42P10)
-      case Repo.insert(changeset, on_conflict: :nothing) do
+      case Repo.insert(changeset,
+             on_conflict: :nothing,
+             conflict_target: [:email, :personal_number, :msisdn, :id_number]
+           ) do
         {:ok, %User{} = user} ->
-          # optional: only for freshly inserted sys users
           if user.sys_user do
             :ok
             # {:ok, _} =
@@ -415,7 +416,6 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
 
           {:inserted, user}
 
-        # duplicate on any unique (personal_number/email/msisdn/id_number) -> skipped
         {:ok, _noop} ->
           {:skipped, :duplicate}
 
