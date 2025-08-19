@@ -38,7 +38,9 @@ if config_env() == :prod do
     username: System.get_env("GMAIL_USERNAME"),
     password: System.get_env("GMAIL_APP_PASSWORD"),
     port: String.to_integer(System.get_env("GMAIL_PORT") || "587"),
-    ssl: true
+    ssl: false,
+    tls: :always,
+    auth: :always
 
   # Optional HTTPS config block
   https_config =

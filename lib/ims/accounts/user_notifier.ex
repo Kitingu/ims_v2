@@ -8,7 +8,7 @@ defmodule Ims.Accounts.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"Ims", "kitingu11@gmail.com"})
+      |> from({"Ims", System.get_env("GMAIL_USERNAME") || ""})
       |> subject(subject)
       |> text_body(body)
 
