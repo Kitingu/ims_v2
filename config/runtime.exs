@@ -31,6 +31,15 @@ if config_env() == :prod do
     queue_target: 5000,
     queue_interval: 5000
 
+  # Configure the mailer
+  config :ims, Ims.Mailer,
+    adapter: Swoosh.Adapters.SMTP,
+    relay: System.get_env("SMTP_RELAY") || "smtp.gmail.com",
+    username: System.get_env("GMAIL_USERNAME"),
+    password: System.get_env("GMAIL_APP_PASSWORD"),
+    port: String.to_integer(System.get_env("GMAIL_PORT") || "587"),
+    ssl: true
+
   # Optional HTTPS config block
   https_config =
     if System.get_env("SSL_KEY_PATH") && System.get_env("SSL_CERT_PATH") do
@@ -48,24 +57,25 @@ if config_env() == :prod do
     end
 
   # Endpoint config
-  config :ims, ImsWeb.Endpoint,
-    [
-      url: [host: host, port: http_port, scheme: "http"],
-      http: [
-        ip: {0, 0, 0, 0},
-        port: http_port
-      ],
-      secret_key_base: secret_key_base,
-      cache_static_manifest: "priv/static/cache_manifest.json",
-      check_origin: [
-        "http://localhost:4000",
-        "http://127.0.0.1:4000",
-        "http://#{host}:4000",
-        "http://#{host}",
-        "https://#{host}"
-      ]
-    ]
-    ++ https_config
+  config :ims,
+         ImsWeb.Endpoint,
+         [
+           url: [host: host, port: http_port, scheme: "http"],
+           http: [
+             ip: {0, 0, 0, 0},
+             port: http_port
+           ],
+           secret_key_base: secret_key_base,
+           cache_static_manifest: "priv/static/cache_manifest.json",
+           check_origin: [
+             "http://localhost:4000",
+             "http://127.0.0.1:4000",
+             "http://#{host}:4000",
+             "http://#{host}",
+             "https://#{host}"
+           ]
+         ] ++
+           https_config
 
   # DNS clustering (optional)
   config :ims, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")

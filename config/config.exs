@@ -35,16 +35,7 @@ config :goth, json: File.read!("config/credentials.json")
 # at the `config/runtime.exs`.
 # config :ims, Ims.Mailer, adapter: Swoosh.Adapters.Local
 
-config :ims, Ims.Mailer,
-  adapter: Swoosh.Adapters.SMTP,
-  relay: "smtp.gmail.com",
-  username: "kitingu11@gmail.com",
-  password: "ocxteshxatrzrinh",
-  port: 587,
-  ssl: false,
-  tls: :always,
-  tls_options: [verify: :verify_none],
-  auth: :always
+
 
 # Configure esbuild (the version is required)
 config :esbuild,
