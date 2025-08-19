@@ -21,6 +21,9 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"admin_id" => admin_id, "path" => path}}) do
+    # Attribute all DB writes/audit logs to the uploader
+    Ims.Audit.set_actor(%{id: admin_id})
+
     if not File.exists?(path) do
       Logger.warning("❌ Skipping retry — file no longer exists: #{path}")
       :discard
@@ -29,12 +32,12 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
 
       case process_excel_file(path, admin_id) do
         {:ok, _summary} ->
-          File.rm(path)
+          _ = File.rm(path)
           :ok
 
         {:error, reason} ->
           Logger.error("❌ Upload failed: #{inspect(reason)}")
-          File.rm(path)
+          _ = File.rm(path)
           {:error, reason}
       end
     end
@@ -100,64 +103,39 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
         try do
           case safe_parse_row_to_attrs(row, admin_id) do
             {:ok, attrs} ->
-              # Critical keys present & not blank?
-              case ensure_required_attrs(attrs, [
-                     :personal_number,
-                     :id_number,
-                     :designation,
-                     :job_group_id
-                   ]) do
+              case ensure_required_attrs(attrs, [:personal_number, :id_number, :designation, :job_group_id]) do
                 :ok ->
-                  if personal_number_exists?(attrs.personal_number) do
-                    Logger.warning(
-                      "⚠️ [Row #{index}] Duplicate personal_number: #{attrs.personal_number}"
-                    )
+                  case create_user(attrs) do
+                    {:ok, %User{} = user} ->
+                      Logger.info("✅ [Row #{index}] Inserted user: #{user.first_name} #{user.last_name}")
+                      {:ok, index, %{id: user.id, pn: user.personal_number}}
 
-                    {:skipped_duplicate, index, %{personal_number: attrs.personal_number}}
-                  else
-                    case create_user(attrs) do
-                      {:ok, %User{} = user} ->
-                        Logger.info(
-                          "✅ [Row #{index}] Inserted user: #{user.first_name} #{user.last_name}"
-                        )
+                    {:skipped, :duplicate} ->
+                      Logger.warning("🔁 [Row #{index}] Duplicate (unique conflict) — skipped. PN=#{attrs.personal_number}")
+                      {:skipped_duplicate, index, %{personal_number: attrs.personal_number}}
 
-                        {:ok, index, %{id: user.id, pn: user.personal_number}}
+                    {:error, %Ecto.Changeset{} = changeset} ->
+                      Logger.error("📝 [Row #{index}] Insert failed: #{inspect(changeset.errors)}")
+                      {:error_changeset, index, %{errors: changeset.errors, attrs: redact(attrs)}}
 
-                      {:error, %Ecto.Changeset{} = changeset} ->
-                        Logger.error(
-                          "❌ [Row #{index}] Insert failed: #{inspect(changeset.errors)}"
-                        )
-
-                        {:error_changeset, index,
-                         %{errors: changeset.errors, attrs: redact(attrs)}}
-
-                      {:error, reason} ->
-                        Logger.error(
-                          "❌ [Row #{index}] Unexpected insert error: #{inspect(reason)}"
-                        )
-
-                        {:error_other, index, %{reason: inspect(reason), attrs: redact(attrs)}}
-                    end
+                    {:error, reason} ->
+                      Logger.error("❌ [Row #{index}] Unexpected insert error: #{inspect(reason)}")
+                      {:error_other, index, %{reason: inspect(reason), attrs: redact(attrs)}}
                   end
 
                 {:missing, missing_keys} ->
-                  Logger.error(
-                    "❌ [Row #{index}] Missing required fields: #{Enum.join(missing_keys, ", ")}"
-                  )
-
+                  Logger.error("❌ [Row #{index}] Missing required fields: #{Enum.join(missing_keys, ", ")}")
                   {:error_missing_keys, index, %{missing: missing_keys, row: row}}
               end
 
             {:error, reason} ->
-              Logger.error("❌ [Row #{index}] Skipped — #{reason}: #{inspect(row)}")
+              Logger.error("🧹 [Row #{index}] Skipped — #{reason}: #{inspect(row)}")
               {:error_parse, index, %{reason: reason, row: row}}
           end
         rescue
           e ->
-            Logger.error(
-              "💥 [Row #{index}] Exception (#{inspect(e.__struct__)}):\n" <>
-                Exception.format(:error, e, __STACKTRACE__)
-            )
+            Logger.error("💥 [Row #{index}] Exception (#{inspect(e.__struct__)}):\n" <>
+              Exception.format(:error, e, __STACKTRACE__))
 
             {:error_exception, index, %{error: Exception.message(e), type: e.__struct__}}
         end
@@ -292,9 +270,7 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
         |> Enum.reject(&(&1 == ""))
 
       case right_parts do
-        [first_only] ->
-          {proper_case(first_only), proper_case(surname_block)}
-
+        [first_only] -> {proper_case(first_only), proper_case(surname_block)}
         [first | rest] ->
           middle_block = Enum.join(rest, " ") |> sanitize_block()
 
@@ -321,99 +297,43 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
     end
   end
 
-  # Remove one or more honorifics at start; tolerate extra dots/spaces; case-insensitive
-  defp strip_titles(str) do
-    String.replace(str, ~r/^\s*(?:(?:Mr|Mrs|Ms|Miss|Dr|Prof|Hon)\.*\s+)+/iu, "")
-  end
-
-  defp sanitize_block(s) do
-    s
-    |> String.replace(~r/\s+/, " ")
-    |> String.trim()
-    |> String.trim_leading("., ")
-    |> String.trim_trailing("., ")
-  end
-
-  defp proper_case(str) do
-    str
-    |> String.downcase()
-    |> String.split(~r/\s+/, trim: true)
-    |> Enum.map(fn word ->
-      case String.length(word) do
-        # keep initials like "Z"
-        1 -> String.upcase(word)
-        _ -> String.capitalize(word)
-      end
-    end)
-    |> Enum.join(" ")
-  end
+  defp strip_titles(str), do: String.replace(str, ~r/^\s*(?:(?:Mr|Mrs|Ms|Miss|Dr|Prof|Hon)\.*\s+)+/iu, "")
+  defp sanitize_block(s), do: s |> String.replace(~r/\s+/, " ") |> String.trim() |> String.trim_leading("., ") |> String.trim_trailing("., ")
+  defp proper_case(str),
+    do:
+      str
+      |> String.downcase()
+      |> String.split(~r/\s+/, trim: true)
+      |> Enum.map(fn word -> if String.length(word) == 1, do: String.upcase(word), else: String.capitalize(word) end)
+      |> Enum.join(" ")
 
   # ============================================================
   # DB ops
   # ============================================================
 
-  # Return shape: {:ok, %User{}} | {:error, reason}
-  # defp create_user(attrs) do
-  #   Repo.transaction(fn ->
-  #     changeset =
-  #       if attrs.sys_user do
-  #         %User{}
-  #         |> User.registration_changeset(attrs)
-  #         |> Ecto.Changeset.put_change(:confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second))
-  #       else
-  #         %User{} |> User.staff_member_changeset(attrs)
-  #       end
-
-  #     case Repo.insert(changeset) do
-  #       {:ok, user} ->
-  #         if user.sys_user do
-  #           {:ok, _} =
-  #             Ims.Accounts.deliver_user_confirmation_instructions(
-  #               user,
-  #               fn token -> ImsWeb.Endpoint.url() <> "/users/confirm/#{token}" end
-  #             )
-  #         end
-
-  #         user  # return the struct from inside the txn
-
-  #       {:error, changeset} ->
-  #         Repo.rollback(changeset)
-  #     end
-  #   end)
-  #   |> case do
-  #     {:ok, %User{} = user} -> {:ok, user}
-  #     {:error, reason} -> {:error, reason}
-  #   end
-  # end
-
+  # Insert-only; skip duplicates on ANY unique constraint (email/msisdn/id_number/personal_number)
+  # Never specify conflict_target -> avoids 42P10 in prod across schemas/index variants
   defp create_user(attrs) do
     Repo.transaction(fn ->
       changeset =
         if attrs.sys_user do
           %User{}
           |> User.registration_changeset(attrs)
-          |> Ecto.Changeset.put_change(
-            :confirmed_at,
-            DateTime.utc_now() |> DateTime.truncate(:second)
-          )
+          |> Ecto.Changeset.put_change(:confirmed_at, DateTime.utc_now() |> DateTime.truncate(:second))
         else
           %User{} |> User.staff_member_changeset(attrs)
         end
 
-      case Repo.insert(changeset,
-             on_conflict: :nothing,
-             conflict_target: [:email, :personal_number, :msisdn, :id_number]
-           ) do
+      case Repo.insert(changeset, on_conflict: :nothing) do
         {:ok, %User{} = user} ->
-          if user.sys_user do
-            :ok
-            # {:ok, _} =
-            #   Ims.Accounts.deliver_user_confirmation_instructions(
-            #     user,
-            #     fn token -> ImsWeb.Endpoint.url() <> "/users/confirm/#{token}" end
-            #   )
-          end
-
+          # (Optional) send email for newly created sys users only
+          # if user.sys_user do
+          #   {:ok, _} =
+          #     Ims.Accounts.deliver_user_confirmation_instructions(
+          #       user,
+          #       fn token -> ImsWeb.Endpoint.url() <> "/users/confirm/#{token}" end
+          #     )
+          # end
           {:inserted, user}
 
         {:ok, _noop} ->
@@ -430,8 +350,8 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
     end
   end
 
-  # Conflict-tolerant (requires unique index on job_groups.name)
-  # create unique_index(:job_groups, [:name])
+  # Conflict-tolerant JobGroup creation that works even if prod lacks a unique on name
+  # (Preferred: add unique_index(:job_groups, [:name]) in prod; this code still works without it)
   defp get_or_create_job_group(name, admin_id) do
     case Repo.get_by(JobGroup, name: name) do
       %JobGroup{} = jg ->
@@ -446,13 +366,9 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
 
         changeset = JobGroup.changeset(%JobGroup{}, params)
 
-        case Repo.insert(changeset,
-               on_conflict: :nothing,
-               conflict_target: :name,
-               returning: true
-             ) do
+        case Repo.insert(changeset, on_conflict: :nothing, returning: true) do
           {:ok, %JobGroup{} = jg} -> jg
-          {:ok, _} -> Repo.get_by!(JobGroup, name: name)
+          {:ok, _noop} -> Repo.get_by!(JobGroup, name: name)
           {:error, _} -> Repo.get_by!(JobGroup, name: name)
         end
     end
@@ -475,8 +391,7 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
   end
 
   defp required_blank_keys(map, keys) do
-    keys
-    |> Enum.filter(fn k ->
+    Enum.filter(keys, fn k ->
       case Map.get(map, k) do
         nil -> true
         "" -> true
@@ -484,14 +399,6 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
       end
     end)
   end
-
-  defp email_exists?(nil), do: false
-  defp email_exists?(email), do: Repo.exists?(from u in User, where: u.email == ^email)
-
-  defp personal_number_exists?(nil), do: false
-
-  defp personal_number_exists?(pn),
-    do: Repo.exists?(from u in User, where: u.personal_number == ^pn)
 
   # ============================================================
   # Misc parsers
@@ -532,10 +439,8 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
         inserted: for({:ok, idx, info} <- results, do: %{row: idx, info: info}),
         duplicates: for({:skipped_duplicate, idx, info} <- results, do: %{row: idx, info: info}),
         parse_errors: for({:error_parse, idx, info} <- results, do: %{row: idx, info: info}),
-        missing_key_errors:
-          for({:error_missing_keys, idx, info} <- results, do: %{row: idx, info: info}),
-        changeset_errors:
-          for({:error_changeset, idx, info} <- results, do: %{row: idx, info: info}),
+        missing_key_errors: for({:error_missing_keys, idx, info} <- results, do: %{row: idx, info: info}),
+        changeset_errors: for({:error_changeset, idx, info} <- results, do: %{row: idx, info: info}),
         other_errors: for({:error_other, idx, info} <- results, do: %{row: idx, info: info}),
         exceptions: for({:error_exception, idx, info} <- results, do: %{row: idx, info: info})
       }
@@ -565,33 +470,13 @@ defmodule Ims.Workers.UploadStaffMembersWorker do
         "Exceptions: #{c.exceptions}, Total: #{c.total_rows}"
     )
 
-    Enum.each(summary.inserted, fn %{row: r, info: i} ->
-      Logger.debug("➕ inserted row=#{r} #{inspect(i)}")
-    end)
-
-    Enum.each(summary.duplicates, fn %{row: r, info: i} ->
-      Logger.debug("🔁 duplicate row=#{r} #{inspect(i)}")
-    end)
-
-    Enum.each(summary.parse_errors, fn %{row: r, info: i} ->
-      Logger.debug("🧹 parse error row=#{r} #{inspect(i)}")
-    end)
-
-    Enum.each(summary.missing_key_errors, fn %{row: r, info: i} ->
-      Logger.debug("🚫 missing keys row=#{r} #{inspect(i)}")
-    end)
-
-    Enum.each(summary.changeset_errors, fn %{row: r, info: i} ->
-      Logger.debug("📝 changeset error row=#{r} #{inspect(i)}")
-    end)
-
-    Enum.each(summary.other_errors, fn %{row: r, info: i} ->
-      Logger.debug("❓ other error row=#{r} #{inspect(i)}")
-    end)
-
-    Enum.each(summary.exceptions, fn %{row: r, info: i} ->
-      Logger.debug("💥 exception row=#{r} #{inspect(i)}")
-    end)
+    Enum.each(summary.inserted, fn %{row: r, info: i} -> Logger.debug("➕ inserted row=#{r} #{inspect(i)}") end)
+    Enum.each(summary.duplicates, fn %{row: r, info: i} -> Logger.debug("🔁 duplicate row=#{r} #{inspect(i)}") end)
+    Enum.each(summary.parse_errors, fn %{row: r, info: i} -> Logger.debug("🧹 parse error row=#{r} #{inspect(i)}") end)
+    Enum.each(summary.missing_key_errors, fn %{row: r, info: i} -> Logger.debug("🚫 missing keys row=#{r} #{inspect(i)}") end)
+    Enum.each(summary.changeset_errors, fn %{row: r, info: i} -> Logger.debug("📝 changeset error row=#{r} #{inspect(i)}") end)
+    Enum.each(summary.other_errors, fn %{row: r, info: i} -> Logger.debug("❓ other error row=#{r} #{inspect(i)}") end)
+    Enum.each(summary.exceptions, fn %{row: r, info: i} -> Logger.debug("💥 exception row=#{r} #{inspect(i)}") end)
   end
 
   defp summary_to_message(summary) do
