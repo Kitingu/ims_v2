@@ -5,14 +5,22 @@ defmodule Ims.Accounts.UserNotifier do
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
+    from_email =
+      Application.fetch_env!(:ims, :mailer_from_email)
+
+    from_name =
+      Application.get_env(:ims, :mailer_from_name, "IMS")
+
     email =
       new()
+      # "user@example.com" or {"Name", "user@example.com"}
       |> to(recipient)
-      |> from({"Ims", System.get_env("GMAIL_USERNAME") || ""})
+      # guarantees non-empty address
+      |> from({from_name, from_email})
       |> subject(subject)
       |> text_body(body)
 
-    with {:ok, _metadata} <- Mailer.deliver(email) |> IO.inspect() do
+    with {:ok, _meta} <- Mailer.deliver(email) do
       {:ok, email}
     end
   end

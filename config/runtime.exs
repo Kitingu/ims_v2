@@ -46,6 +46,10 @@ if config_env() == :prod do
     adapter: Swoosh.Adapters.Sendgrid,
     api_key: System.fetch_env!("SENDGRID_API_KEY")
 
+  config :ims,
+    mailer_from_email: System.fetch_env!("MAIL_FROM_EMAIL"),
+    mailer_from_name: System.get_env("MAIL_FROM_NAME") || "IMS"
+
   # Optional HTTPS config block
   https_config =
     if System.get_env("SSL_KEY_PATH") && System.get_env("SSL_CERT_PATH") do
