@@ -32,15 +32,19 @@ if config_env() == :prod do
     queue_interval: 5000
 
   # Configure the mailer
+  # config :ims, Ims.Mailer,
+  #   adapter: Swoosh.Adapters.SMTP,
+  #   relay: System.get_env("SMTP_RELAY") || "smtp.gmail.com",
+  #   username: System.get_env("GMAIL_USERNAME"),
+  #   password: System.get_env("GMAIL_APP_PASSWORD"),
+  #   port: String.to_integer(System.get_env("GMAIL_PORT") || "587"),
+  #   ssl: false,
+  #   tls: :always,
+  #   auth: :always
+
   config :ims, Ims.Mailer,
-    adapter: Swoosh.Adapters.SMTP,
-    relay: System.get_env("SMTP_RELAY") || "smtp.gmail.com",
-    username: System.get_env("GMAIL_USERNAME"),
-    password: System.get_env("GMAIL_APP_PASSWORD"),
-    port: String.to_integer(System.get_env("GMAIL_PORT") || "587"),
-    ssl: false,
-    tls: :always,
-    auth: :always
+    adapter: Swoosh.Adapters.Sendgrid,
+    api_key: System.fetch_env!("SENDGRID_API_KEY")
 
   # Optional HTTPS config block
   https_config =
