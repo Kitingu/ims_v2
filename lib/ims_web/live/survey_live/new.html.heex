@@ -1,46 +1,42 @@
-<!-- Header (width-limited purple, same width as form) -->
-<div class="max-w-3xl mx-auto px-4 pt-8">
-  <!-- Header (Kenyan colors, same width as form) -->
-<div class="max-w-3xl mx-auto px-4 pt-8">
-  <div class="rounded-t-2xl border border-gray-200 overflow-hidden shadow-sm">
-    <!-- Kenyan flag stripes -->
-    <div class="h-2 bg-black"></div>
-    <div class="h-1 bg-white"></div>
-    <div class="h-2 bg-red-600"></div>
-    <div class="h-1 bg-white"></div>
-    <div class="h-2 bg-green-600"></div>
+<!-- Header (Kenyan colors, same width as form) -->
 
-    <!-- Header content -->
-    <div class="bg-white/95 backdrop-blur p-6">
-      <div class="flex items-center gap-4">
-        <img src="/images/logo.png" alt="Logo" class="h-20 w-auto shadow-sm" />
-        <div>
-          <p class="text-xs tracking-wide text-gray-700">EXECUTIVE OFFICE OF THE DEPUTY PRESIDENT</p>
-         
-        </div>
-      </div>
+<div class="mx-auto max-w-3xl px-4 pt-6">
+  <div class="flex flex-col sm:flex-row gap-4 sm:items-center">
+    <!-- Logo -->
+    <img src="/images/logo_1.png" alt="Republic of Kenya"
+      class="h-24 sm:h-28 md:h-32 w-auto self-center sm:self-auto" />
 
-      <h1 class="mt-4 text-2xl md:text-3xl font-semibold text-gray-900">
-        Economic Empowerment Programmes – Data Collection
-      </h1>
-      <p class="mt-2 text-sm text-gray-600">
-        Please fill the form carefully. Fields marked <span class="text-red-500">*</span> are required.
+    <!-- Title (exactly centered to the image box) -->
+    <div
+      class="sm:h-24 sm:sm:h-28 md:sm:h-32 sm:h-[theme(spacing.28)] md:h-[theme(spacing.32)] flex items-center justify-center sm:justify-start text-center sm:text-left w-full">
+      <p class="text-base sm:text-lg md:text-xl font-semibold tracking-wide">
+        OFFICE OF THE DEPUTY PRESIDENT
       </p>
     </div>
   </div>
-</div>
+
+  <!-- Kenyan colours bar (kept same width as form) -->
+  <div class="mt-2 rounded overflow-hidden">
+    <div class="h-2 w-full" style="background:#000"></div>
+    <div class="h-[2px] w-full" style="background:#fff"></div>
+    <div class="h-2 w-full" style="background:#ed1c24"></div>
+    <div class="h-[2px] w-full" style="background:#fff"></div>
+    <div class="h-2 w-full" style="background:#00a64f"></div>
+  </div>
+
+  <!-- Page heading -->
+  <.header class="mb-2">
+    Economic Empowerment Programmes – Data Collection
+    <:subtitle>All questions are required. Please answer honestly.</:subtitle>
+  </.header>
 
 </div>
 
 <!-- Body -->
-<div class="max-w-3xl mx-auto px-4 mt-6">
-  <.form
-    for={@changeset}
-    as={:survey_response}
-    id="survey-form"
-    phx-change="validate"
-    phx-submit="save"
-    :let={f}>
+<div class="max-w-3xl mx-auto px-4 py-4">
+
+
+  <.form for={@changeset} as={:survey_response} id="survey-form" phx-change="validate" phx-submit="save" :let={f}>
 
     <!-- LOCATION -->
     <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
@@ -50,61 +46,68 @@
       <div class="mt-6 space-y-6">
         <div>
           <label class="block text-base font-medium text-gray-900">
-            Project Name <span class="text-red-500">*</span>
+            Project Name <span class="text-red-600">*</span>
           </label>
           <div class="mt-2">
-            <.input field={f[:project_name]} placeholder="Enter project name" class="w-full" />
+            <.input field={f[:project_name]} placeholder="Enter project name" class="w-full" required />
           </div>
         </div>
 
         <div>
-          <label class="block text-base font-medium text-gray-900">Location (free text)</label>
+          <label class="block text-base font-medium text-gray-900">
+            Location (free text) <span class="text-red-600">*</span>
+          </label>
           <div class="mt-2">
-            <.input field={f[:location_text]} placeholder="Estate / centre / landmark" class="w-full" />
+            <.input field={f[:location_text]} placeholder="Estate / centre / landmark" class="w-full" required />
           </div>
         </div>
 
         <div class="grid gap-4 md:grid-cols-3">
           <div>
             <label class="block text-base font-medium text-gray-900">
-              County <span class="text-red-500">*</span>
+              County <span class="text-red-600">*</span>
             </label>
             <div class="mt-2">
-              <.input type="select" field={f[:county_id]} prompt="Select county" options={@counties} />
+              <.input type="select" field={f[:county_id]} prompt="Select county" options={@counties} required />
             </div>
           </div>
 
           <div>
             <label class="block text-base font-medium text-gray-900">
-              Constituency <span class="text-red-500">*</span>
+              Constituency <span class="text-red-600">*</span>
             </label>
             <div class="mt-2">
-              <.input type="select" field={f[:constituency_id]} prompt="Select constituency" options={@constituencies} />
+              <.input type="select" field={f[:constituency_id]} prompt="Select constituency" options={@constituencies}
+                required />
             </div>
           </div>
 
           <div>
             <label class="block text-base font-medium text-gray-900">
-              Ward <span class="text-red-500">*</span>
+              Ward <span class="text-red-600">*</span>
             </label>
             <div class="mt-2">
-              <.input type="select" field={f[:ward_id]} prompt="Select ward" options={@wards} />
+              <.input type="select" field={f[:ward_id]} prompt="Select ward" options={@wards} required />
             </div>
           </div>
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
           <div>
-            <label class="block text-base font-medium text-gray-900">Date of Data Collection</label>
+            <label class="block text-base font-medium text-gray-900">
+              Date of Data Collection <span class="text-red-600">*</span>
+            </label>
             <div class="mt-2">
-              <.input type="date" field={f[:date_of_data_collection]} />
+              <.input type="date" field={f[:date_of_data_collection]} required />
             </div>
           </div>
 
           <div>
-            <label class="block text-base font-medium text-gray-900">Enumerator’s Name</label>
+            <label class="block text-base font-medium text-gray-900">
+              Enumerator’s Name <span class="text-red-600">*</span>
+            </label>
             <div class="mt-2">
-              <.input field={f[:enumerator_name]} placeholder="Your name" />
+              <.input field={f[:enumerator_name]} placeholder="Your name" required />
             </div>
           </div>
         </div>
@@ -118,52 +121,69 @@
 
       <div class="mt-6 space-y-6">
         <div>
-          <label class="block text-base font-medium text-gray-900">Respondent Name</label>
-          <div class="mt-2"><.input field={f[:respondent_name]} /></div>
+          <label class="block text-base font-medium text-gray-900">
+            Respondent Name <span class="text-red-600">*</span>
+          </label>
+          <div class="mt-2">
+            <.input field={f[:respondent_name]} required />
+          </div>
         </div>
 
         <div class="grid gap-4 md:grid-cols-3">
           <div>
-            <label class="block text-base font-medium text-gray-900">Gender</label>
+            <label class="block text-base font-medium text-gray-900">Gender <span class="text-red-600">*</span></label>
             <div class="mt-2">
-              <.input type="select" field={f[:gender]} prompt="Select" options={SurveyResponse.gender_options()} />
+              <.input type="select" field={f[:gender]} prompt="Select" options={SurveyResponse.gender_options()}
+                required />
             </div>
           </div>
 
           <div>
-            <label class="block text-base font-medium text-gray-900">Age</label>
+            <label class="block text-base font-medium text-gray-900">Age <span class="text-red-600">*</span></label>
             <div class="mt-2">
-              <.input type="select" field={f[:age_bracket]} prompt="Select" options={SurveyResponse.age_options()} />
+              <.input type="select" field={f[:age_bracket]} prompt="Select" options={SurveyResponse.age_options()}
+                required />
             </div>
           </div>
 
           <div>
-            <label class="block text-base font-medium text-gray-900">Category</label>
+            <label class="block text-base font-medium text-gray-900">Category <span
+                class="text-red-600">*</span></label>
             <div class="mt-2">
-              <.input type="select" field={f[:category]} prompt="Select" options={SurveyResponse.category_options()} />
+              <.input type="select" field={f[:category]} prompt="Select" options={SurveyResponse.category_options()}
+                required />
             </div>
           </div>
         </div>
 
-        <% category_other_on = to_string(f[:category].value || "") == "other" %>
-        <%= if category_other_on do %>
-          <div>
-            <label class="block text-base font-medium text-gray-900">If Other, specify</label>
-            <div class="mt-2"><.input field={f[:category_other]} /></div>
-          </div>
-        <% end %>
+        <% category_other_on=to_string(f[:category].value || "" )=="other" %>
+          <%= if category_other_on do %>
+            <div>
+              <label class="block text-base font-medium text-gray-900">If Other, specify <span
+                  class="text-red-600">*</span></label>
+              <div class="mt-2">
+                <.input field={f[:category_other]} required />
+              </div>
+            </div>
+            <% end %>
 
-        <div class="grid gap-4 md:grid-cols-2">
-          <div>
-            <label class="block text-base font-medium text-gray-900">Group/Organization Affiliation</label>
-            <div class="mt-2"><.input field={f[:group_affiliation]} /></div>
-          </div>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="block text-base font-medium text-gray-900">Group/Organization Affiliation <span
+                      class="text-red-600">*</span></label>
+                  <div class="mt-2">
+                    <.input field={f[:group_affiliation]} required />
+                  </div>
+                </div>
 
-          <div>
-            <label class="block text-base font-medium text-gray-900">Contact Information (optional)</label>
-            <div class="mt-2"><.input field={f[:contact_info]} placeholder="Phone or email" /></div>
-          </div>
-        </div>
+                <div>
+                  <label class="block text-base font-medium text-gray-900">Contact Information <span
+                      class="text-red-600">*</span></label>
+                  <div class="mt-2">
+                    <.input field={f[:contact_info]} placeholder="Phone or email" required />
+                  </div>
+                </div>
+              </div>
       </div>
     </section>
 
@@ -173,52 +193,97 @@
       <div class="mt-4 border-t border-gray-200"></div>
 
       <div class="mt-6 space-y-6">
-        <div class="grid gap-4 md:grid-cols-2">
+        <!-- Aware of DP visit -->
+        <% aware_dp=f[:aware_dp_visit].value in [true, "true" ] %>
           <div>
-            <label class="block text-base font-medium text-gray-900">Are you aware of the recent visit by H.E. DP?</label>
-            <div class="mt-2"><.input type="checkbox" field={f[:aware_dp_visit]} /></div>
+            <label class="block text-base font-medium text-gray-900">Are you aware of the recent visit by H.E. DP? <span
+                class="text-red-600">*</span></label>
+            <div class="mt-2 flex gap-6">
+              <label class="inline-flex items-center gap-2">
+                <input type="radio" name={f[:aware_dp_visit].name} value="true" required
+                  checked={to_string(f[:aware_dp_visit].value||"")=="true" } class="h-4 w-4 text-purple-600" />
+                <span>Yes</span>
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input type="radio" name={f[:aware_dp_visit].name} value="false"
+                  checked={to_string(f[:aware_dp_visit].value||"")=="false" } class="h-4 w-4 text-purple-600" />
+                <span>No</span>
+              </label>
+            </div>
           </div>
 
-          <div>
-            <label class="block text-base font-medium text-gray-900">Were you present during the event?</label>
-            <div class="mt-2"><.input type="checkbox" field={f[:present_event]} /></div>
-          </div>
-        </div>
-
-        <% present_on = f[:present_event].value in [true, "true", "on", 1] %>
-        <%= if present_on do %>
-          <div class="grid gap-4 md:grid-cols-2">
+          <!-- Present during event -->
+          <% present_event=f[:present_event].value in [true, "true" ] %>
             <div>
-              <label class="block text-base font-medium text-gray-900">If yes, what was your role?</label>
-              <div class="mt-2">
-                <.input type="select" field={f[:role_at_event]} prompt="Select" options={SurveyResponse.role_options()} />
+              <label class="block text-base font-medium text-gray-900">Were you present during the event? <span
+                  class="text-red-600">*</span></label>
+              <div class="mt-2 flex gap-6">
+                <label class="inline-flex items-center gap-2">
+                  <input type="radio" name={f[:present_event].name} value="true" required
+                    checked={to_string(f[:present_event].value||"")=="true" } class="h-4 w-4 text-purple-600" />
+                  <span>Yes</span>
+                </label>
+                <label class="inline-flex items-center gap-2">
+                  <input type="radio" name={f[:present_event].name} value="false"
+                    checked={to_string(f[:present_event].value||"")=="false" } class="h-4 w-4 text-purple-600" />
+                  <span>No</span>
+                </label>
               </div>
             </div>
 
-            <% role_other_on = to_string(f[:role_at_event].value || "") == "other" %>
-            <%= if role_other_on do %>
-              <div>
-                <label class="block text-base font-medium text-gray-900">Other role (specify)</label>
-                <div class="mt-2"><.input field={f[:role_other]} /></div>
+            <%= if present_event do %>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="block text-base font-medium text-gray-900">If yes, what was your role? <span
+                      class="text-red-600">*</span></label>
+                  <div class="mt-2">
+                    <.input type="select" field={f[:role_at_event]} prompt="Select"
+                      options={SurveyResponse.role_options()} required />
+                  </div>
+                </div>
+
+                <% role_other_on=to_string(f[:role_at_event].value || "" )=="other" %>
+                  <%= if role_other_on do %>
+                    <div>
+                      <label class="block text-base font-medium text-gray-900">Other role (specify) <span
+                          class="text-red-600">*</span></label>
+                      <div class="mt-2">
+                        <.input field={f[:role_other]} required />
+                      </div>
+                    </div>
+                    <% end %>
               </div>
-            <% end %>
-          </div>
-        <% end %>
+              <% end %>
 
-        <div class="grid gap-4 md:grid-cols-2">
-          <div>
-            <label class="block text-base font-medium text-gray-900">Are you aware of any funds raised?</label>
-            <div class="mt-2"><.input type="checkbox" field={f[:aware_funds]} /></div>
-          </div>
+                <!-- Aware of funds -->
+                <% aware_funds=f[:aware_funds].value in [true, "true" ] %>
+                  <div>
+                    <label class="block text-base font-medium text-gray-900">Are you aware of any funds raised? <span
+                        class="text-red-600">*</span></label>
+                    <div class="mt-2 flex gap-6">
+                      <label class="inline-flex items-center gap-2">
+                        <input type="radio" name={f[:aware_funds].name} value="true" required
+                          checked={to_string(f[:aware_funds].value||"")=="true" } class="h-4 w-4 text-purple-600" />
+                        <span>Yes</span>
+                      </label>
+                      <label class="inline-flex items-center gap-2">
+                        <input type="radio" name={f[:aware_funds].name} value="false"
+                          checked={to_string(f[:aware_funds].value||"")=="false" } class="h-4 w-4 text-purple-600" />
+                        <span>No</span>
+                      </label>
+                    </div>
+                  </div>
 
-          <% aware_funds_on = f[:aware_funds].value in [true, "true", "on", 1] %>
-          <%= if aware_funds_on do %>
-            <div>
-              <label class="block text-base font-medium text-gray-900">If yes, how much was publicly declared?</label>
-              <div class="mt-2"><.input type="number" step="0.01" field={f[:funds_declared_amount]} placeholder="0.00" /></div>
-            </div>
-          <% end %>
-        </div>
+                  <%= if aware_funds do %>
+                    <div>
+                      <label class="block text-base font-medium text-gray-900">If yes, how much was publicly declared?
+                        <span class="text-red-600">*</span></label>
+                      <div class="mt-2">
+                        <.input type="number" step="0.01" field={f[:funds_declared_amount]} placeholder="0.00"
+                          required />
+                      </div>
+                    </div>
+                    <% end %>
       </div>
     </section>
 
@@ -228,93 +293,153 @@
       <div class="mt-4 border-t border-gray-200"></div>
 
       <div class="mt-6 space-y-6">
-        <% received_on = f[:received_funds].value in [true, "true", "on", 1] %>
-        <div class="grid gap-4 md:grid-cols-3">
+        <!-- Received funds -->
+        <% received=f[:received_funds].value in [true, "true" ] %>
           <div>
-            <label class="block text-base font-medium text-gray-900">Has your group/organization received funds?</label>
-            <div class="mt-2"><.input type="checkbox" field={f[:received_funds]} /></div>
-          </div>
-
-          <%= if received_on do %>
-            <div>
-              <label class="block text-base font-medium text-gray-900">If yes, how much did you receive?</label>
-              <div class="mt-2"><.input type="number" step="0.01" field={f[:amount_received]} placeholder="0.00" /></div>
-            </div>
-
-            <div>
-              <label class="block text-base font-medium text-gray-900">When did you receive the funds?</label>
-              <div class="mt-2"><.input type="date" field={f[:date_received]} /></div>
-            </div>
-          <% end %>
-        </div>
-
-        <div>
-          <label class="block text-base font-medium text-gray-900">What activities/projects did you implement?</label>
-          <div class="mt-2"><.input type="textarea" field={f[:activities_implemented]} /></div>
-        </div>
-
-        <% training_on = f[:training_provided].value in [true, "true", "on", 1] %>
-        <div class="grid gap-4 md:grid-cols-2">
-          <div>
-            <label class="block text-base font-medium text-gray-900">Were you provided with any training or guidance?</label>
-            <div class="mt-2"><.input type="checkbox" field={f[:training_provided]} /></div>
-          </div>
-
-          <%= if training_on do %>
-            <div>
-              <label class="block text-base font-medium text-gray-900">If yes, please describe</label>
-              <div class="mt-2"><.input type="textarea" field={f[:training_desc]} /></div>
-            </div>
-          <% end %>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-2">
-          <div>
-            <label class="block text-base font-medium text-gray-900">Are you satisfied with the amount and manner of disbursement?</label>
-            <div class="mt-2">
-              <.input type="select" field={f[:satisfaction]} prompt="Select"
-                      options={[{"Very satisfied","very_satisfied"},{"Satisfied","satisfied"},{"Dissatisfied","dissatisfied"},{"Very dissatisfied","very_dissatisfied"}]} />
+            <label class="block text-base font-medium text-gray-900">Has your group/organization received funds? <span
+                class="text-red-600">*</span></label>
+            <div class="mt-2 flex gap-6">
+              <label class="inline-flex items-center gap-2">
+                <input type="radio" name={f[:received_funds].name} value="true" required
+                  checked={to_string(f[:received_funds].value||"")=="true" } class="h-4 w-4 text-purple-600" />
+                <span>Yes</span>
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input type="radio" name={f[:received_funds].name} value="false"
+                  checked={to_string(f[:received_funds].value||"")=="false" } class="h-4 w-4 text-purple-600" />
+                <span>No</span>
+              </label>
             </div>
           </div>
 
-          <div>
-            <label class="block text-base font-medium text-gray-900">Please explain</label>
-            <div class="mt-2"><.input type="textarea" field={f[:satisfaction_explain]} /></div>
-          </div>
-        </div>
+          <%= if received do %>
+            <div class="grid gap-4 md:grid-cols-2">
+              <div>
+                <label class="block text-base font-medium text-gray-900">If yes, how much did you receive? <span
+                    class="text-red-600">*</span></label>
+                <div class="mt-2">
+                  <.input type="number" step="0.01" field={f[:amount_received]} placeholder="0.00" required />
+                </div>
+              </div>
 
-        <% impact_val = to_string(f[:impact_rating].value || "") %>
-        <div class="grid gap-4 md:grid-cols-2">
-          <div>
-            <label class="block text-base font-medium text-gray-900">Rate the impact of the programme</label>
-            <div class="mt-2">
-              <.input type="select" field={f[:impact_rating]} prompt="Select"
-                      options={[{"Very High","very_high"},{"High","high"},{"Moderate","moderate"},{"Low","low"},{"No Impact","no_impact"}]} />
+              <div>
+                <label class="block text-base font-medium text-gray-900">When did you receive the funds? <span
+                    class="text-red-600">*</span></label>
+                <div class="mt-2">
+                  <.input type="date" field={f[:date_received]} required />
+                </div>
+              </div>
             </div>
-          </div>
+            <% end %>
 
-          <%= if impact_val != "" do %>
-            <div>
-              <label class="block text-base font-medium text-gray-900">Explain</label>
-              <div class="mt-2"><.input type="textarea" field={f[:impact_explain]} /></div>
-            </div>
-          <% end %>
-        </div>
+              <div>
+                <label class="block text-base font-medium text-gray-900">What activities/projects did you implement?
+                  <span class="text-red-600">*</span></label>
+                <div class="mt-2">
+                  <.input type="textarea" field={f[:activities_implemented]} required />
+                </div>
+              </div>
 
-        <% addressed_on = f[:addressed_needs].value in [true, "true", "on", 1] %>
-        <div class="grid gap-4 md:grid-cols-2">
-          <div>
-            <label class="block text-base font-medium text-gray-900">Do you feel the programme has addressed your needs?</label>
-            <div class="mt-2"><.input type="checkbox" field={f[:addressed_needs]} /></div>
-          </div>
+              <!-- Training provided -->
+              <% training=f[:training_provided].value in [true, "true" ] %>
+                <div>
+                  <label class="block text-base font-medium text-gray-900">Were you provided with any training or
+                    guidance? <span class="text-red-600">*</span></label>
+                  <div class="mt-2 flex gap-6">
+                    <label class="inline-flex items-center gap-2">
+                      <input type="radio" name={f[:training_provided].name} value="true" required
+                        checked={to_string(f[:training_provided].value||"")=="true" } class="h-4 w-4 text-purple-600" />
+                      <span>Yes</span>
+                    </label>
+                    <label class="inline-flex items-center gap-2">
+                      <input type="radio" name={f[:training_provided].name} value="false"
+                        checked={to_string(f[:training_provided].value||"")=="false" }
+                        class="h-4 w-4 text-purple-600" />
+                      <span>No</span>
+                    </label>
+                  </div>
+                </div>
 
-          <%= if addressed_on do %>
-            <div>
-              <label class="block text-base font-medium text-gray-900">Please elaborate</label>
-              <div class="mt-2"><.input type="textarea" field={f[:addressed_explain]} /></div>
-            </div>
-          <% end %>
-        </div>
+                <%= if training do %>
+                  <div>
+                    <label class="block text-base font-medium text-gray-900">If yes, please describe <span
+                        class="text-red-600">*</span></label>
+                    <div class="mt-2">
+                      <.input type="textarea" field={f[:training_desc]} required />
+                    </div>
+                  </div>
+                  <% end %>
+
+                    <div class="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label class="block text-base font-medium text-gray-900">Are you satisfied with the amount and
+                          manner of disbursement? <span class="text-red-600">*</span></label>
+                        <div class="mt-2">
+                          <.input type="select" field={f[:satisfaction]} prompt="Select" options={[{"Very
+                            satisfied","very_satisfied"},{"Satisfied","satisfied"},{"Dissatisfied","dissatisfied"},{"Very
+                            dissatisfied","very_dissatisfied"}]} required />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label class="block text-base font-medium text-gray-900">Please explain <span
+                            class="text-red-600">*</span></label>
+                        <div class="mt-2">
+                          <.input type="textarea" field={f[:satisfaction_explain]} required />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <label class="block text-base font-medium text-gray-900">Rate the impact of the programme <span
+                            class="text-red-600">*</span></label>
+                        <div class="mt-2">
+                          <.input type="select" field={f[:impact_rating]} prompt="Select" options={[{"Very
+                            High","very_high"},{"High","high"},{"Moderate","moderate"},{"Low","low"},{"No
+                            Impact","no_impact"}]} required />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label class="block text-base font-medium text-gray-900">Explain Impact <span
+                            class="text-red-600">*</span></label>
+                        <div class="mt-2">
+                          <.input type="textarea" field={f[:impact_explain]} required />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Addressed needs -->
+                    <% addressed=f[:addressed_needs].value in [true, "true" ] %>
+                      <div>
+                        <label class="block text-base font-medium text-gray-900">Do you feel the programme has addressed
+                          your needs? <span class="text-red-600">*</span></label>
+                        <div class="mt-2 flex gap-6">
+                          <label class="inline-flex items-center gap-2">
+                            <input type="radio" name={f[:addressed_needs].name} value="true" required
+                              checked={to_string(f[:addressed_needs].value||"")=="true" }
+                              class="h-4 w-4 text-purple-600" />
+                            <span>Yes</span>
+                          </label>
+                          <label class="inline-flex items-center gap-2">
+                            <input type="radio" name={f[:addressed_needs].name} value="false"
+                              checked={to_string(f[:addressed_needs].value||"")=="false" }
+                              class="h-4 w-4 text-purple-600" />
+                            <span>No</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <%= if addressed do %>
+                        <div>
+                          <label class="block text-base font-medium text-gray-900">Please elaborate <span
+                              class="text-red-600">*</span></label>
+                          <div class="mt-2">
+                            <.input type="textarea" field={f[:addressed_explain]} required />
+                          </div>
+                        </div>
+                        <% end %>
       </div>
     </section>
 
@@ -324,58 +449,100 @@
       <div class="mt-4 border-t border-gray-200"></div>
 
       <div class="mt-6 space-y-6">
-        <% promises_on = f[:promises_made].value in [true, "true", "on", 1] %>
-        <div class="grid gap-4 md:grid-cols-2">
+        <!-- Promises made -->
+        <% promises=f[:promises_made].value in [true, "true" ] %>
           <div>
-            <label class="block text-base font-medium text-gray-900">Were there any promises made by the leaders?</label>
-            <div class="mt-2"><.input type="checkbox" field={f[:promises_made]} /></div>
+            <label class="block text-base font-medium text-gray-900">Were there any promises made by the leaders? <span
+                class="text-red-600">*</span></label>
+            <div class="mt-2 flex gap-6">
+              <label class="inline-flex items-center gap-2">
+                <input type="radio" name={f[:promises_made].name} value="true" required
+                  checked={to_string(f[:promises_made].value||"")=="true" } class="h-4 w-4 text-purple-600" />
+                <span>Yes</span>
+              </label>
+              <label class="inline-flex items-center gap-2">
+                <input type="radio" name={f[:promises_made].name} value="false"
+                  checked={to_string(f[:promises_made].value||"")=="false" } class="h-4 w-4 text-purple-600" />
+                <span>No</span>
+              </label>
+            </div>
           </div>
 
-          <%= if promises_on do %>
+          <%= if promises do %>
             <div>
-              <label class="block text-base font-medium text-gray-900">If yes, specify</label>
-              <div class="mt-2"><.input type="textarea" field={f[:promises_desc]} /></div>
+              <label class="block text-base font-medium text-gray-900">If yes, specify <span
+                  class="text-red-600">*</span></label>
+              <div class="mt-2">
+                <.input type="textarea" field={f[:promises_desc]} required />
+              </div>
             </div>
-          <% end %>
-        </div>
+            <% end %>
 
-        <% fulfilled_val = to_string(f[:promises_fulfilled].value || "") %>
-        <div class="grid gap-4 md:grid-cols-2">
-          <div>
-            <label class="block text-base font-medium text-gray-900">Have these promises been fulfilled?</label>
-            <div class="mt-2">
-              <.input type="select" field={f[:promises_fulfilled]} prompt="Select"
-                      options={[{"Fully","fully"},{"Partially","partially"},{"Not at all","not_at_all"}]} />
-            </div>
-          </div>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label class="block text-base font-medium text-gray-900">Have these promises been fulfilled? <span
+                      class="text-red-600">*</span></label>
+                  <div class="mt-2">
+                    <.input type="select" field={f[:promises_fulfilled]} prompt="Select"
+                      options={[{"Fully","fully"},{"Partially","partially"},{"Not at all","not_at_all"}]} required />
+                  </div>
+                </div>
 
-          <%= if fulfilled_val in ["partially", "not_at_all"] do %>
-            <div>
-              <label class="block text-base font-medium text-gray-900">Explain</label>
-              <div class="mt-2"><.input type="textarea" field={f[:promises_explain]} /></div>
-            </div>
-          <% end %>
-        </div>
+                <div>
+                  <label class="block text-base font-medium text-gray-900">Explain <span
+                      class="text-red-600">*</span></label>
+                  <div class="mt-2">
+                    <.input type="textarea" field={f[:promises_explain]} required />
+                  </div>
+                </div>
+              </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
-          <div>
-            <label class="block text-base font-medium text-gray-900">Were you consulted or involved in decision-making after the visit?</label>
-            <div class="mt-2"><.input type="checkbox" field={f[:consulted_after]} /></div>
-          </div>
+              <!-- Consulted after / Follow-up -->
+              <% consulted=f[:consulted_after].value in [true, "true" ] %>
+                <div>
+                  <label class="block text-base font-medium text-gray-900">Were you consulted or involved after the
+                    visit? <span class="text-red-600">*</span></label>
+                  <div class="mt-2 flex gap-6">
+                    <label class="inline-flex items-center gap-2">
+                      <input type="radio" name={f[:consulted_after].name} value="true" required
+                        checked={to_string(f[:consulted_after].value||"")=="true" } class="h-4 w-4 text-purple-600" />
+                      <span>Yes</span>
+                    </label>
+                    <label class="inline-flex items-center gap-2">
+                      <input type="radio" name={f[:consulted_after].name} value="false"
+                        checked={to_string(f[:consulted_after].value||"")=="false" } class="h-4 w-4 text-purple-600" />
+                      <span>No</span>
+                    </label>
+                  </div>
+                </div>
 
-          <% followed_on = f[:followed_up].value in [true, "true", "on", 1] %>
-          <div>
-            <label class="block text-base font-medium text-gray-900">Have government or political officers followed up after the event?</label>
-            <div class="mt-2"><.input type="checkbox" field={f[:followed_up]} /></div>
-          </div>
-        </div>
+                <% followed=f[:followed_up].value in [true, "true" ] %>
+                  <div>
+                    <label class="block text-base font-medium text-gray-900">Have government or political officers
+                      followed up? <span class="text-red-600">*</span></label>
+                    <div class="mt-2 flex gap-6">
+                      <label class="inline-flex items-center gap-2">
+                        <input type="radio" name={f[:followed_up].name} value="true" required
+                          checked={to_string(f[:followed_up].value||"")=="true" } class="h-4 w-4 text-purple-600" />
+                        <span>Yes</span>
+                      </label>
+                      <label class="inline-flex items-center gap-2">
+                        <input type="radio" name={f[:followed_up].name} value="false"
+                          checked={to_string(f[:followed_up].value||"")=="false" } class="h-4 w-4 text-purple-600" />
+                        <span>No</span>
+                      </label>
+                    </div>
+                  </div>
 
-        <%= if followed_on do %>
-          <div>
-            <label class="block text-base font-medium text-gray-900">If yes, how often?</label>
-            <div class="mt-2"><.input field={f[:followup_frequency]} placeholder="e.g., weekly / monthly" /></div>
-          </div>
-        <% end %>
+                  <%= if followed do %>
+                    <div>
+                      <label class="block text-base font-medium text-gray-900">If yes, how often? <span
+                          class="text-red-600">*</span></label>
+                      <div class="mt-2">
+                        <.input field={f[:followup_frequency]} placeholder="e.g., weekly / monthly" required />
+                      </div>
+                    </div>
+                    <% end %>
       </div>
     </section>
 
@@ -386,18 +553,27 @@
 
       <div class="mt-6 space-y-6">
         <div>
-          <label class="block text-base font-medium text-gray-900">What challenges have you experienced?</label>
-          <div class="mt-2"><.input type="textarea" field={f[:challenges]} /></div>
+          <label class="block text-base font-medium text-gray-900">What challenges have you experienced? <span
+              class="text-red-600">*</span></label>
+          <div class="mt-2">
+            <.input type="textarea" field={f[:challenges]} required />
+          </div>
         </div>
 
         <div>
-          <label class="block text-base font-medium text-gray-900">What improvements would you recommend?</label>
-          <div class="mt-2"><.input type="textarea" field={f[:improvements]} /></div>
+          <label class="block text-base font-medium text-gray-900">What improvements would you recommend? <span
+              class="text-red-600">*</span></label>
+          <div class="mt-2">
+            <.input type="textarea" field={f[:improvements]} required />
+          </div>
         </div>
 
         <div>
-          <label class="block text-base font-medium text-gray-900">Any other comments or feedback?</label>
-          <div class="mt-2"><.input type="textarea" field={f[:other_comments]} /></div>
+          <label class="block text-base font-medium text-gray-900">Any other comments or feedback? <span
+              class="text-red-600">*</span></label>
+          <div class="mt-2">
+            <.input type="textarea" field={f[:other_comments]} required />
+          </div>
         </div>
       </div>
     </section>
