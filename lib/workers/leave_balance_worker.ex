@@ -64,13 +64,13 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
       Repo.transaction(fn ->
         {bal_count, dept_count, errs} =
           data_rows
-          |> Stream.with_index(2) # Excel row numbers start at 2
+          # Excel row numbers start at 2
+          |> Stream.with_index(2)
           |> Enum.reduce({0, 0, []}, fn {row, rno}, {acc_bal, acc_dept, acc_errs} ->
             case process_row(row, ix, annual_lt_id) do
               {:ok, bal_updated?, dept_updated?} ->
                 {acc_bal + if(bal_updated?, do: 1, else: 0),
-                 acc_dept + if(dept_updated?, do: 1, else: 0),
-                 acc_errs}
+                 acc_dept + if(dept_updated?, do: 1, else: 0), acc_errs}
 
               {:error, msg} ->
                 {acc_bal, acc_dept, [{rno, %{}, msg} | acc_errs]}
@@ -147,7 +147,9 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
           {:ok, false}
         else
           case Repo.one(from u in User, where: u.personal_number == ^pno, limit: 1) do
-            nil -> {:ok, false}
+            nil ->
+              {:ok, false}
+
             %User{} = user ->
               dept_id = upsert_department_id(dept_name)
 
@@ -206,7 +208,12 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
   end
 
   defp fetch_annual_leave_type_id do
-    case Repo.one(from lt in LeaveType, where: ilike(lt.name, ^@annual_leave_name), select: lt.id, limit: 1) do
+    case Repo.one(
+           from lt in LeaveType,
+             where: ilike(lt.name, ^@annual_leave_name),
+             select: lt.id,
+             limit: 1
+         ) do
       nil -> {:error, "Leave type not found: #{@annual_leave_name}"}
       id -> {:ok, id}
     end
@@ -216,12 +223,14 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
 
   # Robustly read a decimal from Excel cell (int/float/string), ensure non-negative and 2dp
   defp read_decimal(_row, nil), do: :skip
+
   defp read_decimal(row, idx) do
     raw = fetch(row, idx)
     if provided?(raw), do: to_nonneg_decimal(raw), else: :skip
   end
 
   defp fetch(row, nil), do: nil
+
   defp fetch(row, idx) when is_list(row) do
     case Enum.fetch(row, idx) do
       {:ok, v} -> v
@@ -234,6 +243,7 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
   # Convert anything we get into a clean digit-only string without losing leading zeros.
   defp normalize_personal_number(nil), do: ""
   defp normalize_personal_number(v) when is_integer(v), do: Integer.to_string(v)
+
   defp normalize_personal_number(v) when is_float(v) do
     # compact drops trailing .0 and expands scientific notation
     :erlang.float_to_binary(v, [:compact, decimals: 0])
@@ -255,7 +265,8 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
         case Decimal.parse(s) do
           {:ok, d} ->
             d
-            |> Decimal.round(0) # nearest integer
+            # nearest integer
+            |> Decimal.round(0)
             |> Decimal.to_string(:normal)
             |> String.replace(~r/\.0+$/, "")
 
@@ -294,6 +305,7 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
 
   defp to_nonneg_decimal(v) when is_binary(v) do
     s = v |> String.trim() |> String.replace(",", "")
+
     case Decimal.parse(s) do
       {:ok, d} -> to_nonneg_decimal(d)
       :error -> {:error, "Invalid decimal #{inspect(v)}"}
@@ -303,6 +315,7 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
   defp to_nonneg_decimal(other), do: {:error, "Unsupported value #{inspect(other)}"}
 
   defp normalize(nil), do: ""
+
   defp normalize(term) do
     term
     |> to_string()
