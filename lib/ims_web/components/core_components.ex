@@ -563,6 +563,17 @@ embed_templates "/core_components/*"
     """
   end
 
+  attr :legend, :string, required: true
+  slot :inner_block, required: true
+  def fieldset(assigns) do
+    ~H"""
+    <fieldset class="space-y-4 border rounded p-4">
+      <legend class="font-semibold px-1"><%= @legend %></legend>
+      <%= render_slot(@inner_block) %>
+    </fieldset>
+    """
+  end
+
   @doc """
   Renders a back navigation link.
 

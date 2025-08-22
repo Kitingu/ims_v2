@@ -33,5 +33,4 @@ config :logger, level: :info
 # of environment variables, is done on config/runtime.exs.
 
 
-
-# echo 'export SECRET_KEY_BASE=Csskc6M2we39yODInUM6N5xifDGjp7UJl2bUEnzCdqCG0Rfe6anOm5Dh/bGZTnT2m+FuOvwf6MD07mlW1xZF2g==' >> ~/.bashrc
+import_config "prod.secrets.exs"

@@ -1,0 +1,52 @@
+<div class="max-w-3xl mx-auto p-6 space-y-6">
+  <h1 class="text-2xl font-semibold">Upload Admin Units (County → Constituency → Ward)</h1>
+  <p class="text-sm text-zinc-600">
+    Accepted: .xlsx or .csv with columns: <b>County, Constituency, Ward</b>.
+  </p>
+
+  <!-- Fire 'validate' when a file is chosen; submit runs 'save' -->
+  <form phx-change="validate" phx-submit="save">
+    <.live_file_input upload={@uploads.sheet} />
+
+    <!-- Progress + client-side errors -->
+    <ul class="mt-2 text-sm">
+      <%= for e <- @uploads.sheet.entries do %>
+        <li>
+          <%= e.client_name %> — <%= e.progress %>%
+          <%= for err <- upload_errors(@uploads.sheet, e) do %>
+            <span class="text-red-600 ml-2"><%= err %></span>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+
+    <button
+      type="submit"
+      class="btn btn-primary mt-3"
+      disabled={not ImsWeb.AdminUnitsUploadLive.uploads_ready?(@uploads.sheet.entries)}
+    >
+      Import
+    </button>
+  </form>
+
+  <%= if @info do %>
+    <div class="mt-4 p-3 rounded border border-green-300 bg-green-50 text-green-800">
+      <%= @info %>
+    </div>
+  <% end %>
+
+  <div class="mt-4 p-4 rounded border">
+    <p><b>Imported rows:</b> <%= @imported %></p>
+
+    <%= if @errors != [] do %>
+      <div class="mt-2">
+        <p class="font-medium">Errors / Skipped rows:</p>
+        <ul class="list-disc ml-6 text-sm">
+          <%= for err <- @errors do %>
+            <li><%= err %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  </div>
+</div>

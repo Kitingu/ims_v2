@@ -1,0 +1,401 @@
+<!-- Header (width-limited purple, same width as form) -->
+<div class="max-w-3xl mx-auto px-4 pt-8">
+  <div class="rounded-t-2xl bg-gradient-to-r from-purple-600 to-purple-500 p-4 sm:p-6">
+    <div class="flex items-center gap-4">
+      <img src="/images/logo.png" alt="Logo" class="h-28 w-auto shadow-lg" />
+      <div class="text-white">
+        <p class="text-sm mt-1 font-medium">
+          EXECUTIVE OFFICE OF THE DEPUTY PRESIDENT
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white/95 backdrop-blur rounded-b-2xl border border-purple-200 shadow-sm p-6">
+    <h1 class="text-2xl md:text-3xl font-semibold text-gray-900">
+      Economic Empowerment Programmes – Data Collection
+    </h1>
+    <p class="mt-2 text-sm text-gray-600">
+      Please fill the form carefully. Fields marked <span class="text-red-500">*</span> are required.
+    </p>
+  </div>
+</div>
+
+<!-- Body -->
+<div class="max-w-3xl mx-auto px-4 mt-6">
+  <.form
+    for={@changeset}
+    as={:survey_response}
+    id="survey-form"
+    phx-change="validate"
+    phx-submit="save"
+    :let={f}>
+
+    <!-- LOCATION -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+      <h2 class="text-xl md:text-2xl font-semibold text-gray-900">Location</h2>
+      <div class="mt-4 border-t border-gray-200"></div>
+
+      <div class="mt-6 space-y-6">
+        <div>
+          <label class="block text-base font-medium text-gray-900">
+            Project Name <span class="text-red-500">*</span>
+          </label>
+          <div class="mt-2">
+            <.input field={f[:project_name]} placeholder="Enter project name" class="w-full" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-base font-medium text-gray-900">Location (free text)</label>
+          <div class="mt-2">
+            <.input field={f[:location_text]} placeholder="Estate / centre / landmark" class="w-full" />
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-base font-medium text-gray-900">
+              County <span class="text-red-500">*</span>
+            </label>
+            <div class="mt-2">
+              <.input type="select" field={f[:county_id]} prompt="Select county" options={@counties} />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-base font-medium text-gray-900">
+              Constituency <span class="text-red-500">*</span>
+            </label>
+            <div class="mt-2">
+              <.input type="select" field={f[:constituency_id]} prompt="Select constituency" options={@constituencies} />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-base font-medium text-gray-900">
+              Ward <span class="text-red-500">*</span>
+            </label>
+            <div class="mt-2">
+              <.input type="select" field={f[:ward_id]} prompt="Select ward" options={@wards} />
+            </div>
+          </div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Date of Data Collection</label>
+            <div class="mt-2">
+              <.input type="date" field={f[:date_of_data_collection]} />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-base font-medium text-gray-900">Enumerator’s Name</label>
+            <div class="mt-2">
+              <.input field={f[:enumerator_name]} placeholder="Your name" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION A -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+      <h2 class="text-xl md:text-2xl font-semibold text-gray-900">Section A: General Information</h2>
+      <div class="mt-4 border-t border-gray-200"></div>
+
+      <div class="mt-6 space-y-6">
+        <div>
+          <label class="block text-base font-medium text-gray-900">Respondent Name</label>
+          <div class="mt-2"><.input field={f[:respondent_name]} /></div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Gender</label>
+            <div class="mt-2">
+              <.input type="select" field={f[:gender]} prompt="Select" options={SurveyResponse.gender_options()} />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-base font-medium text-gray-900">Age</label>
+            <div class="mt-2">
+              <.input type="select" field={f[:age_bracket]} prompt="Select" options={SurveyResponse.age_options()} />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-base font-medium text-gray-900">Category</label>
+            <div class="mt-2">
+              <.input type="select" field={f[:category]} prompt="Select" options={SurveyResponse.category_options()} />
+            </div>
+          </div>
+        </div>
+
+        <% category_other_on = to_string(f[:category].value || "") == "other" %>
+        <%= if category_other_on do %>
+          <div>
+            <label class="block text-base font-medium text-gray-900">If Other, specify</label>
+            <div class="mt-2"><.input field={f[:category_other]} /></div>
+          </div>
+        <% end %>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Group/Organization Affiliation</label>
+            <div class="mt-2"><.input field={f[:group_affiliation]} /></div>
+          </div>
+
+          <div>
+            <label class="block text-base font-medium text-gray-900">Contact Information (optional)</label>
+            <div class="mt-2"><.input field={f[:contact_info]} placeholder="Phone or email" /></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION B -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+      <h2 class="text-xl md:text-2xl font-semibold text-gray-900">Section B: Awareness and Participation</h2>
+      <div class="mt-4 border-t border-gray-200"></div>
+
+      <div class="mt-6 space-y-6">
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Are you aware of the recent visit by H.E. DP?</label>
+            <div class="mt-2"><.input type="checkbox" field={f[:aware_dp_visit]} /></div>
+          </div>
+
+          <div>
+            <label class="block text-base font-medium text-gray-900">Were you present during the event?</label>
+            <div class="mt-2"><.input type="checkbox" field={f[:present_event]} /></div>
+          </div>
+        </div>
+
+        <% present_on = f[:present_event].value in [true, "true", "on", 1] %>
+        <%= if present_on do %>
+          <div class="grid gap-4 md:grid-cols-2">
+            <div>
+              <label class="block text-base font-medium text-gray-900">If yes, what was your role?</label>
+              <div class="mt-2">
+                <.input type="select" field={f[:role_at_event]} prompt="Select" options={SurveyResponse.role_options()} />
+              </div>
+            </div>
+
+            <% role_other_on = to_string(f[:role_at_event].value || "") == "other" %>
+            <%= if role_other_on do %>
+              <div>
+                <label class="block text-base font-medium text-gray-900">Other role (specify)</label>
+                <div class="mt-2"><.input field={f[:role_other]} /></div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Are you aware of any funds raised?</label>
+            <div class="mt-2"><.input type="checkbox" field={f[:aware_funds]} /></div>
+          </div>
+
+          <% aware_funds_on = f[:aware_funds].value in [true, "true", "on", 1] %>
+          <%= if aware_funds_on do %>
+            <div>
+              <label class="block text-base font-medium text-gray-900">If yes, how much was publicly declared?</label>
+              <div class="mt-2"><.input type="number" step="0.01" field={f[:funds_declared_amount]} placeholder="0.00" /></div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION C -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+      <h2 class="text-xl md:text-2xl font-semibold text-gray-900">Section C: Fund Disbursement and Utilization</h2>
+      <div class="mt-4 border-t border-gray-200"></div>
+
+      <div class="mt-6 space-y-6">
+        <% received_on = f[:received_funds].value in [true, "true", "on", 1] %>
+        <div class="grid gap-4 md:grid-cols-3">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Has your group/organization received funds?</label>
+            <div class="mt-2"><.input type="checkbox" field={f[:received_funds]} /></div>
+          </div>
+
+          <%= if received_on do %>
+            <div>
+              <label class="block text-base font-medium text-gray-900">If yes, how much did you receive?</label>
+              <div class="mt-2"><.input type="number" step="0.01" field={f[:amount_received]} placeholder="0.00" /></div>
+            </div>
+
+            <div>
+              <label class="block text-base font-medium text-gray-900">When did you receive the funds?</label>
+              <div class="mt-2"><.input type="date" field={f[:date_received]} /></div>
+            </div>
+          <% end %>
+        </div>
+
+        <div>
+          <label class="block text-base font-medium text-gray-900">What activities/projects did you implement?</label>
+          <div class="mt-2"><.input type="textarea" field={f[:activities_implemented]} /></div>
+        </div>
+
+        <% training_on = f[:training_provided].value in [true, "true", "on", 1] %>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Were you provided with any training or guidance?</label>
+            <div class="mt-2"><.input type="checkbox" field={f[:training_provided]} /></div>
+          </div>
+
+          <%= if training_on do %>
+            <div>
+              <label class="block text-base font-medium text-gray-900">If yes, please describe</label>
+              <div class="mt-2"><.input type="textarea" field={f[:training_desc]} /></div>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Are you satisfied with the amount and manner of disbursement?</label>
+            <div class="mt-2">
+              <.input type="select" field={f[:satisfaction]} prompt="Select"
+                      options={[{"Very satisfied","very_satisfied"},{"Satisfied","satisfied"},{"Dissatisfied","dissatisfied"},{"Very dissatisfied","very_dissatisfied"}]} />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-base font-medium text-gray-900">Please explain</label>
+            <div class="mt-2"><.input type="textarea" field={f[:satisfaction_explain]} /></div>
+          </div>
+        </div>
+
+        <% impact_val = to_string(f[:impact_rating].value || "") %>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Rate the impact of the programme</label>
+            <div class="mt-2">
+              <.input type="select" field={f[:impact_rating]} prompt="Select"
+                      options={[{"Very High","very_high"},{"High","high"},{"Moderate","moderate"},{"Low","low"},{"No Impact","no_impact"}]} />
+            </div>
+          </div>
+
+          <%= if impact_val != "" do %>
+            <div>
+              <label class="block text-base font-medium text-gray-900">Explain</label>
+              <div class="mt-2"><.input type="textarea" field={f[:impact_explain]} /></div>
+            </div>
+          <% end %>
+        </div>
+
+        <% addressed_on = f[:addressed_needs].value in [true, "true", "on", 1] %>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Do you feel the programme has addressed your needs?</label>
+            <div class="mt-2"><.input type="checkbox" field={f[:addressed_needs]} /></div>
+          </div>
+
+          <%= if addressed_on do %>
+            <div>
+              <label class="block text-base font-medium text-gray-900">Please elaborate</label>
+              <div class="mt-2"><.input type="textarea" field={f[:addressed_explain]} /></div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION D -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+      <h2 class="text-xl md:text-2xl font-semibold text-gray-900">Section D: Promises, Feedback &amp; Follow-up</h2>
+      <div class="mt-4 border-t border-gray-200"></div>
+
+      <div class="mt-6 space-y-6">
+        <% promises_on = f[:promises_made].value in [true, "true", "on", 1] %>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Were there any promises made by the leaders?</label>
+            <div class="mt-2"><.input type="checkbox" field={f[:promises_made]} /></div>
+          </div>
+
+          <%= if promises_on do %>
+            <div>
+              <label class="block text-base font-medium text-gray-900">If yes, specify</label>
+              <div class="mt-2"><.input type="textarea" field={f[:promises_desc]} /></div>
+            </div>
+          <% end %>
+        </div>
+
+        <% fulfilled_val = to_string(f[:promises_fulfilled].value || "") %>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Have these promises been fulfilled?</label>
+            <div class="mt-2">
+              <.input type="select" field={f[:promises_fulfilled]} prompt="Select"
+                      options={[{"Fully","fully"},{"Partially","partially"},{"Not at all","not_at_all"}]} />
+            </div>
+          </div>
+
+          <%= if fulfilled_val in ["partially", "not_at_all"] do %>
+            <div>
+              <label class="block text-base font-medium text-gray-900">Explain</label>
+              <div class="mt-2"><.input type="textarea" field={f[:promises_explain]} /></div>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-2">
+          <div>
+            <label class="block text-base font-medium text-gray-900">Were you consulted or involved in decision-making after the visit?</label>
+            <div class="mt-2"><.input type="checkbox" field={f[:consulted_after]} /></div>
+          </div>
+
+          <% followed_on = f[:followed_up].value in [true, "true", "on", 1] %>
+          <div>
+            <label class="block text-base font-medium text-gray-900">Have government or political officers followed up after the event?</label>
+            <div class="mt-2"><.input type="checkbox" field={f[:followed_up]} /></div>
+          </div>
+        </div>
+
+        <%= if followed_on do %>
+          <div>
+            <label class="block text-base font-medium text-gray-900">If yes, how often?</label>
+            <div class="mt-2"><.input field={f[:followup_frequency]} placeholder="e.g., weekly / monthly" /></div>
+          </div>
+        <% end %>
+      </div>
+    </section>
+
+    <!-- SECTION E -->
+    <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 md:p-8 mb-6">
+      <h2 class="text-xl md:text-2xl font-semibold text-gray-900">Section E: Recommendations &amp; Suggestions</h2>
+      <div class="mt-4 border-t border-gray-200"></div>
+
+      <div class="mt-6 space-y-6">
+        <div>
+          <label class="block text-base font-medium text-gray-900">What challenges have you experienced?</label>
+          <div class="mt-2"><.input type="textarea" field={f[:challenges]} /></div>
+        </div>
+
+        <div>
+          <label class="block text-base font-medium text-gray-900">What improvements would you recommend?</label>
+          <div class="mt-2"><.input type="textarea" field={f[:improvements]} /></div>
+        </div>
+
+        <div>
+          <label class="block text-base font-medium text-gray-900">Any other comments or feedback?</label>
+          <div class="mt-2"><.input type="textarea" field={f[:other_comments]} /></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Submit -->
+    <div class="flex justify-end pb-10">
+      <.button class="bg-purple-600 hover:bg-purple-700 focus:ring-purple-500">
+        Submit
+      </.button>
+    </div>
+  </.form>
+</div>

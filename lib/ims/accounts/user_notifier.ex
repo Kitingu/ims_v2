@@ -7,9 +7,11 @@ defmodule Ims.Accounts.UserNotifier do
   defp deliver(recipient, subject, body) do
     from_email =
       Application.fetch_env!(:ims, :mailer_from_email)
+      |> IO.inspect(label: "Mailer from email")
 
     from_name =
       Application.get_env(:ims, :mailer_from_name, "IMS")
+    |> IO.inspect(label: "Mailer from name")
 
     email =
       new()
@@ -19,8 +21,9 @@ defmodule Ims.Accounts.UserNotifier do
       |> from({from_name, from_email})
       |> subject(subject)
       |> text_body(body)
+      |> IO.inspect(label: "Email to deliver")
 
-    with {:ok, _meta} <- Mailer.deliver(email) do
+    with {:ok, _meta} <- Mailer.deliver(email) |> IO.inspect(label: "ejjjre") do
       {:ok, email}
     end
   end

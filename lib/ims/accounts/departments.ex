@@ -5,7 +5,7 @@ defmodule Ims.Accounts.Departments do
   schema "departments" do
     field :name, :string
     belongs_to :created_by, Ims.Accounts.User
-    has_many :users, Ims.Accounts.User
+    has_many :users, Ims.Accounts.User 
 
     timestamps(type: :utc_datetime)
   end
