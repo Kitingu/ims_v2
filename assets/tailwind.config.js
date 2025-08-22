@@ -24,6 +24,7 @@ module.exports = {
     "from-purple-600",
     "to-purple-500",
     "bg-purple-600",
+    "bg-red-600",
     "hover:bg-purple-700",
     "focus:ring-purple-500"
   ],
