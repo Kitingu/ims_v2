@@ -13,20 +13,21 @@
     <!-- Actions -->
     <div class="flex items-end gap-2">
       <!-- Export -->
-      <a href={~p"/leave-balances/export?#{@params}"}
+      <a :if={Canada.Can.can?(@current_user, ["export"], "leave_balances")} href={~p"/leave-balances/export?#{@params}"}
          class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
         Export to Excel
       </a>
 
       <!-- Update -->
-      <button phx-click="update_leave_balance"
+      <button :if={Canada.Can.can?(@current_user, ["edit"], "leave_balances")} phx-click="update_leave_balance"
               class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
         Update Leave Balances
       </button>
 
       <!-- Import Excel (single file input, visually hidden NOT display:none) -->
-      <form class="flex items-center gap-2" phx-change="noop">
+      <form :if={Canada.Can.can?(@current_user, ["upload"], "leave_balances")} class="flex items-center gap-2" phx-change="noop">
         <!-- Wrap input inside label: always works -->
+
         <label class="bg-gray-600 hover:bg-gray-700 text-black px-4 py-2 rounded cursor-pointer">
           Import Excel
           <!-- live_file_input renders <input type="file">; keep it visible to a11y but offscreen -->

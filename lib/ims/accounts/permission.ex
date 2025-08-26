@@ -115,8 +115,6 @@ defmodule Ims.Accounts.Permission do
       %{name: "assets.list_available_assets"},
       %{name: "assets.list_all_assets"},
 
-
-
       # asset actions
       %{name: "assets.mark_as_lost"},
       %{name: "assets.return"},
@@ -129,8 +127,6 @@ defmodule Ims.Accounts.Permission do
       %{name: "asset_names.index"},
       %{name: "asset_names.edit"},
       %{name: "asset_names.view"},
-
-
 
       # requests
       %{name: "requests.edit"},
@@ -153,6 +149,12 @@ defmodule Ims.Accounts.Permission do
       %{name: "leave_types.index"},
       %{name: "leave_types.list_all"},
 
+      # leave balances
+      %{name: "leave_balances.index"},
+      %{name: "leave_balances.edit"},
+      %{name: "leave_balances.export"},
+      %{name: "leave_balances.upload"},
+
       # admin
       %{name: "admin_panel.manage"},
       %{name: "hr_dashboard.manage"},
@@ -164,7 +166,6 @@ defmodule Ims.Accounts.Permission do
       %{name: "dashboard_welfare.view"},
       %{name: "dashboard_hr.view"},
       %{name: "dashboard_ict.view"},
-
 
       # main sidebar
       %{name: "welfare.index"},
