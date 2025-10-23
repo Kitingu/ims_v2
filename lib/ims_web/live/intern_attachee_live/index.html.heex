@@ -18,14 +18,19 @@
 >
   <:col :let={ intern_attachee} label="ID">{intern_attachee.id}</:col>
   <:col :let={ intern_attachee} label="Full name">{intern_attachee.full_name}</:col>
-  <:col :let={ intern_attachee} label="Phone">{intern_attachee.phone}</:col>
+  <!-- <:col :let={ intern_attachee} label="Phone">{intern_attachee.phone}</:col> -->
   <:col :let={ intern_attachee} label="Department">{intern_attachee.department.name} </:col>
-  <:col :let={ intern_attachee} label="School">{intern_attachee.school}</:col>
+  <!-- <:col :let={ intern_attachee} label="School">{intern_attachee.school}</:col> -->
+  <:col :let={intern_attachee} label="School">
+    <span class="inline-block max-w-[150px] truncate text-gray-700" title={intern_attachee.school}>
+      <%= intern_attachee.school %>
+    </span>
+  </:col>
   <:col :let={ intern_attachee} label="Program">{intern_attachee.program}</:col>
   <:col :let={ intern_attachee} label="Start date">{intern_attachee.start_date}</:col>
   <:col :let={ intern_attachee} label="End date">{intern_attachee.end_date}</:col>
   <:col :let={ intern_attachee} label="Duration">{intern_attachee.duration}</:col>
-  <:col :let={ intern_attachee} label="Next of kin phone">{intern_attachee.next_of_kin_phone}</:col>
+  <!-- <:col :let={ intern_attachee} label="Next of kin phone">{intern_attachee.next_of_kin_phone}</:col> -->
  
 </.table>
 

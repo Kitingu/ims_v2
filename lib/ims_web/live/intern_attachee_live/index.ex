@@ -3,7 +3,7 @@ defmodule ImsWeb.InternAttacheeLive.Index do
 
   alias Ims.Interns
   alias Ims.Interns.InternAttachee
-  @paginator_opts [order_by: [desc: :id], page_size: 10]
+  @paginator_opts [order_by: [desc: :id], page_size: 15]
 
   @impl true
   def mount(_params, _session, socket) do
@@ -81,11 +81,11 @@ defmodule ImsWeb.InternAttacheeLive.Index do
       end
 
     opts = Keyword.merge(@paginator_opts, page: new_page)
-    intern_attacheesççç = fetch_records(socket.assigns.filters, opts)
+    intern_attachees = fetch_records(socket.assigns.filters, opts)
 
     socket =
       socket
-      |> assign(:intern_attacheesççç, intern_attacheesççç)
+      |> assign(:intern_attachees, intern_attachees)
       |> assign(:page, new_page)
 
     # No need for String.to_integer here
