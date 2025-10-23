@@ -60,6 +60,38 @@ defmodule ImsWeb.InternAttacheeLive.Index do
     {:noreply, stream_delete(socket, :intern_attachees, intern_attachee)}
   end
 
+  def handle_event("resize_table", %{"size" => size}, socket) do
+    intern_attacheesççç =
+      fetch_records(socket.assigns.filters, page_size: String.to_integer(size)) |> IO.inspect()
+
+    {:noreply, assign(socket, intern_attacheesççç: intern_attacheesççç)}
+  end
+
+  def handle_event("render_page", %{"page" => page}, socket) do
+    IO.inspect("page: #{page}")
+    current_page = socket.assigns.page |> IO.inspect(label: "Current Page")
+
+    # Determine new page number based on the action
+
+    new_page =
+      case page do
+        "next" -> current_page + 1
+        "previous" -> max(current_page - 1, 1)
+        _ -> String.to_integer(page)
+      end
+
+    opts = Keyword.merge(@paginator_opts, page: new_page)
+    intern_attacheesççç = fetch_records(socket.assigns.filters, opts)
+
+    socket =
+      socket
+      |> assign(:intern_attacheesççç, intern_attacheesççç)
+      |> assign(:page, new_page)
+
+    # No need for String.to_integer here
+    {:noreply, socket}
+  end
+
   def fetch_records(filters, opts) do
     opts = Keyword.merge(opts, @paginator_opts)
 

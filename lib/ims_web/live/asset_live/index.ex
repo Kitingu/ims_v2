@@ -27,8 +27,6 @@ defmodule ImsWeb.AssetLive.Index do
     {:ok, socket}
   end
 
-
-
   @impl true
   def handle_params(params, _url, socket) do
     page = String.to_integer(params["page"] || "1")
@@ -266,6 +264,38 @@ defmodule ImsWeb.AssetLive.Index do
      socket
      |> assign(:filters, %{})
      |> assign(:assets, fetch_records(%{}, @paginator_opts))}
+  end
+
+  def handle_event("resize_table", %{"size" => size}, socket) do
+    assets =
+      fetch_records(socket.assigns.filters, page_size: String.to_integer(size)) |> IO.inspect()
+
+    {:noreply, assign(socket, assets: assets)}
+  end
+
+  def handle_event("render_page", %{"page" => page}, socket) do
+    IO.inspect("page: #{page}")
+    current_page = socket.assigns.page |> IO.inspect(label: "Current Page")
+
+    # Determine new page number based on the action
+
+    new_page =
+      case page do
+        "next" -> current_page + 1
+        "previous" -> max(current_page - 1, 1)
+        _ -> String.to_integer(page)
+      end
+
+    opts = Keyword.merge(@paginator_opts, page: new_page)
+    assets = fetch_records(socket.assigns.filters, opts)
+
+    socket =
+      socket
+      |> assign(:assets, assets)
+      |> assign(:page, new_page)
+
+    # No need for String.to_integer here
+    {:noreply, socket}
   end
 
   defp fetch_records(filters, opts) do
