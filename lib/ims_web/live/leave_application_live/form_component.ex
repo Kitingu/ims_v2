@@ -182,7 +182,18 @@ defmodule ImsWeb.LeaveApplicationLive.FormComponent do
      socket
      |> assign(assigns)
      |> assign(:leave_types, Enum.map(leave_types, &{&1.name, &1.id}))
-     |> assign(:users, Enum.map(users, &{"#{&1.first_name} - #{&1.personal_number}", &1.id}))
+     |> assign(
+       :users,
+       Enum.map(users, fn u ->
+         name =
+           [u.first_name, u.last_name]
+           |> Enum.reject(&is_nil/1)
+           |> Enum.join(" ")
+           |> String.trim()
+
+         {"#{name} - #{to_string(u.personal_number)}", u.id}
+       end)
+     )
      |> assign(:uploaded_files, nil)
      |> assign(:selected_user, user_id)
      |> assign(:selected_leave_type, leave_type_id)

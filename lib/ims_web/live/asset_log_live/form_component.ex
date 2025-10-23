@@ -40,7 +40,20 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
       ) do
     IO.inspect(assigns, label: "Fallback Update Assigns")
 
-    users = Ims.Accounts.list_users() |> Enum.map(&{&1.first_name, &1.id})
+    users =
+      Ims.Accounts.list_users()
+      |> Enum.map(fn u ->
+        name =
+          [u.first_name, u.last_name]
+          |> Enum.reject(&is_nil/1)
+          |> Enum.join(" ")
+          |> String.trim()
+
+        pn = u.personal_number |> to_string()
+
+        {"#{name} (#{pn})", u.id}
+      end)
+
     offices = Ims.Inventory.list_offices() |> Enum.map(&{&1.name, &1.id})
     asset_log = %Ims.Inventory.AssetLog{}
     category_id = request.category_id
@@ -63,7 +76,12 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
 
   @impl true
   def update(%{asset: asset, action: action, return_to: return_to} = assigns, socket) do
-    users = Ims.Accounts.list_users() |> Enum.map(&{&1.first_name, &1.id})
+    users =
+      Ims.Accounts.list_users()
+      |> Enum.map(fn u ->
+        {"#{u.first_name} #{u.last_name} (#{u.personal_number})", u.id}
+      end)
+
     offices = Ims.Inventory.list_offices() |> Enum.map(&{&1.name, &1.id})
     asset_log = %Ims.Inventory.AssetLog{}
 
@@ -343,6 +361,7 @@ defmodule ImsWeb.AssetLogLive.FormComponent do
   @impl true
   def handle_event("validate", %{"asset_log" => asset_log_params}, socket) do
     IO.inspect(label: "Validate Event")
+
     changeset =
       Inventory.change_asset_log(socket.assigns.asset_log, asset_log_params) |> IO.inspect()
 
