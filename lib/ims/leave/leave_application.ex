@@ -331,7 +331,7 @@ defmodule Ims.Leave.LeaveApplication do
           before_decision.(application)
 
           application
-          |> change(%{status: status, decided_by_id: actor && actor.id, decided_at: DateTime.utc_now(:second)})
+          |> change(%{status: status, decided_by_id: actor && actor.id, decided_at: DateTime.utc_now() |> DateTime.truncate(:second)})
           |> Repo.update!()
 
         nil ->

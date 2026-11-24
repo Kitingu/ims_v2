@@ -7,7 +7,7 @@ defmodule ImsWeb.UserLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    filters = %{}
+    filters = %{status: "active"}
 
     socket =
       socket
@@ -64,7 +64,7 @@ defmodule ImsWeb.UserLive do
 
   @impl true
   def handle_event("search", %{"query" => query}, socket) do
-    filters = atomize_keys(%{"query" => query})
+    filters = Map.put(socket.assigns.filters, :query, query)
 
     opts = Keyword.merge(@paginator_opts, page: 1)
 
@@ -74,10 +74,42 @@ defmodule ImsWeb.UserLive do
      socket
      |> assign(:filters, filters)
      |> assign(:users, users)
-     |> assign(:page, socket.assigns.page || 1)}
+     |> assign(:page, 1)}
   end
 
-  @impl true
+  def handle_event("filter_status", %{"status" => status}, socket)
+      when status in ["active", "archived"] do
+    filters = Map.put(socket.assigns.filters, :status, status)
+    {:noreply, assign(socket, filters: filters, users: fetch_records(filters, @paginator_opts), page: 1)}
+  end
+
+  def handle_event("set_user_deactivation", %{"id" => id, "deactivate" => action}, socket)
+      when action in ["true", "false"] do
+    actor = socket.assigns.current_user
+
+    with true <- Canada.Can.can?(actor, ["edit"], "users"),
+         {user_id, ""} <- Integer.parse(id),
+         {:ok, tokens} <- Accounts.set_user_deactivation(actor, user_id, action == "true") do
+      Enum.each(tokens, fn token ->
+        ImsWeb.Endpoint.broadcast("users_sessions:#{Base.url_encode64(token)}", "disconnect", %{})
+      end)
+
+      filters = socket.assigns.filters
+      message = if action == "true", do: "User deactivated.", else: "User reactivated."
+
+      {:noreply,
+       socket
+       |> assign(users: fetch_records(filters, @paginator_opts), page: 1)
+       |> put_flash(:info, message)}
+    else
+      {:error, :own_account} ->
+        {:noreply, put_flash(socket, :error, "You cannot deactivate your own account.")}
+
+      _ ->
+        {:noreply, put_flash(socket, :error, "Unable to change this user's status.")}
+    end
+  end
+
   def handle_event("show_modal", %{"user-id" => user_id}, socket) do
     {:noreply, assign(socket, show_modal: true, modal_user_id: String.to_integer(user_id))}
   end
@@ -170,7 +202,15 @@ defmodule ImsWeb.UserLive do
 
   defp fetch_records(filters, opts) do
     IO.inspect(opts, label: "opts")
-    query = User.search(filters)
+    import Ecto.Query
+
+    query =
+      case filters[:status] do
+        "archived" -> from u in User, where: not is_nil(u.deactivated_at)
+        _ -> from u in User, where: is_nil(u.deactivated_at)
+      end
+
+    query = User.search(query, filters)
     opts = Keyword.merge(@paginator_opts, opts)
 
     query
@@ -214,9 +254,17 @@ defmodule ImsWeb.UserLive do
               phx-debounce="300"
               placeholder="Search by name or staff number..."
               class="w-full border px-4 py-2 rounded shadow-sm focus:outline-none focus:ring focus:border-blue-300"
-              value={@filters["query"] || ""}
+              value={@filters[:query] || ""}
             />
             <!-- No submit button -->
+          </form>
+
+          <form phx-change="filter_status">
+            <label for="user-status-filter" class="sr-only">Account status</label>
+            <select id="user-status-filter" name="status" class="rounded border-gray-300">
+              <option value="active" selected={@filters[:status] == "active"}>Active users</option>
+              <option value="archived" selected={@filters[:status] == "archived"}>Archived users</option>
+            </select>
           </form>
 
     <!-- Action Buttons -->
@@ -280,7 +328,7 @@ defmodule ImsWeb.UserLive do
         </:col>
 
         <:col :let={user} label="Department">
-          {user.department.name}
+          {user.department && user.department.name}
         </:col>
 
         <:col :let={user} label="Role">
@@ -289,6 +337,20 @@ defmodule ImsWeb.UserLive do
           <% else %>
             {Enum.map(user.roles, & &1.name) |> Enum.join(", ")}
           <% end %>
+        </:col>
+        <:col :let={user} label="Account status">
+          <span>{if user.deactivated_at, do: "Archived", else: "Active"}</span>
+          <button
+            :if={user.id != @current_user.id && Canada.Can.can?(@current_user, ["edit"], "users")}
+            type="button"
+            phx-click="set_user_deactivation"
+            phx-value-id={user.id}
+            phx-value-deactivate={to_string(is_nil(user.deactivated_at))}
+            data-confirm={if is_nil(user.deactivated_at), do: "Deactivate this user and sign them out?"}
+            class="ml-2 text-blue-700 underline"
+          >
+            {if user.deactivated_at, do: "Reactivate", else: "Deactivate"}
+          </button>
         </:col>
       </.table>
 

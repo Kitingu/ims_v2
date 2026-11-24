@@ -88,7 +88,7 @@ defmodule ImsWeb.InternAttacheeLive.FormComponent do
 
   @impl true
   def handle_event("validate", %{"intern_attachee" => intern_attachee_params}, socket) do
-    intern_attachee_params = maybe_calculate_end_date(intern_attachee_params)
+    intern_attachee_params = maybe_calculate_end_date(intern_attachee_params, socket.assigns.intern_attachee)
 
     changeset =
       Interns.change_intern_attachee(
@@ -100,34 +100,39 @@ defmodule ImsWeb.InternAttacheeLive.FormComponent do
   end
 
   def handle_event("save", %{"intern_attachee" => intern_attachee_params}, socket) do
-    intern_attachee_params = maybe_calculate_end_date(intern_attachee_params)
+    intern_attachee_params = maybe_calculate_end_date(intern_attachee_params, socket.assigns.intern_attachee)
 
     save_intern_attachee(socket, socket.assigns.action, intern_attachee_params)
   end
 
   defp save_intern_attachee(socket, :edit, intern_attachee_params) do
-    case Interns.update_intern_attachee(socket.assigns.intern_attachee, intern_attachee_params) do
-      {:ok, intern_attachee} ->
-        notify_parent({:saved, intern_attachee})
-
-        {:noreply,
-         socket
-         |> put_flash(:info, "Intern attachee updated successfully")
-         |> push_patch(to: socket.assigns.patch)}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, form: to_form(changeset))}
+    if Canada.Can.can?(socket.assigns.current_user, ["edit"], "intern_attachees") do
+      update_intern_attachee(socket, intern_attachee_params)
+    else
+      {:noreply, put_flash(socket, :error, "You do not have permission to edit this record.")}
     end
   end
 
   defp save_intern_attachee(socket, :new, intern_attachee_params) do
-    case Interns.create_intern_attachee(intern_attachee_params) do
+    persist_intern_attachee(socket, Interns.create_intern_attachee(intern_attachee_params), "created")
+  end
+
+  defp update_intern_attachee(socket, params) do
+    persist_intern_attachee(
+      socket,
+      Interns.update_intern_attachee(socket.assigns.intern_attachee, params),
+      "updated"
+    )
+  end
+
+  defp persist_intern_attachee(socket, result, operation) do
+    case result do
       {:ok, intern_attachee} ->
         notify_parent({:saved, intern_attachee})
 
         {:noreply,
          socket
-         |> put_flash(:info, "Intern attachee created successfully")
+         |> put_flash(:info, "Intern attaché #{operation} successfully")
          |> push_patch(to: socket.assigns.patch)}
 
       {:error, %Ecto.Changeset{} = changeset} ->
@@ -135,9 +140,10 @@ defmodule ImsWeb.InternAttacheeLive.FormComponent do
     end
   end
 
-  defp maybe_calculate_end_date(params) do
+  defp maybe_calculate_end_date(params, record) do
     with %{"start_date" => start_date, "duration" => duration} <- params,
          {:ok, start_date} <- Date.from_iso8601(start_date),
+         true <- is_nil(record.end_date) or record.start_date != start_date or record.duration != duration,
          {:ok, months} <- duration_to_months(duration) do
       # Approximate month
       end_date = Date.add(start_date, months * 30)

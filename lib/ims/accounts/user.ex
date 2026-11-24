@@ -21,6 +21,7 @@ defmodule Ims.Accounts.User do
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
+    field :deactivated_at, :utc_datetime
     # New field
     field :password_reset_required, :boolean, default: true
     # New gender field

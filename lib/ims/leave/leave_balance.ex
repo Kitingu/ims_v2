@@ -80,7 +80,7 @@ defmodule Ims.Leave.LeaveBalance do
   end
 
   def upsert_leave_balance(%{user_id: user_id, leave_type_id: leave_type_id, remaining_days: remaining_days}) do
-    now = DateTime.utc_now(:second)
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
 
     insert = %__MODULE__{
       user_id: user_id,

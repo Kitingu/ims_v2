@@ -19,7 +19,7 @@
   <:col :let={ intern_attachee} label="ID">{intern_attachee.id}</:col>
   <:col :let={ intern_attachee} label="Full name">{intern_attachee.full_name}</:col>
   <!-- <:col :let={ intern_attachee} label="Phone">{intern_attachee.phone}</:col> -->
-  <:col :let={ intern_attachee} label="Department">{intern_attachee.department.name} </:col>
+  <:col :let={ intern_attachee} label="Department">{intern_attachee.department && intern_attachee.department.name} </:col>
   <!-- <:col :let={ intern_attachee} label="School">{intern_attachee.school}</:col> -->
   <:col :let={intern_attachee} label="School">
     <span class="inline-block max-w-[150px] truncate text-gray-700" title={intern_attachee.school}>
@@ -34,13 +34,14 @@
  
 </.table>
 
-<.modal :if={@live_action in [:new, :edit]} id="intern_attachee-modal" show on_cancel={JS.patch(~p"/intern_attachees")}>
+<.modal :if={@live_action in [:new, :edit]} id="intern_attachee-modal" show on_cancel={JS.patch(~p"/hr/intern_attachees")}>
   <.live_component
     module={ImsWeb.InternAttacheeLive.FormComponent}
     id={@intern_attachee.id || :new}
     title={@page_title}
     action={@live_action}
     intern_attachee={@intern_attachee}
+    current_user={@current_user}
     patch={~p"/hr/intern_attachees"}
   />
 </.modal>

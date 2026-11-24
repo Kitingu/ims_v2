@@ -16,6 +16,11 @@ defmodule ImsWeb.InternAttacheeLive.Show do
      |> assign(:intern_attachee, Interns.get_intern_attachee!(id))}
   end
 
+  @impl true
+  def handle_info({ImsWeb.InternAttacheeLive.FormComponent, {:saved, record}}, socket) do
+    {:noreply, assign(socket, :intern_attachee, record)}
+  end
+
   defp page_title(:show), do: "Show Intern attachee"
   defp page_title(:edit), do: "Edit Intern attachee"
 end

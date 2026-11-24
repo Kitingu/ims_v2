@@ -153,7 +153,7 @@ defmodule Ims.Leave.AnnualLeave do
           |> Ecto.Changeset.change(%{
             submitted_by_id: actor.id,
             decided_by_id: actor.id,
-            decided_at: DateTime.utc_now(:second)
+            decided_at: DateTime.utc_now() |> DateTime.truncate(:second)
           })
 
         application = write(Repo.insert(changeset))

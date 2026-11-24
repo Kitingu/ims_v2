@@ -42,7 +42,7 @@ defmodule Ims.Accounts do
   """
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email)
+    user = Repo.one(from u in User, where: u.email == ^email and is_nil(u.deactivated_at))
     if User.valid_password?(user, password), do: user
   end
 
@@ -452,6 +452,31 @@ defmodule Ims.Accounts do
       {:ok, %{user: user}} -> {:ok, user}
       {:error, :user, changeset, _} -> {:error, changeset}
     end
+  end
+
+  def set_user_deactivation(%User{id: actor_id}, id, _deactivated?) when actor_id == id,
+    do: {:error, :own_account}
+
+  def set_user_deactivation(%User{}, id, deactivated?) when is_boolean(deactivated?) do
+    Repo.transaction(fn ->
+      user = Repo.one(from u in User, where: u.id == ^id, lock: "FOR UPDATE")
+      if is_nil(user), do: Repo.rollback(:not_found)
+
+      timestamp = if deactivated?, do: DateTime.truncate(DateTime.utc_now(), :second)
+      Repo.update!(Ecto.Changeset.change(user, deactivated_at: timestamp))
+
+      tokens =
+        if deactivated? do
+          query = UserToken.by_user_and_contexts_query(user, :all)
+          sessions = Repo.all(from t in query, where: t.context == "session", select: t.token)
+          Repo.delete_all(query)
+          sessions
+        else
+          []
+        end
+
+      tokens
+    end)
   end
 
   def list_users do

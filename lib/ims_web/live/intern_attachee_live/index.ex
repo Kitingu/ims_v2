@@ -60,11 +60,19 @@ defmodule ImsWeb.InternAttacheeLive.Index do
     {:noreply, stream_delete(socket, :intern_attachees, intern_attachee)}
   end
 
-  def handle_event("resize_table", %{"size" => size}, socket) do
-    intern_attacheesççç =
-      fetch_records(socket.assigns.filters, page_size: String.to_integer(size)) |> IO.inspect()
+  def handle_event("edit" <> id, _params, socket) do
+    if Canada.Can.can?(socket.assigns.current_user, ["edit"], "intern_attachees") do
+      {:noreply, push_patch(socket, to: ~p"/hr/intern_attachees/#{id}/edit")}
+    else
+      {:noreply, put_flash(socket, :error, "You do not have permission to edit this record.")}
+    end
+  end
 
-    {:noreply, assign(socket, intern_attacheesççç: intern_attacheesççç)}
+  def handle_event("resize_table", %{"size" => size}, socket) do
+    intern_attachees =
+      fetch_records(socket.assigns.filters, page_size: String.to_integer(size))
+
+    {:noreply, assign(socket, intern_attachees: intern_attachees)}
   end
 
   def handle_event("render_page", %{"page" => page}, socket) do
@@ -97,6 +105,5 @@ defmodule ImsWeb.InternAttacheeLive.Index do
 
     InternAttachee.search(filters)
     |> Ims.Repo.paginate(opts)
-    |> IO.inspect(label: "InternAttachee.search(filters)")
   end
 end

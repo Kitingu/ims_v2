@@ -13,6 +13,53 @@ defmodule ImsWeb.InternAttacheeLiveTest do
     %{intern_attachee: intern_attachee}
   end
 
+  test "the HR table Edit action updates an intern and preserves the end date", %{conn: conn} do
+    alias Ims.Accounts.{Departments, Permission, Role, User, UserRole}
+    alias Ims.Interns.InternAttachee
+    alias Ims.Repo
+
+    role = Repo.insert!(%Role{name: "super_admin"})
+    permission = Repo.insert!(%Permission{name: "intern_attachees.edit"})
+    now = DateTime.truncate(DateTime.utc_now(), :second)
+    Repo.insert_all("role_permissions", [
+      %{role_id: role.id, permission_id: permission.id, inserted_at: now, updated_at: now}
+    ])
+    user = Repo.insert!(%User{email: "intern-editor@example.com", password_reset_required: false})
+    Repo.insert!(%UserRole{user_id: user.id, role_id: role.id})
+    department = Repo.insert!(%Departments{name: "Internship test"})
+    end_date = ~D[2025-05-08]
+
+    record =
+      Repo.insert!(%InternAttachee{
+        full_name: "Original intern",
+        email: "intern@example.com",
+        phone: "0700000000",
+        id_number: "12345678",
+        school: "Test school",
+        program: "Internship",
+        department_id: department.id,
+        start_date: ~D[2025-04-27],
+        end_date: end_date,
+        duration: "1 month",
+        next_of_kin_name: "Contact",
+        next_of_kin_phone: "0700000001"
+      })
+
+    conn = log_in_user(conn, user)
+    {:ok, view, _html} = live(conn, ~p"/hr/intern_attachees")
+    assert view |> element(~s(button[phx-click="edit#{record.id}"])) |> render_click() =~
+             "Edit Intern attachee"
+
+    assert_patch(view, ~p"/hr/intern_attachees/#{record}/edit")
+
+    view
+    |> form("#intern_attachee-form", intern_attachee: %{full_name: "Updated intern"})
+    |> render_submit()
+
+    assert_patch(view, ~p"/hr/intern_attachees")
+    assert %{full_name: "Updated intern", end_date: ^end_date} = Repo.get!(InternAttachee, record.id)
+  end
+
   describe "Index" do
     setup [:create_intern_attachee]
 
