@@ -2,7 +2,7 @@
   Leave application {@leave_application.id}
   <:subtitle>This is a leave_application record from your database.</:subtitle>
   <:actions>
-    <.link patch={~p"/leave_applications/#{@leave_application}/show/edit"} phx-click={JS.push_focus()}>
+    <.link :if={@leave_application.status == "pending" && Canada.Can.can?(@current_user, ["edit"], "leave_applications")} patch={~p"/hr/leave_applications/#{@leave_application}/show/edit"} phx-click={JS.push_focus()}>
       <.button>Edit leave_application</.button>
     </.link>
   </:actions>
@@ -18,15 +18,16 @@
   <:item title="Proof document">{@leave_application.proof_document}</:item>
 </.list>
 
-<.back navigate={~p"/leave_applications"}>Back to leave_applications</.back>
+<.back navigate={~p"/hr/leave_applications"}>Back to leave_applications</.back>
 
-<.modal :if={@live_action == :edit} id="leave_application-modal" show on_cancel={JS.patch(~p"/leave_applications/#{@leave_application}")}>
+<.modal :if={@live_action == :edit} id="leave_application-modal" show on_cancel={JS.patch(~p"/hr/leave_applications/#{@leave_application}")}>
   <.live_component
     module={ImsWeb.LeaveApplicationLive.FormComponent}
     id={@leave_application.id}
     title={@page_title}
     action={@live_action}
+    current_user={@current_user}
     leave_application={@leave_application}
-    patch={~p"/leave_applications/#{@leave_application}"}
+    patch={~p"/hr/leave_applications/#{@leave_application}"}
   />
 </.modal>

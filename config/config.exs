@@ -89,7 +89,7 @@ config :ims, Oban,
     {Oban.Plugins.Cron,
      crontab: [
 
-       # Run on Jan 1st every year at 1 AM
+       # Renew leave on 1 July each financial year.
        {"0 0 1 7 *", Ims.Workers.LeaveAccrualWorker, args: %{"type" => "year_start"}}
      ]}
   ],

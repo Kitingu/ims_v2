@@ -5,14 +5,12 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
   alias Ims.Repo.Audited, as: Repo
   alias Ims.Leave
   alias Ims.Leave.LeaveType
-  alias Ims.Accounts
+  alias Ims.Accounts.User
   require Logger
 
   alias Ims.Leave.Workers.LeaveBalanceUploadWorker
   alias Oban
   alias Oban.Job
-
-  alias ImsWeb.Router.Helpers, as: Routes
 
   @impl true
   def mount(_params, _session, socket) do
@@ -51,7 +49,7 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
         [xlsx_path | _] ->
           Logger.debug("enqueue oban job for path=#{xlsx_path}")
 
-          case Oban.insert(LeaveBalanceUploadWorker.new(%{"xlsx_path" => xlsx_path})) do
+          case Oban.insert(LeaveBalanceUploadWorker.new(%{"xlsx_path" => xlsx_path, "actor_id" => socket.assigns.current_user.id})) do
             {:ok, %Job{id: jid}} ->
               Process.send_after(self(), {:poll_job, jid}, 500)
 
@@ -78,38 +76,41 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
 
   @impl true
   def handle_params(params, _url, socket) do
-    live_action = socket.assigns[:live_action] || :index
+    employee_id = params["id"]
+    params = Map.take(params, ["search", "leave_type", "page", "page_size"])
     leave_types = Repo.all(from lt in LeaveType, select: lt.name)
 
-    case live_action do
-      :edit ->
-        user_id = params["id"]
-        user = Accounts.get_user!(user_id)
+    socket =
+      assign(socket,
+        rows: Leave.paginated_leave_balances(params),
+        all_leave_types: leave_types,
+        search: Map.get(params, "search", ""),
+        selected_type: Map.get(params, "leave_type", ""),
+        params: params,
+        page_title: "Leave Balances",
+        selected_user: nil,
+        balance_mode: nil,
+        show_manage_modal: false
+      )
 
-        {:noreply,
-         socket
-         |> assign(:page_title, "Edit Leave Balances")
-         |> assign(:user, user)
-         |> assign(:all_leave_types, leave_types)
-         |> assign(:visible_leave_types, leave_types)
-         |> assign(:columns, leave_types)
-         |> assign(:live_action, :edit)}
+    case socket.assigns.live_action do
+      :edit -> open_employee_balances(socket, employee_id, :edit)
+      :index -> {:noreply, socket}
+      :new -> handle_event("update_leave_balance", %{}, socket)
+    end
+  end
 
-      :index ->
-        page = Leave.paginated_leave_balances(params)
+  defp open_employee_balances(socket, user_id, mode) do
+    permission = if mode == :edit, do: "edit", else: "index"
 
-        {:noreply,
-         socket
-         |> assign(:rows, page)
-         |> assign(:columns, leave_types)
-         |> assign(:all_leave_types, leave_types)
-         |> assign(:search, Map.get(params, "search", ""))
-         |> assign(:selected_type, Map.get(params, "leave_type", ""))
-         |> assign(:params, params)
-         |> assign(:page_title, "Leave Balances")
-         |> assign(:user, nil)
-         |> assign(:show_manage_modal, false)
-         |> assign(:live_action, :index)}
+    with true <- Canada.Can.can?(socket.assigns.current_user, [permission], "leave_balances"),
+         {id, ""} when id > 0 and id <= 9_223_372_036_854_775_807 <- Integer.parse(user_id),
+         %User{} = user <- Repo.get(User, id) do
+      {:noreply,
+       assign(socket, selected_user: user, balance_mode: mode, show_manage_modal: true)}
+    else
+      false -> {:noreply, put_flash(socket, :error, "You do not have access to this action.")}
+      _ -> {:noreply, put_flash(socket, :error, "Employee not found.")}
     end
   end
 
@@ -125,11 +126,16 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
 
   @impl true
   def handle_event("update_leave_balance", _params, socket) do
-    {:noreply, assign(socket, :show_manage_modal, true)}
+    if Canada.Can.can?(socket.assigns.current_user, ["edit"], "leave_balances") do
+      {:noreply,
+       assign(socket, selected_user: nil, balance_mode: :edit, show_manage_modal: true)}
+    else
+      {:noreply, put_flash(socket, :error, "You do not have access to edit leave balances.")}
+    end
   end
 
   def handle_event("close_manage_balances", _params, socket) do
-    {:noreply, assign(socket, :show_manage_modal, false)}
+    {:noreply, close_balance_modal(socket)}
   end
 
   def handle_event("search_user", %{"search" => search}, socket) do
@@ -183,12 +189,16 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
      |> assign(:rows, page)}
   end
 
+  def handle_event("view" <> user_id, _params, socket) do
+    open_employee_balances(socket, user_id, :view)
+  end
+
+  def handle_event("edit" <> user_id, _params, socket) do
+    open_employee_balances(socket, user_id, :edit)
+  end
+
   def handle_event("open_update_modal", %{"id" => user_id}, socket) do
-    {:noreply,
-     push_patch(socket,
-       to: Routes.leave_balances_index_path(socket, :edit, user_id),
-       replace: true
-     )}
+    open_employee_balances(socket, user_id, :edit)
   end
 
   def handle_event("filter_leave_type", %{"leave_type" => lt}, socket) do
@@ -308,12 +318,19 @@ defmodule ImsWeb.LeaveBalanceLive.Index do
 
   @impl true
   def handle_info(:close_manage_balances, socket) do
-    {:noreply, assign(socket, :show_manage_modal, false)}
+    {:noreply, close_balance_modal(socket)}
   end
 
   def handle_info(_msg, socket), do: {:noreply, socket}
 
   # ===== Helpers =====
+
+  defp close_balance_modal(socket) do
+    case socket.assigns.live_action do
+      :index -> assign(socket, :show_manage_modal, false)
+      _ -> push_patch(socket, to: ~p"/hr/leave_balances?#{socket.assigns.params}")
+    end
+  end
 
   defp get_job_state(job_id) do
     case Repo.get(Job, job_id) do

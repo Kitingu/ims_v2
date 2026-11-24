@@ -44,7 +44,12 @@
         <!-- Show any upload errors -->
         <%= for err <- Phoenix.Component.upload_errors(@uploads.balances) do %>
           <span class="text-xs text-red-600">
-            <%= Phoenix.Component.upload_error_to_string(err) %>
+            <%= case err do
+              :too_large -> "File exceeds 10 MB."
+              :not_accepted -> "Select an Excel (.xlsx) file."
+              :too_many_files -> "Select one file."
+              _ -> "Unable to upload the file."
+            end %>
           </span>
         <% end %>
 
@@ -70,7 +75,7 @@
   </div>
 
   <!-- Table -->
-  <.table id="leave-balances" rows={@rows} resource="leave_balances" current_user={@current_user}>
+  <.table id="leave-balances" rows={@rows} resource="leave_balances" current_user={@current_user} actions={["view", "edit"]}>
     <:col :let={row} label="Personal Number"><%= row.personal_number %></:col>
     <:col :let={row} label="First Name"><%= row.first_name %></:col>
     <:col :let={row} label="Last Name"><%= row.last_name %></:col>
@@ -82,14 +87,11 @@
   </.table>
 </div>
 
-<!-- Edit user drawer/modal -->
-<%= if @live_action == :edit and @user do %>
-  <.live_component module={ImsWeb.LeaveBalancesLive.FormComponent}
-                   id={"edit-user-#{@user.id}"} user={@user}
-                   return_to={Routes.leave_balances_index_path(@socket, :index)} />
-<% end %>
-
-<!-- Manage balances modal -->
-<%= if @show_manage_modal do %>
-  <.live_component module={ImsWeb.LeaveBalancesLive.ManageComponent} id="manage-balances" />
-<% end %>
+<.live_component
+  :if={@show_manage_modal}
+  module={ImsWeb.LeaveBalancesLive.ManageComponent}
+  id={"leave-balances-#{@balance_mode}-#{@selected_user && @selected_user.id || "select"}"}
+  user={@selected_user}
+  mode={@balance_mode}
+  current_user={@current_user}
+/>

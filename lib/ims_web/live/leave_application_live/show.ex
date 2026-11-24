@@ -10,10 +10,18 @@ defmodule ImsWeb.LeaveApplicationLive.Show do
 
   @impl true
   def handle_params(%{"id" => id}, _, socket) do
-    {:noreply,
-     socket
-     |> assign(:page_title, page_title(socket.assigns.live_action))
-     |> assign(:leave_application, Leave.get_leave_application!(id))}
+    application = Leave.get_leave_application!(id)
+
+    if socket.assigns.live_action == :edit &&
+         (application.status != "pending" ||
+            !Canada.Can.can?(socket.assigns.current_user, ["edit"], "leave_applications")) do
+      {:noreply, push_patch(socket, to: ~p"/hr/leave_applications/#{application}")}
+    else
+      {:noreply,
+       socket
+       |> assign(:page_title, page_title(socket.assigns.live_action))
+       |> assign(:leave_application, application)}
+    end
   end
 
   defp page_title(:show), do: "Show Leave application"

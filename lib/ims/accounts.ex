@@ -143,22 +143,27 @@ defmodule Ims.Accounts do
     results =
       Enum.map(leave_types, fn leave_type ->
         skip =
-          case {String.downcase(user.gender), String.downcase(leave_type.name)} do
+          case {String.downcase(user.gender || ""), String.downcase(leave_type.name)} do
             {"male", "maternity leave"} -> true
             {"female", "paternity leave"} -> true
             _ -> false
           end
 
-        unless skip do
-          %Ims.Leave.LeaveBalance{}
-          |> Ims.Leave.LeaveBalance.changeset(%{
-            user_id: user_id,
-            leave_type_id: leave_type.id,
-            remaining_days: 0
-          })
-          |> Repo.insert()
-        else
-          {:skipped, leave_type.name}
+        cond do
+          skip ->
+            {:skipped, leave_type.name}
+
+          leave_type.name == "Annual Leave" ->
+            Ims.Leave.AnnualLeave.renew(user_id, leave_type.id)
+
+          true ->
+            %Ims.Leave.LeaveBalance{}
+            |> Ims.Leave.LeaveBalance.changeset(%{
+              user_id: user_id,
+              leave_type_id: leave_type.id,
+              remaining_days: 0
+            })
+            |> Repo.insert()
         end
       end)
 

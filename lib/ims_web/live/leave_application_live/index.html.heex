@@ -24,7 +24,20 @@
       </:actions>
     </.header>
 
-    <.table id="leave_applications" rows={@leave_applications} resource="leave_applications"
+    <.form for={@report_form} phx-submit="filter_report" class="my-4 flex flex-wrap items-end gap-3">
+      <.input field={@report_form[:from]} type="date" label="Period start" />
+      <.input field={@report_form[:to]} type="date" label="Period end" />
+      <.input field={@report_form[:status]} type="select" label="Status"
+        options={[{"All statuses", ""}, {"Pending", "pending"}, {"Approved", "approved"}, {"Rejected", "rejected"}]} />
+      <input type="hidden" name={@report_form[:user_id].name} value={@report_form[:user_id].value} />
+      <.button>Apply filters</.button>
+      <.button :if={@can_email_report} type="button" phx-click="email_report" phx-disable-with="Sending…">
+        Email me a summary
+      </.button>
+    </.form>
+    <p :if={@report_error} role="alert" class="mb-4 text-red-700"><%= @report_error %></p>
+
+    <.table :if={!@report_error} id="leave_applications" rows={@leave_applications} resource="leave_applications"
       current_user={@current_user} actions={["approve", "reject" ]}>
       <:col :let={leave_application} label="ID">
         <%= leave_application.id %>
@@ -53,6 +66,23 @@
       <:col :let={leave_application} label="Resumption date">
         <%= leave_application.resumption_date %>
       </:col>
+      <:col :let={leave_application} label="Submitted on">
+        <%= DateTime.to_date(leave_application.inserted_at) %>
+      </:col>
+      <:col :let={application} label="Submitted by">
+        <%= if actor = application.submitted_by do %>
+          <%= actor.first_name %> <%= actor.last_name %>
+        <% else %>
+          —
+        <% end %>
+      </:col>
+      <:col :let={application} label="Decision by">
+        <%= if actor = application.decided_by do %>
+          <%= actor.first_name %> <%= actor.last_name %>
+        <% else %>
+          —
+        <% end %>
+      </:col>
       <:col :let={leave_application} label="Status">
 
         <div class="px-2 py-1">
@@ -70,4 +100,5 @@
       </:col>
 
     </.table>
+
     <% end %>

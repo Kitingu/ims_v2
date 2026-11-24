@@ -32,16 +32,15 @@ if config_env() == :prod do
     queue_target: 5000,
     queue_interval: 5000
 
-  # Optional SMTP configuration. SendGrid remains configured in prod.secrets.exs.
-  # config :ims, Ims.Mailer,
-  #   adapter: Swoosh.Adapters.SMTP,
-  #   relay: System.get_env("SMTP_RELAY") || "smtp.gmail.com",
-  #   username: System.get_env("GMAIL_USERNAME"),
-  #   password: System.get_env("GMAIL_APP_PASSWORD"),
-  #   port: String.to_integer(System.get_env("GMAIL_PORT") || "587"),
-  #   ssl: false,
-  #   tls: :always,
-  #   auth: :always
+  if sender = System.get_env("MAILER_FROM_EMAIL") do
+    config :ims,
+      mailer_from_email: sender,
+      mailer_from_name: System.get_env("MAILER_FROM_NAME") || "IMS"
+  end
+
+  if api_key = System.get_env("SENDGRID_API_KEY") do
+    config :ims, Ims.Mailer, adapter: Swoosh.Adapters.Sendgrid, api_key: api_key
+  end
 
   # Direct HTTPS remains available when certificate paths are supplied.
   https_config =

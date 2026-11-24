@@ -1,7 +1,7 @@
 defmodule Ims.Leave.LeaveApplication do
   use Ecto.Schema
   import Ecto.Changeset
-  alias Ims.Leave.{LeaveBalance, LeaveType}
+  alias Ims.Leave.{AnnualLeave, LeaveBalance, LeaveType}
   alias Ims.Repo.Audited, as: Repo
   use Ims.RepoHelpers, repo: Repo
   import Ecto.Query
@@ -33,6 +33,9 @@ defmodule Ims.Leave.LeaveApplication do
     field :status, :string, default: "pending"
     belongs_to :user, Ims.Accounts.User
     belongs_to :leave_type, LeaveType
+    belongs_to :submitted_by, Ims.Accounts.User
+    belongs_to :decided_by, Ims.Accounts.User
+    field :decided_at, :utc_datetime
 
     timestamps(type: :utc_datetime)
   end
@@ -52,7 +55,6 @@ defmodule Ims.Leave.LeaveApplication do
       :user_id
     ])
     |> validate_required([:status, :comment, :start_date, :end_date, :leave_type_id])
-    |> validate_future_dates()
     |> validate_end_after_start()
     |> compute_days_requested()
     # Runs after computing `days_requested`
@@ -65,28 +67,14 @@ defmodule Ims.Leave.LeaveApplication do
     |> compute_resumption_date()
   end
 
-  # Ensure dates are in the future
-  def validate_future_dates(changeset) do
-    today = Date.utc_today()
-
-    # start_date = get_field(changeset, :start_date)
-    # end_date = get_field(changeset, :end_date)
-
-    changeset
-    |> validate_change(:start_date, fn _, date ->
-      if Date.compare(date, today) == :lt do
-        [start_date: "Start date cannot be in the past"]
-      else
-        []
-      end
-    end)
-    |> validate_change(:end_date, fn _, date ->
-      if Date.compare(date, today) == :lt do
-        [end_date: "End date cannot be in the past"]
-      else
-        []
-      end
-    end)
+  def historical_changeset(application, attrs) do
+    application
+    |> cast(attrs, [:user_id, :leave_type_id, :start_date, :end_date, :comment, :status])
+    |> validate_required([:user_id, :leave_type_id, :start_date, :end_date, :comment, :status])
+    |> validate_end_after_start()
+    |> compute_days_requested()
+    |> validate_number(:days_requested, greater_than: 0)
+    |> compute_resumption_date()
   end
 
   # Ensure `end_date` is after `start_date`
@@ -127,11 +115,6 @@ defmodule Ims.Leave.LeaveApplication do
             message: "Birth notification required for paternity leave"
           )
 
-        %LeaveType{name: "Annual Leave"} ->
-          changeset
-          |> validate_number(:days_requested, less_than_or_equal_to: 30)
-          |> validate_annual_leave()
-
         %LeaveType{name: "Sick Leave"} ->
           changeset
           |> validate_number(:days_requested, less_than_or_equal_to: 90)
@@ -149,63 +132,27 @@ defmodule Ims.Leave.LeaveApplication do
     end
   end
 
-  # Validate Annual Leave Rules
-  defp validate_annual_leave(changeset) do
-    user_id = get_field(changeset, :user_id)
-    days_requested = get_field(changeset, :days_requested) || 0
-    leave_taken = get_annual_leave_taken(user_id) || 0
-
-    if leave_taken + days_requested > 30 do
-      add_error(changeset, :days_requested, "Cannot exceed 30 days of annual leave in a year")
-    else
-      changeset
-    end
-  end
-
-  # Fetch the actual annual leave taken by the user
-  defp get_annual_leave_taken(user_id) do
-    query =
-      from(la in Ims.Leave.LeaveApplication,
-        where: la.user_id == ^user_id and la.leave_type_id == ^get_annual_leave_type_id(),
-        select: sum(la.days_requested)
-      )
-
-    Repo.one(query) || 0
-  end
-
-  # Get the leave type ID for annual leave
-  defp get_annual_leave_type_id() do
-    case Repo.get_by(Ims.Leave.LeaveType, name: "Annual Leave") do
-      %Ims.Leave.LeaveType{id: id} -> id
-      _ -> nil
-    end
-  end
-
   # Validate against leave balance and leave type max days
   defp validate_leave_limits(changeset) do
     user_id = get_field(changeset, :user_id)
     leave_type_id = get_field(changeset, :leave_type_id)
-    days_requested = get_field(changeset, :days_requested) |> IO.inspect(label: "days_requested")
+    days_requested = get_field(changeset, :days_requested)
 
     if user_id && leave_type_id && days_requested do
-      leave_balance =
-        get_leave_balance(user_id, leave_type_id)
-        |> IO.inspect(label: "leave_balance")
+      leave_balance = get_leave_balance(user_id, leave_type_id)
 
-      leave_type_max_days =
-        get_leave_type_max_days(leave_type_id)
+      leave_type = Repo.get(LeaveType, leave_type_id)
 
       changeset
       |> validate_change(:days_requested, fn _, _ ->
         cond do
-          days_requested > leave_type_max_days ->
-            [
-              {:days_requested,
-               "Cannot apply for more than #{leave_type_max_days} days for this leave type"}
-            ]
+          match?(%LeaveType{name: "Annual Leave"}, leave_type) ->
+            []
 
-          # days_requested > leave_balance
-          days_requested > Decimal.to_integer(leave_balance) ->
+          leave_type && days_requested > leave_type.max_days ->
+            [days_requested: "Cannot apply for more than #{leave_type.max_days} days for this leave type"]
+
+          Decimal.compare(Decimal.new(days_requested), leave_balance) == :gt ->
             [{:days_requested, "Insufficient leave balance"}]
 
           true ->
@@ -220,16 +167,8 @@ defmodule Ims.Leave.LeaveApplication do
   # Fetch leave balance for a user and leave type
   defp get_leave_balance(user_id, leave_type_id) do
     case Repo.get_by(LeaveBalance, user_id: user_id, leave_type_id: leave_type_id) do
-      nil -> 0
+      nil -> Decimal.new(0)
       balance -> balance.remaining_days
-    end
-  end
-
-  # Fetch max leave days for the given leave type
-  defp get_leave_type_max_days(leave_type_id) do
-    case Repo.get(LeaveType, leave_type_id) do
-      nil -> 0
-      leave_type -> leave_type.max_days
     end
   end
 
@@ -294,7 +233,7 @@ defmodule Ims.Leave.LeaveApplication do
     start_date = get_field(changeset, :start_date)
     end_date = get_field(changeset, :end_date)
 
-    if start_date && end_date do
+    if start_date && end_date && Date.compare(start_date, end_date) != :gt do
       num_days = num_business_days(start_date, end_date)
       put_change(changeset, :days_requested, num_days)
     else
@@ -339,6 +278,12 @@ defmodule Ims.Leave.LeaveApplication do
           k == "status" ->
             from(q in accum_query, where: q.status == ^v)
 
+          k == "from" ->
+            from(q in accum_query, where: q.end_date >= ^v)
+
+          k == "to" ->
+            from(q in accum_query, where: q.start_date <= ^v)
+
           k == "user_id" ->
             from(q in accum_query, where: q.user_id == ^v)
 
@@ -357,66 +302,59 @@ defmodule Ims.Leave.LeaveApplication do
         end
       end)
 
-    from(q in query, preload: [:user, :leave_type])
+    from(q in query, preload: [:user, :leave_type, :submitted_by, :decided_by])
   end
 
   @doc """
   Approves a leave application and deducts the requested leave days from the user's balance.
   """
-  def approve_leave_application(leave_application_id) do
-    Repo.transaction(fn ->
-      with %__MODULE__{
-             user_id: user_id,
-             leave_type_id: leave_type_id,
-             days_requested: days_requested,
-             status: "pending"
-           } = leave_application <-
-             get(leave_application_id),
-           %LeaveBalance{remaining_days: remaining_days} = leave_balance <-
-             Repo.get_by(LeaveBalance, user_id: user_id, leave_type_id: leave_type_id) do
+  def approve_leave_application(id, actor \\ nil) do
+    decide(id, "approved", actor, fn application ->
+      type = Repo.get!(LeaveType, application.leave_type_id)
 
-        # Convert all values to Decimal for safe comparison
-        requested_days = Decimal.new(days_requested)
-        current_balance = Decimal.new(remaining_days)
-
-        # Validate sufficient balance
-        if Decimal.compare(current_balance, requested_days) == :lt do
-          Repo.rollback("Insufficient leave balance")
-        end
-
-        # Calculate new balance (as Decimal)
-        new_balance = Decimal.sub(current_balance, requested_days)
-
-        # Update leave balance (storing as decimal)
-        leave_balance
-        |> Ecto.Changeset.change(%{remaining_days: new_balance})
-        |> Repo.update!()
-
-        # Approve the leave application
-        leave_application
-        |> Ecto.Changeset.change(%{status: "approved"})
-        |> Repo.update!()
-
-        {:ok, leave_application}
+      if type.name == "Annual Leave" do
+        AnnualLeave.approve(application, actor)
       else
-        nil -> Repo.rollback("Leave application not found")
-        _ -> Repo.rollback("Invalid leave application status")
+        deduct_balance(application)
       end
     end)
   end
 
-  def reject_leave_application(leave_application_id) do
-    Repo.transaction(fn ->
-      with %__MODULE__{status: "pending"} = leave_application <- get(leave_application_id) do
-        leave_application
-        |> Ecto.Changeset.change(%{status: "rejected"})
-        |> Repo.update!()
+  def reject_leave_application(id, actor \\ nil) do
+    decide(id, "rejected", actor, fn _application -> :ok end)
+  end
 
-        {:ok, leave_application}
-      else
-        nil -> {:error, "Leave application not found"}
-        _ -> {:error, "Invalid leave application status"}
+  defp decide(id, status, actor, before_decision) do
+    Repo.transaction(fn ->
+      case Repo.one(from a in __MODULE__, where: a.id == ^id, lock: "FOR UPDATE") do
+        %__MODULE__{status: "pending"} = application ->
+          before_decision.(application)
+
+          application
+          |> change(%{status: status, decided_by_id: actor && actor.id, decided_at: DateTime.utc_now(:second)})
+          |> Repo.update!()
+
+        nil ->
+          Repo.rollback("Leave application not found.")
+
+        _ ->
+          Repo.rollback("This leave application has already been decided.")
       end
     end)
+  end
+
+  defp deduct_balance(application) do
+    query =
+      from b in LeaveBalance,
+        where: b.user_id == ^application.user_id and b.leave_type_id == ^application.leave_type_id,
+        lock: "FOR UPDATE"
+
+    with %LeaveBalance{} = balance <- Repo.one(query),
+         remaining = Decimal.sub(balance.remaining_days, application.days_requested),
+         true <- Decimal.compare(remaining, 0) != :lt do
+      balance |> change(remaining_days: remaining) |> Repo.update!()
+    else
+      _ -> Repo.rollback("Insufficient leave balance.")
+    end
   end
 end

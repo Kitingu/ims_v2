@@ -16,7 +16,7 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
   import Ecto.Query
 
   alias Ims.Accounts.{User, Departments}
-  alias Ims.Leave.{LeaveType, LeaveBalance}
+  alias Ims.Leave.{AnnualLeave, LeaveType}
   require Logger
 
   @annual_leave_name "Annual Leave"
@@ -24,14 +24,23 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
   # ===== PUBLIC =====
 
   @impl Oban.Worker
-  def perform(%Oban.Job{args: %{"xlsx_path" => path}}) when is_binary(path) do
+  def perform(%Oban.Job{args: %{"xlsx_path" => path} = args}) when is_binary(path) do
     with {:ok, rows} <- load_xlsx(path) do
-      process_rows(rows)
+      process_rows(rows, import_actor(args))
     end
   end
 
-  def perform(%Oban.Job{args: %{"sheet" => rows}}) when is_list(rows), do: process_rows(rows)
+  def perform(%Oban.Job{args: %{"sheet" => rows} = args}) when is_list(rows),
+    do: process_rows(rows, import_actor(args))
   def perform(%Oban.Job{args: _}), do: {:discard, ~s|Provide "xlsx_path" or "sheet"|}
+
+  defp import_actor(%{"actor_id" => id}) do
+    user = Repo.get(User, id)
+    Ims.Audit.set_actor(user || :system)
+    user
+  end
+
+  defp import_actor(_), do: nil
 
   # ===== IO / LOAD =====
 
@@ -55,41 +64,35 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
 
   # ===== DRIVER =====
 
-  defp process_rows([]),
+  defp process_rows([], _actor),
     do: {:ok, %{updated_balances: 0, updated_departments: 0, errors: [[1, %{}, "Empty sheet"]]}}
 
-  defp process_rows([header | data_rows]) do
+  defp process_rows([header | data_rows], actor) do
     with {:ok, ix} <- build_index(header),
          {:ok, annual_lt_id} <- fetch_annual_leave_type_id() do
-      Repo.transaction(fn ->
-        {bal_count, dept_count, errs} =
-          data_rows
-          # Excel row numbers start at 2
-          |> Stream.with_index(2)
-          |> Enum.reduce({0, 0, []}, fn {row, rno}, {acc_bal, acc_dept, acc_errs} ->
-            case process_row(row, ix, annual_lt_id) do
-              {:ok, bal_updated?, dept_updated?} ->
-                {acc_bal + if(bal_updated?, do: 1, else: 0),
-                 acc_dept + if(dept_updated?, do: 1, else: 0), acc_errs}
+      {bal_count, dept_count, errs} =
+        data_rows
+        # Excel row numbers start at 2
+        |> Stream.with_index(2)
+        |> Enum.reduce({0, 0, []}, fn {row, rno}, {acc_bal, acc_dept, acc_errs} ->
+          case process_row(row, ix, annual_lt_id, actor) do
+            {:ok, bal_updated?, dept_updated?} ->
+              {acc_bal + if(bal_updated?, do: 1, else: 0),
+               acc_dept + if(dept_updated?, do: 1, else: 0), acc_errs}
 
-              {:error, msg} ->
-                {acc_bal, acc_dept, [{rno, %{}, msg} | acc_errs]}
-            end
-          end)
+            {:error, msg} ->
+              {acc_bal, acc_dept, [{rno, %{}, msg} | acc_errs]}
+          end
+        end)
 
-        summary = %{
-          updated_balances: bal_count,
-          updated_departments: dept_count,
-          errors: Enum.reverse(errs)
-        }
+      summary = %{
+        updated_balances: bal_count,
+        updated_departments: dept_count,
+        errors: Enum.reverse(errs)
+      }
 
-        Logger.info("Annual leave upload summary: #{inspect(summary)}")
-        summary
-      end)
-      |> case do
-        {:ok, summary} -> {:ok, summary}
-        {:error, reason} -> {:error, reason}
-      end
+      Logger.info("Annual leave upload summary: #{inspect(summary)}")
+      {:ok, summary}
     end
   end
 
@@ -111,7 +114,7 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
 
   # ===== PER-ROW =====
 
-  defp process_row(row, ix, annual_lt_id) do
+  defp process_row(row, ix, annual_lt_id, actor) do
     raw_pno = fetch(row, ix["personal number"])
     pno = normalize_personal_number(raw_pno)
 
@@ -125,7 +128,7 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
           {:error, "User not found: #{inspect(raw_pno)}"}
 
         %User{} = user ->
-          bal_updated? = update_annual_leave_from_row(user, row, ix, annual_lt_id)
+          bal_updated? = update_annual_leave_from_row(user, row, ix, annual_lt_id, actor)
           {:ok, bal_updated?, dept_updated?}
       end
     end
@@ -188,16 +191,12 @@ defmodule Ims.Leave.Workers.LeaveBalanceUploadWorker do
 
   # ===== ANNUAL LEAVE ONLY =====
 
-  defp update_annual_leave_from_row(%User{id: uid}, row, ix, annual_lt_id) do
+  defp update_annual_leave_from_row(%User{id: uid}, row, ix, annual_lt_id, actor) do
     total_idx = Map.get(ix, normalize("FY2025/2026 Leave total"))
 
     case read_decimal(row, total_idx) do
       {:ok, dec} ->
-        case LeaveBalance.upsert_leave_balance(%{
-               user_id: uid,
-               leave_type_id: annual_lt_id,
-               remaining_days: dec
-             }) do
+        case AnnualLeave.import_balance(uid, annual_lt_id, dec, actor) do
           {:ok, _} -> true
           {:error, _} -> false
         end

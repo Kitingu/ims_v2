@@ -2,7 +2,7 @@ defmodule Ims.Workers.LeaveAccrualWorker do
   use Oban.Worker, queue: :default, max_attempts: 1
 
   alias Ims.Repo.Audited, as: Repo
-  alias Ims.Leave.{LeaveBalance, LeaveType}
+  alias Ims.Leave.{AnnualLeave, LeaveBalance, LeaveType}
   import Ecto.Query
   require Logger
 
@@ -15,41 +15,30 @@ defmodule Ims.Workers.LeaveAccrualWorker do
   defp reset_all_leave_balances do
     leave_types = Repo.all(LeaveType)
 
-    Enum.each(leave_types, fn leave_type ->
-      if leave_type.name == "Annual Leave" do
-        reset_annual_leave(leave_type)
-      else
-        reset_other_leave(leave_type)
-      end
-    end)
+    results =
+      Enum.flat_map(leave_types, fn leave_type ->
+        if leave_type.name == "Annual Leave" do
+          renew_annual_leave(leave_type.id)
+        else
+          reset_other_leave(leave_type)
+          []
+        end
+      end)
 
-    Logger.info("Leave Accrual Worker: All leave types processed.")
-    :ok
+    case results do
+      [] -> :ok
+      errors -> {:error, {:annual_leave_renewals_failed, errors}}
+    end
   end
 
-  defp reset_annual_leave(%LeaveType{id: type_id}) do
-    Logger.info("Resetting Annual Leave balances...")
+  defp renew_annual_leave(type_id) do
+    user_ids =
+      Repo.all(from b in LeaveBalance, where: b.leave_type_id == ^type_id, select: b.user_id)
 
-    balances = Repo.all(from lb in LeaveBalance, where: lb.leave_type_id == ^type_id)
-
-    Enum.each(balances, fn lb ->
-      carry_forward =
-        lb.remaining_days
-        |> Decimal.new()
-        |> Decimal.min(Decimal.new(15))
-        |> Decimal.round(1)
-
-      new_balance = Decimal.add(carry_forward, 30)
-
-      lb
-      |> Ecto.Changeset.change(remaining_days: new_balance)
-      |> Repo.update()
-      |> case do
-        {:ok, _} ->
-          Logger.info("User ##{lb.user_id} — Annual: Carry = #{carry_forward}, Total = #{new_balance}")
-
-        {:error, reason} ->
-          Logger.error("User ##{lb.user_id} — Failed to update Annual Leave: #{inspect(reason)}")
+    Enum.flat_map(user_ids, fn user_id ->
+      case AnnualLeave.renew(user_id, type_id) do
+        {:ok, _balance} -> []
+        {:error, reason} -> [{user_id, reason}]
       end
     end)
   end

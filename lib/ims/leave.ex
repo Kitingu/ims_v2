@@ -239,7 +239,7 @@ defmodule Ims.Leave do
   """
   def get_leave_application!(id) do
     Repo.get!(LeaveApplication, id)
-    |> Repo.preload(:leave_type)
+    |> Repo.preload([:leave_type, :submitted_by, :decided_by])
   end
 
   @doc """
@@ -257,6 +257,7 @@ defmodule Ims.Leave do
   def create_leave_application(attrs \\ %{}) do
     %LeaveApplication{}
     |> LeaveApplication.changeset(attrs)
+    |> Ecto.Changeset.put_change(:submitted_by_id, Ims.Audit.get_actor().id)
     |> Repo.insert()
   end
 
@@ -273,9 +274,9 @@ defmodule Ims.Leave do
 
   """
   def update_leave_application(%LeaveApplication{} = leave_application, attrs) do
-    leave_application
-    |> LeaveApplication.changeset(attrs)
-    |> Repo.update()
+    with_pending_application(leave_application.id, fn application ->
+      application |> LeaveApplication.changeset(attrs) |> Repo.update()
+    end)
   end
 
   @doc """
@@ -291,7 +292,22 @@ defmodule Ims.Leave do
 
   """
   def delete_leave_application(%LeaveApplication{} = leave_application) do
-    Repo.delete(leave_application)
+    with_pending_application(leave_application.id, &Repo.delete/1)
+  end
+
+  defp with_pending_application(id, action) do
+    Repo.transaction(fn ->
+      case Repo.one(from a in LeaveApplication, where: a.id == ^id, lock: "FOR UPDATE") do
+        %LeaveApplication{status: "pending"} = application ->
+          case action.(application) do
+            {:ok, record} -> record
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        _ ->
+          Repo.rollback("Only pending leave applications can be changed.")
+      end
+    end)
   end
 
   @doc """
